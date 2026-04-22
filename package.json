@@ -7,7 +7,9 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "build": "pnpm -r build",
-    "dev": "pnpm --filter nicermd-website dev",
+    "dev": "pnpm --filter nicermd-core build && pnpm --filter nicermd-website dev",
+    "dev:website": "pnpm --filter nicermd-website dev",
+    "dev:core": "pnpm --filter nicermd-core dev",
     "typecheck": "pnpm -r typecheck"
   },
   "devDependencies": {
