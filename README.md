@@ -13,16 +13,23 @@ More shells planned: CLI, Chrome extension, VS Code extension, iOS app.
 
 ## Development
 
-Requires [pnpm](https://pnpm.io) and Node.js 20+.
+Requires Node.js 20+ and [pnpm](https://pnpm.io) (`corepack enable` if Node 20+ is already installed).
 
 ```bash
 pnpm install
-pnpm dev           # run the website dev server
+pnpm dev           # build core + run website dev server
 pnpm build         # build all packages
 pnpm typecheck     # type-check all packages
 ```
 
 The website dev server runs on [http://localhost:3333](http://localhost:3333).
+
+For active work on the core alongside the website, use two terminals:
+
+```bash
+pnpm dev:core      # tsup watch-mode on the core
+pnpm dev:website   # vite dev server on the website
+```
 
 ## Architecture
 
