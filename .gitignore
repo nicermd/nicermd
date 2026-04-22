@@ -1,0 +1,31 @@
+# Defensive: agentic/private files that must never enter the public repo
+CLAUDE.md
+.claude/
+memory/
+
+# Build output
+dist/
+.turbo/
+*.tsbuildinfo
+
+# Dependencies
+node_modules/
+
+# Environment
+.env
+.env.*
+!.env.example
+*.local.*
+
+# Editor
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+npm-debug.log*
+pnpm-debug.log*
