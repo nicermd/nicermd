@@ -1,0 +1,19 @@
+{
+  "name": "nicermd-workspace",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Nicer.md monorepo: one rendering core, multiple thin shells.",
+  "license": "MIT",
+  "packageManager": "pnpm@9.15.0",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm --filter nicermd-website dev",
+    "typecheck": "pnpm -r typecheck"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

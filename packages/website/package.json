@@ -1,0 +1,21 @@
+{
+  "name": "nicermd-website",
+  "version": "0.0.0",
+  "private": true,
+  "description": "The Nicer.md website — live demo and distribution hub at nicermd.com.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "nicermd-core": "workspace:*"
+  },
+  "devDependencies": {
+    "typescript": "^5.6.3",
+    "vite": "^5.4.11"
+  }
+}

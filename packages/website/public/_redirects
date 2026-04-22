@@ -1,0 +1,3 @@
+# Placeholder for URL redirects on Cloudflare Pages.
+# Add rules here as needed, for example when `nicer.md` is acquired:
+# https://nicer.md/* https://nicermd.com/:splat 301
