@@ -58,9 +58,16 @@ body.is-editing .ProseMirror {
 .mode-indicator {
   position: fixed;
   top: 0.875rem;
-  left: 0.875rem;
-  width: 28px;
-  height: 28px;
+  /* Content-aligned: icon's left edge sits at the right edge of the 720px reading column,
+     floating in the gutter outside content. Falls back to the viewport corner on narrow screens.
+     If --nicer-max-width changes, update the 360 constant here (half of 720). */
+  right: max(0.875rem, calc(50vw - 360px - 84px));
+  /* 84 x 84 hit area (3x the visible icon) so hover and click are forgiving. */
+  width: 84px;
+  height: 84px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   padding: 0;
   margin: 0;
   background: none;
@@ -80,7 +87,7 @@ body.is-editing .ProseMirror {
 .mode-indicator:hover { transform: scale(1.08); }
 .mode-indicator:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 6px; }
 body.is-editing .mode-indicator { color: #ea580c; }
-.mode-indicator svg { width: 100%; height: 100%; display: block; }
+.mode-indicator svg { width: 28px; height: 28px; display: block; }
 
 /* App-logo state: blue letter + orange border (two-colour branding).
    Removed after the first mode change, after which the logo follows the mode colour. */
@@ -90,8 +97,10 @@ body.is-editing .mode-indicator { color: #ea580c; }
 /* Placeholder panel anchored below the logo. Design later. */
 .mode-panel {
   position: fixed;
-  top: 3.25rem;
-  left: 0.875rem;
+  top: 5rem;
+  /* Right edge aligned to content's right edge so the panel tucks snugly against
+     the reading column on wide screens; falls back to viewport corner on narrow. */
+  right: max(0.875rem, calc(50vw - 360px));
   min-width: 220px;
   padding: 1rem;
   background: #ffffff;
@@ -216,6 +225,10 @@ async function mount(root: HTMLElement): Promise<void> {
 
   // Show the logo briefly on first load.
   flashIndicator()
+
+  // Scroll activity also flashes the indicator, resetting the fade timer on each event.
+  // Passive listener — we only observe, never call preventDefault.
+  window.addEventListener('scroll', () => flashIndicator(), { passive: true })
 
   // Toggle full-viewport fullscreen on Cmd/Ctrl+Shift+F. Escape is handled by the browser.
   window.addEventListener('keydown', (event) => {
