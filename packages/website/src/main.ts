@@ -2,6 +2,8 @@ import { Editor, rootCtx, defaultValueCtx, editorViewOptionsCtx, editorViewCtx }
 import { commonmark } from '@milkdown/preset-commonmark'
 import { gfm } from '@milkdown/preset-gfm'
 import { getMarkdown, replaceAll } from '@milkdown/utils'
+import { setBlockType, toggleMark } from '@milkdown/prose/commands'
+import type { EditorView } from '@milkdown/prose/view'
 import { getTheme } from 'nicermd-core'
 
 const MARKDOWN_EXTENSIONS = ['.md', '.markdown', '.mdx', '.mdown', '.mkd']
@@ -176,6 +178,31 @@ body.is-editing .mode-indicator { color: #ea580c; }
   outline-offset: 2px;
 }
 
+/* Markdown-category pills get a subtle cool tint so they read as distinct
+   from the app-level action pills. */
+.command-pill[data-category="markdown"] {
+  background: #f6f8fb;
+  border-color: #e2e8f0;
+}
+.command-pill[data-category="markdown"]:hover,
+.command-pill[data-category="markdown"].is-active {
+  background: #eaf0f7;
+  border-color: #cbd5e1;
+}
+
+/* Section headers — small, muted, all-caps for quiet grouping. */
+.command-palette-section-label {
+  width: 100%;
+  padding: 0.5rem 0.25rem 0.25rem;
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #a1a1aa;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.command-palette-section-label:first-child { padding-top: 0.25rem; }
+
 .command-palette-empty {
   width: 100%;
   padding: 1rem;
@@ -290,15 +317,115 @@ async function mount(root: HTMLElement): Promise<void> {
   // Command palette. Clicking the indicator or pressing Cmd/Ctrl+/ opens it;
   // Cmd/Ctrl+I remains the dedicated edit-mode shortcut (the palette also has
   // a "Toggle edit mode" command for mouse/tablet users).
+  type CommandCategory = 'markdown' | 'app'
   type Command = {
     id: string
+    category: CommandCategory
     aliases: string[]
     label: string
+    pillText?: string
     run: () => void
   }
+
+  // Runs fn against the ProseMirror view. Auto-enters edit mode first so
+  // markdown transforms feel intuitive whether the user is reading or editing.
+  function withEditor(fn: (view: EditorView) => void): () => void {
+    return () => {
+      if (!editMode) setEditMode(true)
+      editor.action((ctx) => {
+        const view = ctx.get(editorViewCtx)
+        fn(view)
+        view.focus()
+      })
+    }
+  }
+
+  function setHeading(level: number) {
+    return withEditor((view) => {
+      const type = view.state.schema.nodes.heading
+      if (!type) return
+      setBlockType(type, { level })(view.state, view.dispatch)
+    })
+  }
+
+  function setParagraph() {
+    return withEditor((view) => {
+      const type = view.state.schema.nodes.paragraph
+      if (!type) return
+      setBlockType(type)(view.state, view.dispatch)
+    })
+  }
+
+  function toggleMarkByName(name: string) {
+    return withEditor((view) => {
+      const mark = view.state.schema.marks[name]
+      if (!mark) return
+      toggleMark(mark)(view.state, view.dispatch)
+    })
+  }
+
   const commands: Command[] = [
+    // Markdown (content) — applies a formatting transform, auto-enters edit mode.
+    {
+      id: 'h1',
+      category: 'markdown',
+      aliases: ['/h1', '/heading1'],
+      label: 'Heading 1',
+      pillText: '/h1  # Heading 1',
+      run: setHeading(1),
+    },
+    {
+      id: 'h2',
+      category: 'markdown',
+      aliases: ['/h2', '/heading2'],
+      label: 'Heading 2',
+      pillText: '/h2  ## Heading 2',
+      run: setHeading(2),
+    },
+    {
+      id: 'h3',
+      category: 'markdown',
+      aliases: ['/h3', '/heading3'],
+      label: 'Heading 3',
+      pillText: '/h3  ### Heading 3',
+      run: setHeading(3),
+    },
+    {
+      id: 'p',
+      category: 'markdown',
+      aliases: ['/p', '/paragraph'],
+      label: 'Paragraph',
+      pillText: '/p  paragraph',
+      run: setParagraph(),
+    },
+    {
+      id: 'bold',
+      category: 'markdown',
+      aliases: ['/bold', '/b'],
+      label: 'Bold',
+      pillText: '/bold  **bold**',
+      run: toggleMarkByName('strong'),
+    },
+    {
+      id: 'italic',
+      category: 'markdown',
+      aliases: ['/italic', '/i'],
+      label: 'Italic',
+      pillText: '/italic  *italic*',
+      run: toggleMarkByName('emphasis'),
+    },
+    {
+      id: 'code',
+      category: 'markdown',
+      aliases: ['/code', '/c'],
+      label: 'Inline code',
+      pillText: '/code  `code`',
+      run: toggleMarkByName('inlineCode'),
+    },
+    // App (actions).
     {
       id: 'open-github',
+      category: 'app',
       aliases: ['/git', '/github'],
       label: 'Open GitHub repo',
       run: () => {
@@ -307,13 +434,15 @@ async function mount(root: HTMLElement): Promise<void> {
     },
     {
       id: 'toggle-edit',
+      category: 'app',
       aliases: ['/edit', '/e'],
       label: 'Toggle edit mode',
       run: () => setEditMode(!editMode),
     },
     {
       id: 'help',
-      aliases: ['/h', '/help'],
+      category: 'app',
+      aliases: ['/help', '/?'],
       label: 'Open help page (placeholder)',
       run: () => window.alert('Help placeholder — real content coming later.'),
     },
@@ -326,9 +455,21 @@ async function mount(root: HTMLElement): Promise<void> {
     const q = query.trim().toLowerCase()
     if (!q) return commands.slice()
     return commands.filter((c) => {
-      const haystack = `${c.aliases.join(' ')} ${c.label}`.toLowerCase()
+      const haystack = `${c.aliases.join(' ')} ${c.pillText ?? ''} ${c.label}`.toLowerCase()
       return haystack.includes(q)
     })
+  }
+
+  const SECTION_LABELS: Record<CommandCategory, string> = {
+    markdown: 'Markdown',
+    app: 'Actions',
+  }
+  const SECTION_ORDER: CommandCategory[] = ['markdown', 'app']
+
+  function renderPill(c: Command, flatIdx: number): string {
+    const activeCls = flatIdx === activeIdx ? ' is-active' : ''
+    const text = c.pillText ?? c.aliases[0] ?? ''
+    return `<button type="button" class="command-pill${activeCls}" data-idx="${flatIdx}" data-category="${c.category}" role="option" aria-label="${c.label}" title="${c.label}">${text}</button>`
   }
 
   function renderPalette(): void {
@@ -336,13 +477,16 @@ async function mount(root: HTMLElement): Promise<void> {
       paletteList.innerHTML = `<div class="command-palette-empty">No commands match.</div>`
       return
     }
-    paletteList.innerHTML = filteredCommands
-      .map((c, i) => {
-        const activeCls = i === activeIdx ? ' is-active' : ''
-        const primary = c.aliases[0] ?? ''
-        return `<button type="button" class="command-pill${activeCls}" data-idx="${i}" role="option" aria-label="${c.label}" title="${c.label}">${primary}</button>`
+    const indexed = filteredCommands.map((c, i) => ({ c, i }))
+    const html = SECTION_ORDER
+      .map((cat) => {
+        const items = indexed.filter(({ c }) => c.category === cat)
+        if (items.length === 0) return ''
+        const pills = items.map(({ c, i }) => renderPill(c, i)).join('')
+        return `<div class="command-palette-section-label">${SECTION_LABELS[cat]}</div>${pills}`
       })
       .join('')
+    paletteList.innerHTML = html
   }
 
   function executeActive(): void {
