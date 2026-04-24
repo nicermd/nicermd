@@ -63,6 +63,18 @@ async function mount(root: HTMLElement): Promise<void> {
     .use(commonmark)
     .use(gfm)
     .create()
+
+  // Toggle full-viewport fullscreen on Cmd/Ctrl+Shift+F. Escape is handled by the browser.
+  window.addEventListener('keydown', (event) => {
+    if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.code === 'KeyF') {
+      event.preventDefault()
+      if (document.fullscreenElement) {
+        void document.exitFullscreen()
+      } else {
+        void document.documentElement.requestFullscreen()
+      }
+    }
+  })
 }
 
 const appRoot = document.getElementById('app')
