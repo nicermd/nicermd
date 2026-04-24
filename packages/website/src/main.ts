@@ -18,6 +18,7 @@ import {
   wrapInOrderedListCommand,
   createCodeBlockCommand,
   insertHrCommand,
+  insertHardbreakCommand,
   insertImageCommand,
   toggleLinkCommand,
 } from '@milkdown/preset-commonmark'
@@ -274,7 +275,7 @@ async function mount(root: HTMLElement): Promise<void> {
         class="command-palette-input"
         id="command-palette-input"
         type="text"
-        placeholder="Type a command…"
+        placeholder="Type…"
         autocomplete="off"
         spellcheck="false"
         aria-label="Command"
@@ -403,6 +404,33 @@ async function mount(root: HTMLElement): Promise<void> {
     }
   }
 
+  // Task list: wrap in bullet list, then flip each list_item's checked attr
+  // from null to false so the GFM schema renders them as "- [ ]". Milkdown's
+  // preset-gfm extends list_item with a nullable `checked` attribute; there's
+  // no first-party wrapInTaskListCommand, only an input rule for typed input.
+  function wrapInTaskList(): () => void {
+    return () => {
+      if (!editMode) setEditMode(true)
+      editor.action((ctx) => {
+        ctx.get(commandsCtx).call(wrapInBulletListCommand.key)
+        const view = ctx.get(editorViewCtx)
+        const { state } = view
+        const listItemType = state.schema.nodes.list_item
+        if (!listItemType) return
+        const tr = state.tr
+        let changed = false
+        state.doc.nodesBetween(state.selection.from, state.selection.to, (node, pos) => {
+          if (node.type === listItemType) {
+            tr.setNodeMarkup(pos, undefined, { ...node.attrs, checked: false })
+            changed = true
+          }
+        })
+        if (changed) view.dispatch(tr)
+        view.focus()
+      })
+    }
+  }
+
   const commands: Command[] = [
     // Markdown — Block types
     {
@@ -479,6 +507,14 @@ async function mount(root: HTMLElement): Promise<void> {
       run: runMilkdown(wrapInOrderedListCommand),
     },
     {
+      id: 'task',
+      category: 'markdown',
+      aliases: ['/task', '/todo', '/checkbox'],
+      label: 'Task list',
+      pillText: '- [ ] task',
+      run: wrapInTaskList(),
+    },
+    {
       id: 'quote',
       category: 'markdown',
       aliases: ['/quote', '/q'],
@@ -501,6 +537,14 @@ async function mount(root: HTMLElement): Promise<void> {
       label: 'Rule',
       pillText: '--- hr',
       run: runMilkdown(insertHrCommand),
+    },
+    {
+      id: 'break',
+      category: 'markdown',
+      aliases: ['/break', '/br', '/linebreak'],
+      label: 'Hard break',
+      pillText: '↵ break',
+      run: runMilkdown(insertHardbreakCommand),
     },
     // Markdown — Inline marks
     {
@@ -541,7 +585,7 @@ async function mount(root: HTMLElement): Promise<void> {
       category: 'markdown',
       aliases: ['/link'],
       label: 'Link',
-      pillText: '[](url)',
+      pillText: '[text](url) link',
       run: toggleLink(),
     },
     {
@@ -549,7 +593,7 @@ async function mount(root: HTMLElement): Promise<void> {
       category: 'markdown',
       aliases: ['/image', '/img'],
       label: 'Image',
-      pillText: '![](src)',
+      pillText: '![alt](src) image',
       run: insertImage(),
     },
     {
