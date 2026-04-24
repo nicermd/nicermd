@@ -8,4 +8,10 @@ export default defineConfig({
     target: 'es2022',
     sourcemap: true,
   },
+  // nicermd-core is a workspace package we rebuild manually; excluding it
+  // from dep pre-bundling ensures Vite always reads the current dist rather
+  // than serving a stale cached version.
+  optimizeDeps: {
+    exclude: ['nicermd-core'],
+  },
 })
