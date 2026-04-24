@@ -1,8 +1,29 @@
-import { Editor, rootCtx, defaultValueCtx, editorViewOptionsCtx, editorViewCtx } from '@milkdown/core'
-import { commonmark } from '@milkdown/preset-commonmark'
-import { gfm } from '@milkdown/preset-gfm'
+import {
+  Editor,
+  rootCtx,
+  defaultValueCtx,
+  editorViewOptionsCtx,
+  editorViewCtx,
+  commandsCtx,
+} from '@milkdown/core'
+import type { CmdKey } from '@milkdown/core'
+import {
+  commonmark,
+  wrapInHeadingCommand,
+  toggleStrongCommand,
+  toggleEmphasisCommand,
+  toggleInlineCodeCommand,
+  wrapInBlockquoteCommand,
+  wrapInBulletListCommand,
+  wrapInOrderedListCommand,
+  createCodeBlockCommand,
+  insertHrCommand,
+  insertImageCommand,
+  toggleLinkCommand,
+} from '@milkdown/preset-commonmark'
+import { gfm, toggleStrikethroughCommand, insertTableCommand } from '@milkdown/preset-gfm'
 import { getMarkdown, replaceAll } from '@milkdown/utils'
-import { setBlockType, toggleMark } from '@milkdown/prose/commands'
+import { setBlockType } from '@milkdown/prose/commands'
 import type { EditorView } from '@milkdown/prose/view'
 import { getTheme } from 'nicermd-core'
 
@@ -327,102 +348,217 @@ async function mount(root: HTMLElement): Promise<void> {
     run: () => void
   }
 
-  // Runs fn against the ProseMirror view. Auto-enters edit mode first so
-  // markdown transforms feel intuitive whether the user is reading or editing.
-  function withEditor(fn: (view: EditorView) => void): () => void {
+  // Runs a Milkdown command via commandsCtx. Auto-enters edit mode first so
+  // formatting actions feel intuitive whether the user is reading or editing.
+  function runMilkdown<T>(cmd: { key: CmdKey<T> }, payload?: T): () => void {
     return () => {
       if (!editMode) setEditMode(true)
       editor.action((ctx) => {
-        const view = ctx.get(editorViewCtx)
-        fn(view)
+        ctx.get(commandsCtx).call(cmd.key, payload as T)
+        ctx.get(editorViewCtx).focus()
+      })
+    }
+  }
+
+  // Paragraph uses raw ProseMirror because there's no Milkdown command to
+  // "downgrade current block to paragraph" in the commonmark preset.
+  function setParagraph(): () => void {
+    return () => {
+      if (!editMode) setEditMode(true)
+      editor.action((ctx) => {
+        const view: EditorView = ctx.get(editorViewCtx)
+        const type = view.state.schema.nodes.paragraph
+        if (type) setBlockType(type)(view.state, view.dispatch)
         view.focus()
       })
     }
   }
 
-  function setHeading(level: number) {
-    return withEditor((view) => {
-      const type = view.state.schema.nodes.heading
-      if (!type) return
-      setBlockType(type, { level })(view.state, view.dispatch)
-    })
+  // Link command needs user input for the URL.
+  function toggleLink(): () => void {
+    return () => {
+      if (!editMode) setEditMode(true)
+      const href = window.prompt('Link URL:')
+      if (!href) return
+      editor.action((ctx) => {
+        ctx.get(commandsCtx).call(toggleLinkCommand.key, { href })
+        ctx.get(editorViewCtx).focus()
+      })
+    }
   }
 
-  function setParagraph() {
-    return withEditor((view) => {
-      const type = view.state.schema.nodes.paragraph
-      if (!type) return
-      setBlockType(type)(view.state, view.dispatch)
-    })
-  }
-
-  function toggleMarkByName(name: string) {
-    return withEditor((view) => {
-      const mark = view.state.schema.marks[name]
-      if (!mark) return
-      toggleMark(mark)(view.state, view.dispatch)
-    })
+  // Image command needs URL and alt text.
+  function insertImage(): () => void {
+    return () => {
+      if (!editMode) setEditMode(true)
+      const src = window.prompt('Image URL:')
+      if (!src) return
+      const alt = window.prompt('Alt text (optional):') ?? ''
+      editor.action((ctx) => {
+        ctx.get(commandsCtx).call(insertImageCommand.key, { src, alt })
+        ctx.get(editorViewCtx).focus()
+      })
+    }
   }
 
   const commands: Command[] = [
-    // Markdown (content) — applies a formatting transform, auto-enters edit mode.
+    // Markdown — Block types
     {
       id: 'h1',
       category: 'markdown',
-      aliases: ['/h1', '/heading1'],
-      label: 'Heading 1',
-      pillText: '/h1  # Heading 1',
-      run: setHeading(1),
+      aliases: ['/h1'],
+      label: 'H1',
+      pillText: '# h1',
+      run: runMilkdown(wrapInHeadingCommand, 1),
     },
     {
       id: 'h2',
       category: 'markdown',
-      aliases: ['/h2', '/heading2'],
-      label: 'Heading 2',
-      pillText: '/h2  ## Heading 2',
-      run: setHeading(2),
+      aliases: ['/h2'],
+      label: 'H2',
+      pillText: '## h2',
+      run: runMilkdown(wrapInHeadingCommand, 2),
     },
     {
       id: 'h3',
       category: 'markdown',
-      aliases: ['/h3', '/heading3'],
-      label: 'Heading 3',
-      pillText: '/h3  ### Heading 3',
-      run: setHeading(3),
+      aliases: ['/h3'],
+      label: 'H3',
+      pillText: '### h3',
+      run: runMilkdown(wrapInHeadingCommand, 3),
+    },
+    {
+      id: 'h4',
+      category: 'markdown',
+      aliases: ['/h4'],
+      label: 'H4',
+      pillText: '#### h4',
+      run: runMilkdown(wrapInHeadingCommand, 4),
+    },
+    {
+      id: 'h5',
+      category: 'markdown',
+      aliases: ['/h5'],
+      label: 'H5',
+      pillText: '##### h5',
+      run: runMilkdown(wrapInHeadingCommand, 5),
+    },
+    {
+      id: 'h6',
+      category: 'markdown',
+      aliases: ['/h6'],
+      label: 'H6',
+      pillText: '###### h6',
+      run: runMilkdown(wrapInHeadingCommand, 6),
     },
     {
       id: 'p',
       category: 'markdown',
       aliases: ['/p', '/paragraph'],
       label: 'Paragraph',
-      pillText: '/p  paragraph',
+      pillText: 'paragraph',
       run: setParagraph(),
     },
+    // Markdown — Lists & structure
+    {
+      id: 'ul',
+      category: 'markdown',
+      aliases: ['/ul', '/bullet'],
+      label: 'Bullet list',
+      pillText: '- list',
+      run: runMilkdown(wrapInBulletListCommand),
+    },
+    {
+      id: 'ol',
+      category: 'markdown',
+      aliases: ['/ol', '/numbered'],
+      label: 'Ordered list',
+      pillText: '1. list',
+      run: runMilkdown(wrapInOrderedListCommand),
+    },
+    {
+      id: 'quote',
+      category: 'markdown',
+      aliases: ['/quote', '/q'],
+      label: 'Quote',
+      pillText: '> quote',
+      run: runMilkdown(wrapInBlockquoteCommand),
+    },
+    {
+      id: 'codeblock',
+      category: 'markdown',
+      aliases: ['/codeblock', '/pre'],
+      label: 'Code block',
+      pillText: '``` code block',
+      run: runMilkdown(createCodeBlockCommand),
+    },
+    {
+      id: 'hr',
+      category: 'markdown',
+      aliases: ['/hr', '/rule'],
+      label: 'Rule',
+      pillText: '--- hr',
+      run: runMilkdown(insertHrCommand),
+    },
+    // Markdown — Inline marks
     {
       id: 'bold',
       category: 'markdown',
       aliases: ['/bold', '/b'],
       label: 'Bold',
-      pillText: '/bold  **bold**',
-      run: toggleMarkByName('strong'),
+      pillText: '**bold**',
+      run: runMilkdown(toggleStrongCommand),
     },
     {
       id: 'italic',
       category: 'markdown',
       aliases: ['/italic', '/i'],
       label: 'Italic',
-      pillText: '/italic  *italic*',
-      run: toggleMarkByName('emphasis'),
+      pillText: '*italic*',
+      run: runMilkdown(toggleEmphasisCommand),
     },
     {
       id: 'code',
       category: 'markdown',
       aliases: ['/code', '/c'],
-      label: 'Inline code',
-      pillText: '/code  `code`',
-      run: toggleMarkByName('inlineCode'),
+      label: 'Code',
+      pillText: '`code`',
+      run: runMilkdown(toggleInlineCodeCommand),
     },
-    // App (actions).
+    {
+      id: 'strike',
+      category: 'markdown',
+      aliases: ['/strike', '/s'],
+      label: 'Strike',
+      pillText: '~~strike~~',
+      run: runMilkdown(toggleStrikethroughCommand),
+    },
+    // Markdown — Insert with prompt
+    {
+      id: 'link',
+      category: 'markdown',
+      aliases: ['/link'],
+      label: 'Link',
+      pillText: '[](url)',
+      run: toggleLink(),
+    },
+    {
+      id: 'image',
+      category: 'markdown',
+      aliases: ['/image', '/img'],
+      label: 'Image',
+      pillText: '![](src)',
+      run: insertImage(),
+    },
+    {
+      id: 'table',
+      category: 'markdown',
+      aliases: ['/table'],
+      label: 'Table',
+      pillText: '| | | table',
+      run: runMilkdown(insertTableCommand, { row: 3, col: 3 }),
+    },
+    // App (actions)
     {
       id: 'open-github',
       category: 'app',
@@ -461,7 +597,7 @@ async function mount(root: HTMLElement): Promise<void> {
   }
 
   const SECTION_LABELS: Record<CommandCategory, string> = {
-    markdown: 'Markdown',
+    markdown: 'Markdown hints',
     app: 'Actions',
   }
   const SECTION_ORDER: CommandCategory[] = ['markdown', 'app']
