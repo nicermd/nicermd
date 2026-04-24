@@ -22,6 +22,7 @@ import {
   toggleLinkCommand,
 } from '@milkdown/preset-commonmark'
 import { gfm, toggleStrikethroughCommand, insertTableCommand } from '@milkdown/preset-gfm'
+import { history } from '@milkdown/plugin-history'
 import { getMarkdown, replaceAll } from '@milkdown/utils'
 import { setBlockType } from '@milkdown/prose/commands'
 import type { EditorView } from '@milkdown/prose/view'
@@ -306,6 +307,7 @@ async function mount(root: HTMLElement): Promise<void> {
     })
     .use(commonmark)
     .use(gfm)
+    .use(history)
     .create()
 
   // Flash the mode indicator visible, then fade it out after 1s.
@@ -655,12 +657,12 @@ async function mount(root: HTMLElement): Promise<void> {
   })
 
   paletteInput.addEventListener('keydown', (event) => {
-    if (event.key === 'ArrowDown') {
+    if (event.key === 'ArrowDown' || event.key === 'ArrowRight') {
       event.preventDefault()
       if (filteredCommands.length === 0) return
       activeIdx = Math.min(activeIdx + 1, filteredCommands.length - 1)
       renderPalette()
-    } else if (event.key === 'ArrowUp') {
+    } else if (event.key === 'ArrowUp' || event.key === 'ArrowLeft') {
       event.preventDefault()
       if (filteredCommands.length === 0) return
       activeIdx = Math.max(activeIdx - 1, 0)
