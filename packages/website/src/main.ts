@@ -2,31 +2,14 @@ import { Editor, rootCtx, defaultValueCtx, editorViewOptionsCtx } from '@milkdow
 import { commonmark } from '@milkdown/preset-commonmark'
 import { gfm } from '@milkdown/preset-gfm'
 import { getTheme } from 'nicermd-core'
-import { CANONICAL_DOMAIN } from './config.js'
 
 import '@milkdown/prose/view/style/prosemirror.css'
 import '@milkdown/prose/tables/style/tables.css'
 import '@milkdown/prose/gapcursor/style/gapcursor.css'
 
-const INITIAL = `# Nicer.md
+import showcase from './samples/showcase.md?raw'
 
-A beautiful, zero-server markdown reader.
-
-Type anywhere on this page — it's both the reader and the editor.
-
-- One rendering core, many thin shells
-- Themes as CSS custom properties
-- Privacy-respecting: no trackers, no server logic
-
-> Paste a \`.md\` file's contents, or just start writing.
-
-\`\`\`ts
-import { render } from 'nicermd-core'
-const html = render('# hello')
-\`\`\`
-
-Visit [${CANONICAL_DOMAIN}](https://${CANONICAL_DOMAIN}) for the hosted version.
-`
+const INITIAL = showcase
 
 const LAYOUT_CSS = `
 html, body, #app { height: 100%; }
