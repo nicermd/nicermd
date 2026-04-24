@@ -100,25 +100,90 @@ body.is-editing .mode-indicator { color: #ea580c; }
 .mode-indicator.is-app-logo rect { stroke: #ea580c; }
 .mode-indicator.is-app-logo text { fill: #2563eb; }
 
-/* Placeholder panel anchored below the logo. Design later. */
-.mode-panel {
+/* Command palette — centred over the reading column, ~15% from the top.
+   Raycast / VS Code pattern. Width matches the reading column (720px) capped
+   to the viewport on narrow screens. */
+.command-palette {
   position: fixed;
-  top: 5rem;
-  /* Right edge aligned to content's right edge so the panel tucks snugly against
-     the reading column on wide screens; falls back to viewport corner on narrow. */
-  right: max(0.875rem, calc(50vw - 360px));
-  min-width: 220px;
-  padding: 1rem;
+  top: 15vh;
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(720px, calc(100vw - 2rem));
+  max-height: 70vh;
   background: #ffffff;
   border: 1px solid #e4e4e7;
-  border-radius: 8px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  z-index: 10;
-  font-size: 0.9rem;
-  color: #52525b;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.12);
+  z-index: 20;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
-.mode-panel[hidden] { display: none; }
-.mode-panel p { margin: 0; }
+.command-palette[hidden] { display: none; }
+
+.command-palette-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.875rem 1.125rem;
+  border: none;
+  border-bottom: 1px solid #e4e4e7;
+  outline: none;
+  font: inherit;
+  font-size: 1rem;
+  background: transparent;
+  color: inherit;
+}
+.command-palette-input::placeholder { color: #a1a1aa; }
+
+/* Command grid — flex-wrap of pill buttons. Filter shrinks the visible set;
+   tablet users tap directly, keyboard users type + use Up/Down + Enter. */
+.command-palette-list {
+  list-style: none;
+  margin: 0;
+  padding: 0.75rem;
+  overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-content: flex-start;
+}
+
+.command-pill {
+  padding: 0.5rem 0.875rem;
+  border: 1px solid #e4e4e7;
+  border-radius: 999px;
+  background: #ffffff;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 0.9rem;
+  color: #18181b;
+  cursor: pointer;
+  min-height: 2.25rem;
+  line-height: 1.2;
+  white-space: nowrap;
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+  transition: background 100ms ease, border-color 100ms ease;
+}
+.command-pill:hover,
+.command-pill.is-active {
+  background: #f4f4f5;
+  border-color: #d4d4d8;
+}
+.command-pill:focus-visible {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+
+.command-palette-empty {
+  width: 100%;
+  padding: 1rem;
+  text-align: center;
+  color: #a1a1aa;
+  font-size: 0.9rem;
+  list-style: none;
+}
 
 /* Strip ProseMirror's default chrome so .nicer-doc drives the look. */
 .app-pane .ProseMirror {
@@ -155,14 +220,25 @@ async function mount(root: HTMLElement): Promise<void> {
         <text x="16" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="800" fill="currentColor">N</text>
       </svg>
     </button>
-    <div class="mode-panel" id="mode-panel" hidden>
-      <p>Menu placeholder — proper design coming later.</p>
+    <div class="command-palette" id="command-palette" hidden role="dialog" aria-label="Command palette">
+      <input
+        class="command-palette-input"
+        id="command-palette-input"
+        type="text"
+        placeholder="Type a command…"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Command"
+      >
+      <div class="command-palette-list" id="command-palette-list" role="listbox"></div>
     </div>
     <article class="nicer-doc app-pane" id="nicer-pane"></article>
   `
   const container = root.querySelector<HTMLElement>('#nicer-pane')!
   const modeIndicator = root.querySelector<HTMLButtonElement>('#mode-indicator')!
-  const modePanel = root.querySelector<HTMLDivElement>('#mode-panel')!
+  const commandPalette = root.querySelector<HTMLDivElement>('#command-palette')!
+  const paletteInput = root.querySelector<HTMLInputElement>('#command-palette-input')!
+  const paletteList = root.querySelector<HTMLDivElement>('#command-palette-list')!
 
   // Read/edit mode. Defaults to read — Cmd/Ctrl+I enters edit, Escape or the
   // same shortcut exits. Edit mode is signalled by an orange caret, a 2px orange
@@ -211,14 +287,130 @@ async function mount(root: HTMLElement): Promise<void> {
     })
   }
 
-  // Click opens a placeholder menu panel. Cmd/Ctrl+I remains the mode shortcut.
+  // Command palette. Clicking the indicator or pressing Cmd/Ctrl+/ opens it;
+  // Cmd/Ctrl+I remains the dedicated edit-mode shortcut (the palette also has
+  // a "Toggle edit mode" command for mouse/tablet users).
+  type Command = {
+    id: string
+    aliases: string[]
+    label: string
+    run: () => void
+  }
+  const commands: Command[] = [
+    {
+      id: 'open-github',
+      aliases: ['/git', '/github'],
+      label: 'Open GitHub repo',
+      run: () => {
+        window.open('https://github.com/isherlock/nicermd', '_blank', 'noopener,noreferrer')
+      },
+    },
+    {
+      id: 'toggle-edit',
+      aliases: ['/edit', '/e'],
+      label: 'Toggle edit mode',
+      run: () => setEditMode(!editMode),
+    },
+    {
+      id: 'help',
+      aliases: ['/h', '/help'],
+      label: 'Open help page (placeholder)',
+      run: () => window.alert('Help placeholder — real content coming later.'),
+    },
+  ]
+
+  let filteredCommands: Command[] = commands.slice()
+  let activeIdx = 0
+
+  function filterCommands(query: string): Command[] {
+    const q = query.trim().toLowerCase()
+    if (!q) return commands.slice()
+    return commands.filter((c) => {
+      const haystack = `${c.aliases.join(' ')} ${c.label}`.toLowerCase()
+      return haystack.includes(q)
+    })
+  }
+
+  function renderPalette(): void {
+    if (filteredCommands.length === 0) {
+      paletteList.innerHTML = `<div class="command-palette-empty">No commands match.</div>`
+      return
+    }
+    paletteList.innerHTML = filteredCommands
+      .map((c, i) => {
+        const activeCls = i === activeIdx ? ' is-active' : ''
+        const primary = c.aliases[0] ?? ''
+        return `<button type="button" class="command-pill${activeCls}" data-idx="${i}" role="option" aria-label="${c.label}" title="${c.label}">${primary}</button>`
+      })
+      .join('')
+  }
+
+  function executeActive(): void {
+    const cmd = filteredCommands[activeIdx]
+    if (!cmd) return
+    setPanelOpen(false)
+    cmd.run()
+  }
+
   let panelOpen = false
   function setPanelOpen(open: boolean): void {
     if (panelOpen === open) return
     panelOpen = open
-    modePanel.hidden = !open
+    commandPalette.hidden = !open
     modeIndicator.classList.toggle('is-panel-open', open)
+    if (open) {
+      paletteInput.value = ''
+      filteredCommands = commands.slice()
+      activeIdx = 0
+      renderPalette()
+      // rAF so the display update lands before we try to focus.
+      requestAnimationFrame(() => paletteInput.focus())
+    }
   }
+
+  paletteInput.addEventListener('input', () => {
+    filteredCommands = filterCommands(paletteInput.value)
+    activeIdx = 0
+    renderPalette()
+  })
+
+  paletteInput.addEventListener('keydown', (event) => {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault()
+      if (filteredCommands.length === 0) return
+      activeIdx = Math.min(activeIdx + 1, filteredCommands.length - 1)
+      renderPalette()
+    } else if (event.key === 'ArrowUp') {
+      event.preventDefault()
+      if (filteredCommands.length === 0) return
+      activeIdx = Math.max(activeIdx - 1, 0)
+      renderPalette()
+    } else if (event.key === 'Enter') {
+      event.preventDefault()
+      executeActive()
+    }
+  })
+
+  paletteList.addEventListener('mousemove', (event) => {
+    const pill = (event.target as HTMLElement).closest<HTMLButtonElement>('.command-pill')
+    if (!pill) return
+    const idx = Number(pill.dataset.idx)
+    if (!Number.isNaN(idx) && idx !== activeIdx) {
+      activeIdx = idx
+      renderPalette()
+    }
+  })
+
+  paletteList.addEventListener('click', (event) => {
+    const pill = (event.target as HTMLElement).closest<HTMLButtonElement>('.command-pill')
+    if (!pill) return
+    const idx = Number(pill.dataset.idx)
+    if (!Number.isNaN(idx)) {
+      activeIdx = idx
+      executeActive()
+    }
+  })
+
   modeIndicator.addEventListener('click', (event) => {
     event.stopPropagation()
     setPanelOpen(!panelOpen)
@@ -226,7 +418,7 @@ async function mount(root: HTMLElement): Promise<void> {
   document.addEventListener('click', (event) => {
     if (!panelOpen) return
     const target = event.target as Node
-    if (!modePanel.contains(target)) setPanelOpen(false)
+    if (!commandPalette.contains(target)) setPanelOpen(false)
   })
 
   // Show the logo briefly on first load.
