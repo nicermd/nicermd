@@ -440,17 +440,22 @@ async function mount(root: HTMLElement): Promise<void> {
     }
   })
 
-  // Enter/exit edit mode. Cmd/Ctrl+I toggles; Escape exits when active.
+  // Cmd/Ctrl+I enters edit mode from read mode only — in edit mode it falls
+  // through to Milkdown as the standard italic shortcut. Escape exits edit
+  // mode (palette closing takes priority when the palette is open).
+  // The command palette has a "Toggle edit mode" command for mouse/tablet users
+  // who need an explicit toggle in both directions.
   // Cmd/Ctrl+/ toggles the menu panel (mirrors clicking the logo).
   window.addEventListener('keydown', (event) => {
     if (
       (event.metaKey || event.ctrlKey) &&
       !event.shiftKey &&
       !event.altKey &&
-      event.code === 'KeyI'
+      event.code === 'KeyI' &&
+      !editMode
     ) {
       event.preventDefault()
-      setEditMode(!editMode)
+      setEditMode(true)
     } else if (
       (event.metaKey || event.ctrlKey) &&
       !event.altKey &&
