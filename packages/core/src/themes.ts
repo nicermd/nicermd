@@ -10,8 +10,8 @@ export interface Theme {
 
 const DEFAULT_CSS = `:root {
   --nicer-bg: #ffffff;
-  --nicer-bg-secondary: #f6f6f6;
-  --nicer-font-body: -apple-system, BlinkMacSystemFont, 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --nicer-bg-secondary: #f4f4f5;
+  --nicer-font-body: system-ui, -apple-system, sans-serif;
   --nicer-font-heading: var(--nicer-font-body);
   --nicer-font-mono: 'JetBrains Mono', 'Fira Code', ui-monospace, 'SF Mono', Menlo, monospace;
   --nicer-font-size-base: 16px;
@@ -156,7 +156,7 @@ const THEMES: Record<string, Theme> = {
   default: {
     name: 'Default',
     slug: 'default',
-    description: 'Clean, modern, light. Good typography with generous whitespace.',
+    description: 'Clean system sans-serif on soft off-white. Quiet and restrained.',
     mode: 'light',
     css: DEFAULT_CSS,
   },
