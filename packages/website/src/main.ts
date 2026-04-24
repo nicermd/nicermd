@@ -62,7 +62,7 @@ body.is-editing .ProseMirror {
      floating in the gutter outside content. Falls back to the viewport corner on narrow screens.
      If --nicer-max-width changes, update the 360 constant here (half of 720). */
   right: max(0.875rem, calc(50vw - 360px - 84px));
-  /* 84 x 84 hit area (3x the visible icon) so hover and click are forgiving. */
+  /* 84 x 84 hit area (3x the visible icon) — generous surround without hijacking the full right edge. */
   width: 84px;
   height: 84px;
   display: flex;
@@ -78,16 +78,22 @@ body.is-editing .ProseMirror {
   color: #2563eb;
   cursor: pointer;
   opacity: 0;
-  transition: opacity 400ms ease, color 120ms ease, transform 120ms ease;
+  transition: opacity 400ms ease, color 120ms ease;
   z-index: 10;
 }
 .mode-indicator.is-visible,
 .mode-indicator.is-panel-open,
 .mode-indicator:hover { opacity: 1; }
-.mode-indicator:hover { transform: scale(1.08); }
 .mode-indicator:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 6px; }
 body.is-editing .mode-indicator { color: #ea580c; }
-.mode-indicator svg { width: 28px; height: 28px; display: block; }
+/* Hover scale lives on the SVG so the tall column doesn't try to scale itself. */
+.mode-indicator svg {
+  width: 28px;
+  height: 28px;
+  display: block;
+  transition: transform 120ms ease;
+}
+.mode-indicator:hover svg { transform: scale(1.08); }
 
 /* App-logo state: blue letter + orange border (two-colour branding).
    Removed after the first mode change, after which the logo follows the mode colour. */
@@ -143,7 +149,7 @@ async function mount(root: HTMLElement): Promise<void> {
   document.adoptedStyleSheets = [...document.adoptedStyleSheets, themeSheet, layoutSheet]
 
   root.innerHTML = `
-    <button class="mode-indicator is-app-logo" id="mode-indicator" type="button" aria-label="Open menu" title="Menu">
+    <button class="mode-indicator is-app-logo" id="mode-indicator" type="button" aria-label="Open menu" title="Menu (Cmd/Ctrl+/)">
       <svg viewBox="0 0 32 32" aria-hidden="true">
         <rect x="2" y="2" width="28" height="28" rx="6" fill="#ffffff" stroke="currentColor" stroke-width="2.5"/>
         <text x="16" y="22" text-anchor="middle" font-family="system-ui, -apple-system, sans-serif" font-size="18" font-weight="800" fill="currentColor">N</text>
@@ -243,6 +249,7 @@ async function mount(root: HTMLElement): Promise<void> {
   })
 
   // Enter/exit edit mode. Cmd/Ctrl+I toggles; Escape exits when active.
+  // Cmd/Ctrl+/ toggles the menu panel (mirrors clicking the logo).
   window.addEventListener('keydown', (event) => {
     if (
       (event.metaKey || event.ctrlKey) &&
@@ -252,6 +259,13 @@ async function mount(root: HTMLElement): Promise<void> {
     ) {
       event.preventDefault()
       setEditMode(!editMode)
+    } else if (
+      (event.metaKey || event.ctrlKey) &&
+      !event.altKey &&
+      event.key === '/'
+    ) {
+      event.preventDefault()
+      setPanelOpen(!panelOpen)
     } else if (event.code === 'Escape') {
       // Escape closes the menu panel first; otherwise exits edit mode.
       if (panelOpen) {
