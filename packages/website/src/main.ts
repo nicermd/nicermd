@@ -243,6 +243,32 @@ body.is-editing .mode-indicator { color: #ea580c; }
   white-space: pre-wrap;
   word-wrap: break-word;
 }
+
+/* Raw markdown source view — a textarea that fills the same reading column.
+   Monospace for line-oriented editing; otherwise inherits theme colours.
+   overflow: hidden + JS auto-resize keeps the page (not the textarea) handling
+   scroll, matching the read/edit pane feel. */
+.source-textarea {
+  display: block;
+  width: 100%;
+  min-height: calc(100vh - 4rem);
+  box-sizing: border-box;
+  padding: 0;
+  margin: 0;
+  border: none;
+  outline: none;
+  resize: none;
+  overflow: hidden;
+  background: transparent;
+  color: inherit;
+  font-family: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+  font-size: 14px;
+  line-height: 1.6;
+  tab-size: 2;
+}
+.source-textarea::selection {
+  background: #cfe2ff;
+}
 .app-pane .ProseMirror:focus-visible {
   outline: none;
 }
@@ -283,8 +309,13 @@ async function mount(root: HTMLElement): Promise<void> {
       <div class="command-palette-list" id="command-palette-list" role="listbox"></div>
     </div>
     <article class="nicer-doc app-pane" id="nicer-pane"></article>
+    <article class="nicer-doc app-pane" id="source-pane" hidden>
+      <textarea class="source-textarea" id="source-textarea" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
+    </article>
   `
   const container = root.querySelector<HTMLElement>('#nicer-pane')!
+  const sourcePane = root.querySelector<HTMLElement>('#source-pane')!
+  const sourceTextarea = root.querySelector<HTMLTextAreaElement>('#source-textarea')!
   const modeIndicator = root.querySelector<HTMLButtonElement>('#mode-indicator')!
   const commandPalette = root.querySelector<HTMLDivElement>('#command-palette')!
   const paletteInput = root.querySelector<HTMLInputElement>('#command-palette-input')!
@@ -323,11 +354,24 @@ async function mount(root: HTMLElement): Promise<void> {
     }, 1000)
   }
 
+  // Raw markdown source view — orthogonal to edit mode. Toggle fills a textarea
+  // with the current markdown; on close, diffs against the starting markdown and
+  // replays changes through Milkdown's replaceAll so the edit history captures
+  // them (Cmd+Z reverts them afterward).
+  let sourceViewOpen = false
+  let sourceStartingMarkdown = ''
+
+  function updateTitle(): void {
+    if (sourceViewOpen) document.title = `[source] ${baseTitle}`
+    else if (editMode) document.title = `[edit] ${baseTitle}`
+    else document.title = baseTitle
+  }
+
   function setEditMode(enabled: boolean): void {
     if (editMode === enabled) return
     editMode = enabled
     document.body.classList.toggle('is-editing', enabled)
-    document.title = enabled ? `[edit] ${baseTitle}` : baseTitle
+    updateTitle()
     // First mode change drops the two-colour app-logo state; from here the indicator follows the mode.
     modeIndicator.classList.remove('is-app-logo')
     flashIndicator()
@@ -336,6 +380,42 @@ async function mount(root: HTMLElement): Promise<void> {
       view.setProps({ editable: () => enabled })
       if (enabled) view.focus()
     })
+  }
+
+  // Grow the textarea height to match its content so the page (not the textarea)
+  // handles scroll. min-height on the CSS rule keeps the pane feeling full on short docs.
+  function autoResizeSource(): void {
+    sourceTextarea.style.height = 'auto'
+    sourceTextarea.style.height = `${sourceTextarea.scrollHeight}px`
+  }
+  sourceTextarea.addEventListener('input', autoResizeSource)
+
+  function setSourceView(open: boolean): void {
+    if (sourceViewOpen === open) return
+    sourceViewOpen = open
+    updateTitle()
+    if (open) {
+      const md = editor.action(getMarkdown())
+      sourceStartingMarkdown = md
+      sourceTextarea.value = md
+      container.hidden = true
+      sourcePane.hidden = false
+      // Textarea must be visible for scrollHeight to be accurate.
+      requestAnimationFrame(() => {
+        autoResizeSource()
+        sourceTextarea.focus()
+      })
+    } else {
+      const current = sourceTextarea.value
+      sourcePane.hidden = true
+      container.hidden = false
+      if (current !== sourceStartingMarkdown) {
+        editor.action(replaceAll(current))
+      }
+      if (editMode) {
+        editor.action((ctx) => ctx.get(editorViewCtx).focus())
+      }
+    }
   }
 
   // Command palette. Clicking the indicator or pressing Cmd/Ctrl+/ opens it;
@@ -622,6 +702,13 @@ async function mount(root: HTMLElement): Promise<void> {
       run: () => setEditMode(!editMode),
     },
     {
+      id: 'toggle-source',
+      category: 'app',
+      aliases: ['/source', '/raw', '/md'],
+      label: 'Toggle markdown source view',
+      run: () => setSourceView(!sourceViewOpen),
+    },
+    {
       id: 'help',
       category: 'app',
       aliases: ['/help', '/?'],
@@ -755,6 +842,7 @@ async function mount(root: HTMLElement): Promise<void> {
   window.addEventListener('scroll', () => flashIndicator(), { passive: true })
 
   // Toggle full-viewport fullscreen on Cmd/Ctrl+Shift+F. Escape is handled by the browser.
+  // Cmd/Ctrl+Shift+M toggles the raw markdown source view.
   window.addEventListener('keydown', (event) => {
     if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.code === 'KeyF') {
       event.preventDefault()
@@ -763,6 +851,9 @@ async function mount(root: HTMLElement): Promise<void> {
       } else {
         void document.documentElement.requestFullscreen()
       }
+    } else if ((event.metaKey || event.ctrlKey) && event.shiftKey && event.code === 'KeyM') {
+      event.preventDefault()
+      setSourceView(!sourceViewOpen)
     }
   })
 
@@ -790,10 +881,13 @@ async function mount(root: HTMLElement): Promise<void> {
       event.preventDefault()
       setPanelOpen(!panelOpen)
     } else if (event.code === 'Escape') {
-      // Escape closes the menu panel first; otherwise exits edit mode.
+      // Escape priority: close palette → exit source view → exit edit mode.
       if (panelOpen) {
         event.preventDefault()
         setPanelOpen(false)
+      } else if (sourceViewOpen) {
+        event.preventDefault()
+        setSourceView(false)
       } else if (editMode) {
         event.preventDefault()
         setEditMode(false)
