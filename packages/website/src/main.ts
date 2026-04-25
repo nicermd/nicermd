@@ -5,7 +5,8 @@
 // foundation is sound. See memory/milkdown_v1_learnings.md for the patterns
 // to port.
 
-import { EditorState, RangeSetBuilder } from '@codemirror/state'
+import { EditorState } from '@codemirror/state'
+import type { Range } from '@codemirror/state'
 import {
   EditorView,
   keymap,
@@ -14,6 +15,7 @@ import {
   drawSelection,
   Decoration,
   ViewPlugin,
+  WidgetType,
 } from '@codemirror/view'
 import type { DecorationSet, ViewUpdate } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
@@ -21,6 +23,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { GFM } from '@lezer/markdown'
 import { syntaxHighlighting, defaultHighlightStyle, HighlightStyle, syntaxTree } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'
+import { render as renderMarkdown } from 'nicermd-core'
 
 import showcase from './samples/showcase.md?raw'
 
@@ -94,6 +97,76 @@ const proseTheme = EditorView.theme(
     '.cm-selectionBackground, ::selection': {
       backgroundColor: 'rgba(37, 99, 235, 0.18)',
     },
+    // List item widgets — bullets and task checkboxes.
+    '.cm-list-bullet': {
+      color: '#6b7280',
+      fontWeight: '700',
+    },
+    '.cm-task-marker': {
+      color: '#6b7280',
+      letterSpacing: '0.04em',
+    },
+    '.cm-task-marker.is-checked': {
+      color: '#2563eb',
+    },
+    '.cm-image-widget': {
+      maxWidth: '100%',
+      height: 'auto',
+      display: 'inline-block',
+      borderRadius: '4px',
+      verticalAlign: 'middle',
+    },
+    // Fenced code block lines — uniform bg, rounded corners on first/last.
+    // Empty first/last lines (markers hidden) act as visual padding inside
+    // the block. All lines share the same line-height so the bg flows clean.
+    '.cm-code-line': {
+      backgroundColor: '#f6f8fa',
+      paddingLeft: '0.85em',
+      paddingRight: '0.85em',
+    },
+    '.cm-code-line-first': {
+      borderRadius: '6px 6px 0 0',
+    },
+    '.cm-code-line-last': {
+      borderRadius: '0 0 6px 6px',
+    },
+    // Horizontal rule — line gets the `cm-hr-line` class; chars are hidden,
+    // a pseudo-element draws the rule centred vertically across the line.
+    '.cm-hr-line': {
+      position: 'relative',
+    },
+    '.cm-hr-line::after': {
+      content: '""',
+      position: 'absolute',
+      top: '50%',
+      left: '0',
+      right: '0',
+      borderTop: '1px solid #d1d5db',
+    },
+    // Block widgets (currently tables; later images, code, math).
+    '.cm-table-widget': {
+      margin: '1em 0',
+      cursor: 'text',
+    },
+    '.cm-table-widget table': {
+      width: '100%',
+      borderCollapse: 'collapse',
+      fontSize: '0.95em',
+    },
+    '.cm-table-widget th, .cm-table-widget td': {
+      padding: '0.5em 0.75em',
+      borderBottom: '1px solid #e5e7eb',
+      textAlign: 'left',
+      verticalAlign: 'top',
+    },
+    '.cm-table-widget th': {
+      borderBottom: '2px solid #d1d5db',
+      fontWeight: '600',
+      color: '#111827',
+    },
+    '.cm-table-widget tr:hover td': {
+      backgroundColor: '#f9fafb',
+    },
   },
   { dark: false },
 )
@@ -105,33 +178,128 @@ const proseTheme = EditorView.theme(
 // typical docs). For headings and quotes the trailing space after the marker
 // is collapsed too so content doesn't appear shifted.
 const HIDE = Decoration.replace({})
+
+// Block-widget: tables (currently disabled, see comment near use site). When
+// fixed, same pattern will later carry images, fenced code with syntax
+// highlighting, math blocks, and Mermaid diagrams.
+class TableWidget extends WidgetType {
+  constructor(readonly markdown: string) {
+    super()
+  }
+  toDOM(): HTMLElement {
+    const wrapper = document.createElement('div')
+    wrapper.className = 'cm-table-widget'
+    // render() returns DOMPurify-sanitised HTML — safe to assign innerHTML.
+    wrapper.innerHTML = renderMarkdown(this.markdown)
+    return wrapper
+  }
+  eq(other: TableWidget): boolean {
+    return other.markdown === this.markdown
+  }
+  ignoreEvent(): boolean {
+    return false
+  }
+}
+
+// Inline list-item widgets — bullet for unordered lists, checkbox for tasks.
+// Source remains intact; the widgets only replace the marker characters when
+// off-cursor, preserving the markdown bytes for editing on the cursor line.
+class BulletWidget extends WidgetType {
+  toDOM(): HTMLElement {
+    const span = document.createElement('span')
+    span.className = 'cm-list-bullet'
+    span.textContent = '•'
+    return span
+  }
+  eq(): boolean {
+    return true
+  }
+}
+
+class TaskWidget extends WidgetType {
+  constructor(readonly checked: boolean) {
+    super()
+  }
+  toDOM(): HTMLElement {
+    const span = document.createElement('span')
+    span.className = `cm-task-marker${this.checked ? ' is-checked' : ''}`
+    span.textContent = this.checked ? '☑' : '☐'
+    return span
+  }
+  eq(other: TaskWidget): boolean {
+    return other.checked === this.checked
+  }
+}
+
+// Inline HR widget — renders a thin horizontal line in place of `---` source.
+class HrWidget extends WidgetType {
+  toDOM(): HTMLElement {
+    const span = document.createElement('span')
+    span.className = 'cm-hr-widget'
+    return span
+  }
+  eq(): boolean {
+    return true
+  }
+}
+
+// Inline image widget — replaces `![alt](src)` with an actual <img>. Inline
+// replace (not block), so it works whether the image is alone on a line or
+// embedded mid-paragraph. Click → CM positions cursor on the line, widget
+// unmounts, source returns for editing.
+class ImageWidget extends WidgetType {
+  constructor(readonly src: string, readonly alt: string) {
+    super()
+  }
+  toDOM(): HTMLElement {
+    const img = document.createElement('img')
+    img.src = this.src
+    img.alt = this.alt
+    img.className = 'cm-image-widget'
+    return img
+  }
+  eq(other: ImageWidget): boolean {
+    return other.src === this.src && other.alt === this.alt
+  }
+  ignoreEvent(): boolean {
+    return false
+  }
+}
 // Block markers consume the trailing space too so content sits flush left.
 const MARKERS_WITH_TRAILING_SPACE = new Set(['HeaderMark', 'QuoteMark'])
 // Inline markers: emphasis (`*`/`_`), strong (`**`/`__`), inline code (`` ` ``),
 // strike (`~~`), the brackets/parens of links and images (`[`, `]`, `(`, `)`,
-// `!`), the URL inside a link/image, and the language tag on a fenced code
-// block (e.g. ` ```python `). The fenced code block's ``` itself is `CodeMark`
-// and is already handled by that entry.
+// `!`), the URL inside a link/image. CodeMark is included — but for *fenced*
+// code blocks the parent check skips it (otherwise the ``` and language tag
+// lines collapse to empty lines, making the code float). When fenced code
+// gets a proper widget renderer, we can revisit.
 const INLINE_MARKERS = new Set([
   'EmphasisMark',
   'CodeMark',
   'StrikethroughMark',
   'LinkMark',
   'URL',
-  'CodeInfo',
 ])
 
 function buildLiveDecorations(view: EditorView): DecorationSet {
-  const builder = new RangeSetBuilder<Decoration>()
+  const ranges: Range<Decoration>[] = []
+  const add = (from: number, to: number, deco: Decoration): void => {
+    ranges.push(deco.range(from, to))
+  }
   const tree = syntaxTree(view.state)
   const doc = view.state.doc
 
   // Lines that contain (or are adjacent to) any cursor stay fully revealed.
+  // When the editor isn't focused, no line is "active" — every marker hides,
+  // giving a clean rendered-looking view on first load and whenever the user
+  // clicks away. Clicking in restores normal cursor-line reveal.
   const cursorLines = new Set<number>()
-  for (const range of view.state.selection.ranges) {
-    const fromLine = doc.lineAt(range.from).number
-    const toLine = doc.lineAt(range.to).number
-    for (let i = fromLine; i <= toLine; i++) cursorLines.add(i)
+  if (view.hasFocus) {
+    for (const range of view.state.selection.ranges) {
+      const fromLine = doc.lineAt(range.from).number
+      const toLine = doc.lineAt(range.to).number
+      for (let i = fromLine; i <= toLine; i++) cursorLines.add(i)
+    }
   }
 
   for (const { from, to } of view.visibleRanges) {
@@ -139,19 +307,144 @@ function buildLiveDecorations(view: EditorView): DecorationSet {
       from,
       to,
       enter: (node) => {
+        // Block widget: tables get swapped for rendered HTML when off-cursor.
+        // When any cursor line falls inside the table's line range, fall back
+        // to source mode (skip widget, visit children for normal marker hide).
+        if (node.name === 'Table') {
+          const fromLine = doc.lineAt(node.from).number
+          const toLine = doc.lineAt(node.to).number
+          let onCursor = false
+          for (const ln of cursorLines) {
+            if (ln >= fromLine && ln <= toLine) {
+              onCursor = true
+              break
+            }
+          }
+          // TEMP: table widget disabled — both block:true and inline replace
+          // broke layout (cm-gap heights / general layout). Needs a separate
+          // debugging session.
+          if (!onCursor) return
+          return
+        }
+
+        // Fenced code block — apply per-line bg styling so the block reads as
+        // a code block. The opening (```lang) and closing (```) lines have
+        // their content hidden off-cursor, so they appear as empty bg strips
+        // bracketing the code (visually the bg padding). On-cursor lines fall
+        // through to source. We manually hide the marker children rather than
+        // relying on tree iteration because we return false to skip nested
+        // markdown processing inside code.
+        if (node.name === 'FencedCode') {
+          const startLine = doc.lineAt(node.from).number
+          const endLine = doc.lineAt(node.to).number
+          for (let ln = startLine; ln <= endLine; ln++) {
+            const line = doc.line(ln)
+            let cls = 'cm-code-line'
+            if (ln === startLine) cls += ' cm-code-line-first'
+            if (ln === endLine) cls += ' cm-code-line-last'
+            add(line.from, line.from, Decoration.line({ class: cls }))
+          }
+          // Hide the ``` markers and language tag on lines off-cursor.
+          const fence = node.node
+          const c = fence.cursor()
+          if (c.firstChild()) {
+            do {
+              if (c.name === 'CodeMark' || c.name === 'CodeInfo') {
+                const markLine = doc.lineAt(c.from).number
+                if (!cursorLines.has(markLine)) add(c.from, c.to, HIDE)
+              }
+            } while (c.nextSibling())
+          }
+          return false
+        }
+
+        // Horizontal rule — apply a class to the line + hide the `---` chars.
+        // A pseudo-element on the line creates the visible rule. Earlier
+        // widget approach (inline-block + width: 100%) caused the paragraph
+        // above to render at heading size — likely a layout side effect of
+        // the widget on neighbouring line measurements.
+        if (node.name === 'HorizontalRule') {
+          const lineNum = doc.lineAt(node.from).number
+          if (cursorLines.has(lineNum)) return
+          const line = doc.line(lineNum)
+          add(line.from, line.from, Decoration.line({ class: 'cm-hr-line' }))
+          add(node.from, node.to, HIDE)
+          return false
+        }
+
+        // Image widget — replace `![alt](src)` with an <img>. When cursor is
+        // on the image's line we leave source visible and let normal marker
+        // hiding handle the rest (LinkMark/URL each skip on cursor line).
+        if (node.name === 'Image') {
+          const lineNum = doc.lineAt(node.from).number
+          if (cursorLines.has(lineNum)) return
+          const text = doc.sliceString(node.from, node.to)
+          const m = text.match(/^!\[([^\]]*)\]\(([^\s)]+)/)
+          if (!m) return
+          const alt = m[1] ?? ''
+          const src = m[2] ?? ''
+          add(node.from, node.to, Decoration.replace({ widget: new ImageWidget(src, alt) }))
+          return false
+        }
+
+        // List bullets and task checkboxes (off-cursor only).
+        if (node.name === 'ListMark') {
+          const lineNum = doc.lineAt(node.from).number
+          if (cursorLines.has(lineNum)) return
+          const item = node.node.parent
+          // If the list item has a TaskMarker, hide the list bullet entirely —
+          // the checkbox replaces it visually so we don't show "• ☐".
+          if (item) {
+            const c = item.cursor()
+            let hasTask = false
+            if (c.firstChild()) {
+              do {
+                if (c.name === 'TaskMarker') {
+                  hasTask = true
+                  break
+                }
+              } while (c.nextSibling())
+            }
+            if (hasTask) {
+              let toPos = node.to
+              if (doc.sliceString(toPos, toPos + 1) === ' ') toPos += 1
+              add(node.from, toPos, HIDE)
+              return
+            }
+          }
+          // Replace `-`/`*`/`+` with a bullet glyph. Ordered list numbers
+          // (1., 2., …) keep as-is — the numbers carry meaning.
+          const isOrdered = item?.parent?.name === 'OrderedList'
+          if (!isOrdered) {
+            add(node.from, node.to, Decoration.replace({ widget: new BulletWidget() }))
+          }
+          return
+        }
+        if (node.name === 'TaskMarker') {
+          const lineNum = doc.lineAt(node.from).number
+          if (cursorLines.has(lineNum)) return
+          const text = doc.sliceString(node.from, node.to)
+          const checked = /^\[x\]$/i.test(text)
+          add(node.from, node.to, Decoration.replace({ widget: new TaskWidget(checked) }))
+          return
+        }
+
         const isBlock = MARKERS_WITH_TRAILING_SPACE.has(node.name)
         const isInline = INLINE_MARKERS.has(node.name)
         if (!isBlock && !isInline) return
+        // Skip CodeMark inside a FencedCode — those are the ``` lines, hiding
+        // them collapses content to empty lines.
+        if (node.name === 'CodeMark' && node.node.parent?.name === 'FencedCode') return
         const lineNum = doc.lineAt(node.from).number
         if (cursorLines.has(lineNum)) return
         let toPos = node.to
         if (isBlock && doc.sliceString(toPos, toPos + 1) === ' ') toPos += 1
-        builder.add(node.from, toPos, HIDE)
+        add(node.from, toPos, HIDE)
       },
     })
   }
 
-  return builder.finish()
+  return Decoration.set(ranges, true)
 }
 
 const livePreview = ViewPlugin.fromClass(
@@ -161,7 +454,12 @@ const livePreview = ViewPlugin.fromClass(
       this.decorations = buildLiveDecorations(view)
     }
     update(update: ViewUpdate): void {
-      if (update.docChanged || update.selectionSet || update.viewportChanged) {
+      if (
+        update.docChanged ||
+        update.selectionSet ||
+        update.viewportChanged ||
+        update.focusChanged
+      ) {
         this.decorations = buildLiveDecorations(update.view)
       }
     }
