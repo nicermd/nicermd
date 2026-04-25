@@ -12,13 +12,13 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@milkdown/core": "^7.20.0",
-    "@milkdown/ctx": "^7.20.0",
-    "@milkdown/plugin-history": "^7.20.0",
-    "@milkdown/preset-commonmark": "^7.20.0",
-    "@milkdown/preset-gfm": "^7.20.0",
-    "@milkdown/prose": "^7.20.0",
-    "@milkdown/utils": "^7.20.0",
+    "@codemirror/commands": "^6.10.3",
+    "@codemirror/lang-markdown": "^6.5.0",
+    "@codemirror/language": "^6.12.3",
+    "@codemirror/state": "^6.6.0",
+    "@codemirror/view": "^6.41.1",
+    "@lezer/highlight": "^1.2.3",
+    "codemirror": "^6.0.2",
     "nicermd-core": "workspace:*"
   },
   "devDependencies": {
