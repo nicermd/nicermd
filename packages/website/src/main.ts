@@ -5,7 +5,7 @@
 // foundation is sound. See memory/milkdown_v1_learnings.md for the patterns
 // to port.
 
-import { EditorState } from '@codemirror/state'
+import { EditorState, StateField } from '@codemirror/state'
 import type { Range } from '@codemirror/state'
 import {
   EditorView,
@@ -143,8 +143,18 @@ const proseTheme = EditorView.theme(
       right: '0',
       borderTop: '1px solid #d1d5db',
     },
-    // Block widgets (currently tables; later images, code, math).
+    // Diagnostic placeholder version of the table widget — bright box so it's
+    // visually obvious where the widget rendered.
     '.cm-table-widget': {
+      backgroundColor: '#fef3c7',
+      padding: '0.75em',
+      margin: '1em 0',
+      textAlign: 'center',
+      fontWeight: '600',
+      borderRadius: '6px',
+    },
+    // (Real table styling, kept for when we wire the rendered HTML back in.)
+    '.cm-table-widget--real': {
       margin: '1em 0',
       cursor: 'text',
     },
@@ -179,25 +189,34 @@ const proseTheme = EditorView.theme(
 // is collapsed too so content doesn't appear shifted.
 const HIDE = Decoration.replace({})
 
-// Block-widget: tables (currently disabled, see comment near use site). When
-// fixed, same pattern will later carry images, fenced code with syntax
-// highlighting, math blocks, and Mermaid diagrams.
+// Block-widget: tables. Diagnostic placeholder version — once block layout is
+// confirmed working we'll swap to the rendered nicermd-core HTML.
+// Holds the source position so a click can dispatch the cursor INTO the
+// widget's range, which triggers the StateField to unmount and reveal source.
 class TableWidget extends WidgetType {
-  constructor(readonly markdown: string) {
+  constructor(
+    readonly markdown: string,
+    readonly fromPos: number,
+  ) {
     super()
   }
-  toDOM(): HTMLElement {
+  toDOM(view: EditorView): HTMLElement {
     const wrapper = document.createElement('div')
     wrapper.className = 'cm-table-widget'
-    // render() returns DOMPurify-sanitised HTML — safe to assign innerHTML.
-    wrapper.innerHTML = renderMarkdown(this.markdown)
+    wrapper.textContent = 'TABLE PLACEHOLDER'
+    wrapper.addEventListener('mousedown', (event) => {
+      event.preventDefault()
+      view.dispatch({ selection: { anchor: this.fromPos } })
+      view.focus()
+    })
     return wrapper
   }
   eq(other: TableWidget): boolean {
-    return other.markdown === this.markdown
+    return other.markdown === this.markdown && other.fromPos === this.fromPos
   }
-  ignoreEvent(): boolean {
-    return false
+  // We handle mousedown ourselves; let other events fall through.
+  ignoreEvent(event: Event): boolean {
+    return event.type !== 'mousedown'
   }
 }
 
@@ -320,10 +339,11 @@ function buildLiveDecorations(view: EditorView): DecorationSet {
               break
             }
           }
-          // TEMP: table widget disabled — both block:true and inline replace
-          // broke layout (cm-gap heights / general layout). Needs a separate
-          // debugging session.
-          if (!onCursor) return
+          // Tables are handled by a separate StateField (block decorations
+          // can't live in a ViewPlugin). Skip children when off-cursor so we
+          // don't process inner markers — the widget covers them. Visit
+          // children when on-cursor for normal source-view marker handling.
+          if (!onCursor) return false
           return
         }
 
@@ -467,6 +487,66 @@ const livePreview = ViewPlugin.fromClass(
   { decorations: (v) => v.decorations },
 )
 
+// Block decorations (tables today; later images-on-their-own-line, math
+// blocks, mermaid, etc.) must live in a StateField — CM rejects block
+// decorations sourced from a ViewPlugin. Walks the whole syntax tree on
+// each transaction; tree iteration is sub-millisecond on typical docs.
+function buildBlockDecorations(state: EditorState): DecorationSet {
+  const ranges: Range<Decoration>[] = []
+  const doc = state.doc
+  const tree = syntaxTree(state)
+
+  const cursorLines = new Set<number>()
+  for (const range of state.selection.ranges) {
+    const fromLine = doc.lineAt(range.from).number
+    const toLine = doc.lineAt(range.to).number
+    for (let i = fromLine; i <= toLine; i++) cursorLines.add(i)
+  }
+
+  tree.iterate({
+    enter: (node) => {
+      if (node.name !== 'Table') return
+      const fromLine = doc.lineAt(node.from).number
+      const toLine = doc.lineAt(node.to).number
+      let onCursor = false
+      for (const ln of cursorLines) {
+        if (ln >= fromLine && ln <= toLine) {
+          onCursor = true
+          break
+        }
+      }
+      if (!onCursor) {
+        const tableMarkdown = doc.sliceString(node.from, node.to)
+        const blockFrom = doc.line(fromLine).from
+        const blockTo = toLine < doc.lines ? doc.line(toLine + 1).from : doc.length
+        ranges.push(
+          Decoration.replace({
+            block: true,
+            widget: new TableWidget(tableMarkdown, node.from),
+          }).range(blockFrom, blockTo),
+        )
+        return false
+      }
+      return
+    },
+  })
+
+  return Decoration.set(ranges, true)
+}
+
+const blockDecorations = StateField.define<DecorationSet>({
+  create(state) {
+    return buildBlockDecorations(state)
+  },
+  update(decos, tr) {
+    if (tr.docChanged || tr.selection) {
+      return buildBlockDecorations(tr.state)
+    }
+    return decos.map(tr.changes)
+  },
+  provide: (f) => EditorView.decorations.from(f),
+})
+
 function mount(parent: HTMLElement): EditorView {
   const state = EditorState.create({
     doc: INITIAL,
@@ -478,6 +558,7 @@ function mount(parent: HTMLElement): EditorView {
       syntaxHighlighting(proseHighlight),
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
       livePreview,
+      blockDecorations,
       proseTheme,
       keymap.of([...defaultKeymap, ...historyKeymap]),
     ],
