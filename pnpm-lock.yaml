@@ -51,6 +51,9 @@ importers:
       '@lezer/highlight':
         specifier: ^1.2.3
         version: 1.2.3
+      '@lezer/markdown':
+        specifier: ^1.6.3
+        version: 1.6.3
       codemirror:
         specifier: ^6.0.2
         version: 6.0.2
