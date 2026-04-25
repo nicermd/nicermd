@@ -5,11 +5,21 @@
 // foundation is sound. See memory/milkdown_v1_learnings.md for the patterns
 // to port.
 
-import { EditorState } from '@codemirror/state'
-import { EditorView, keymap, lineNumbers, highlightActiveLine, drawSelection } from '@codemirror/view'
+import { EditorState, RangeSetBuilder } from '@codemirror/state'
+import {
+  EditorView,
+  keymap,
+  lineNumbers,
+  highlightActiveLine,
+  drawSelection,
+  Decoration,
+  ViewPlugin,
+} from '@codemirror/view'
+import type { DecorationSet, ViewUpdate } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
-import { syntaxHighlighting, defaultHighlightStyle, HighlightStyle } from '@codemirror/language'
+import { GFM } from '@lezer/markdown'
+import { syntaxHighlighting, defaultHighlightStyle, HighlightStyle, syntaxTree } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'
 
 import showcase from './samples/showcase.md?raw'
@@ -53,6 +63,17 @@ const proseTheme = EditorView.theme(
       fontFamily: 'system-ui, -apple-system, sans-serif',
       fontSize: '17px',
       lineHeight: '1.65',
+      border: 'none',
+      outline: 'none',
+    },
+    '&.cm-editor.cm-focused': {
+      outline: 'none',
+    },
+    '.cm-activeLine': {
+      backgroundColor: 'transparent',
+    },
+    '.cm-activeLineGutter': {
+      backgroundColor: 'transparent',
     },
     '.cm-content': {
       padding: '0',
@@ -65,9 +86,6 @@ const proseTheme = EditorView.theme(
       borderLeftColor: '#111827',
       borderLeftWidth: '2px',
     },
-    '.cm-focused': {
-      outline: 'none',
-    },
     '.cm-scroller': {
       fontFamily: 'inherit',
       lineHeight: 'inherit',
@@ -76,11 +94,79 @@ const proseTheme = EditorView.theme(
     '.cm-selectionBackground, ::selection': {
       backgroundColor: 'rgba(37, 99, 235, 0.18)',
     },
-    '.cm-activeLine': {
-      backgroundColor: 'transparent',
-    },
   },
   { dark: false },
+)
+
+// Live preview plugin — Obsidian / Typora behaviour. Walks the syntax tree in
+// the visible viewport, hides marker tokens (#, **, *, ~~, `) on lines that
+// don't contain the cursor, leaves them visible on the cursor's line. Lezer
+// trees are already incrementally maintained, so iteration is cheap (<1ms for
+// typical docs). For headings and quotes the trailing space after the marker
+// is collapsed too so content doesn't appear shifted.
+const HIDE = Decoration.replace({})
+// Block markers consume the trailing space too so content sits flush left.
+const MARKERS_WITH_TRAILING_SPACE = new Set(['HeaderMark', 'QuoteMark'])
+// Inline markers: emphasis (`*`/`_`), strong (`**`/`__`), inline code (`` ` ``),
+// strike (`~~`), the brackets/parens of links and images (`[`, `]`, `(`, `)`,
+// `!`), the URL inside a link/image, and the language tag on a fenced code
+// block (e.g. ` ```python `). The fenced code block's ``` itself is `CodeMark`
+// and is already handled by that entry.
+const INLINE_MARKERS = new Set([
+  'EmphasisMark',
+  'CodeMark',
+  'StrikethroughMark',
+  'LinkMark',
+  'URL',
+  'CodeInfo',
+])
+
+function buildLiveDecorations(view: EditorView): DecorationSet {
+  const builder = new RangeSetBuilder<Decoration>()
+  const tree = syntaxTree(view.state)
+  const doc = view.state.doc
+
+  // Lines that contain (or are adjacent to) any cursor stay fully revealed.
+  const cursorLines = new Set<number>()
+  for (const range of view.state.selection.ranges) {
+    const fromLine = doc.lineAt(range.from).number
+    const toLine = doc.lineAt(range.to).number
+    for (let i = fromLine; i <= toLine; i++) cursorLines.add(i)
+  }
+
+  for (const { from, to } of view.visibleRanges) {
+    tree.iterate({
+      from,
+      to,
+      enter: (node) => {
+        const isBlock = MARKERS_WITH_TRAILING_SPACE.has(node.name)
+        const isInline = INLINE_MARKERS.has(node.name)
+        if (!isBlock && !isInline) return
+        const lineNum = doc.lineAt(node.from).number
+        if (cursorLines.has(lineNum)) return
+        let toPos = node.to
+        if (isBlock && doc.sliceString(toPos, toPos + 1) === ' ') toPos += 1
+        builder.add(node.from, toPos, HIDE)
+      },
+    })
+  }
+
+  return builder.finish()
+}
+
+const livePreview = ViewPlugin.fromClass(
+  class {
+    decorations: DecorationSet
+    constructor(view: EditorView) {
+      this.decorations = buildLiveDecorations(view)
+    }
+    update(update: ViewUpdate): void {
+      if (update.docChanged || update.selectionSet || update.viewportChanged) {
+        this.decorations = buildLiveDecorations(update.view)
+      }
+    }
+  },
+  { decorations: (v) => v.decorations },
 )
 
 function mount(parent: HTMLElement): EditorView {
@@ -89,11 +175,11 @@ function mount(parent: HTMLElement): EditorView {
     extensions: [
       history(),
       drawSelection(),
-      highlightActiveLine(),
       EditorView.lineWrapping,
-      markdown(),
+      markdown({ extensions: [GFM] }),
       syntaxHighlighting(proseHighlight),
       syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+      livePreview,
       proseTheme,
       keymap.of([...defaultKeymap, ...historyKeymap]),
     ],
