@@ -83,10 +83,7 @@ body.is-editing .ProseMirror {
 .mode-indicator {
   position: fixed;
   top: 0.875rem;
-  /* Content-aligned: icon's left edge sits at the right edge of the 720px reading column,
-     floating in the gutter outside content. Falls back to the viewport corner on narrow screens.
-     If --nicer-max-width changes, update the 360 constant here (half of 720). */
-  right: max(0.875rem, calc(50vw - 360px - 84px));
+  right: 0.875rem;
   /* 84 x 84 hit area (3x the visible icon) — generous surround without hijacking the full right edge. */
   width: 84px;
   height: 84px;
@@ -836,10 +833,6 @@ async function mount(root: HTMLElement): Promise<void> {
 
   // Show the logo briefly on first load.
   flashIndicator()
-
-  // Scroll activity also flashes the indicator, resetting the fade timer on each event.
-  // Passive listener — we only observe, never call preventDefault.
-  window.addEventListener('scroll', () => flashIndicator(), { passive: true })
 
   // Toggle full-viewport fullscreen on Cmd/Ctrl+Shift+F. Escape is handled by the browser.
   // Cmd/Ctrl+Shift+M toggles the raw markdown source view.
