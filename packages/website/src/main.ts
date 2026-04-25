@@ -414,7 +414,7 @@ async function mount(root: HTMLElement): Promise<void> {
     <article class="nicer-doc app-pane" id="source-pane" hidden>
       <textarea class="source-textarea" id="source-textarea" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
     </article>
-    <button class="edit-fab" id="edit-fab" type="button" aria-label="Edit" title="Edit (Cmd/Ctrl+I)">
+    <button class="edit-fab" id="edit-fab" type="button" aria-label="Edit" title="Edit (Cmd/Ctrl+Shift+I)">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M12 20h9"/>
         <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
@@ -443,9 +443,9 @@ async function mount(root: HTMLElement): Promise<void> {
   const paletteInput = root.querySelector<HTMLInputElement>('#command-palette-input')!
   const paletteList = root.querySelector<HTMLDivElement>('#command-palette-list')!
 
-  // Read/edit mode. Defaults to read — Cmd/Ctrl+I enters edit, Escape or the
-  // same shortcut exits. Edit mode is signalled by an orange caret, a 2px orange
-  // top border on the pane, and "[edit] " prepended to the tab title.
+  // Read/edit mode. Defaults to read — Cmd/Ctrl+Shift+I toggles, Escape exits.
+  // Edit mode is signalled by an orange caret, a 2px orange top border on the
+  // pane, and "[edit] " prepended to the tab title.
   let editMode = false
   const baseTitle = document.title
 
@@ -540,9 +540,9 @@ async function mount(root: HTMLElement): Promise<void> {
     }
   }
 
-  // Command palette. Clicking the indicator or pressing Cmd/Ctrl+/ opens it;
-  // Cmd/Ctrl+I remains the dedicated edit-mode shortcut (the palette also has
-  // a "Toggle edit mode" command for mouse/tablet users).
+  // Command palette. Clicking the indicator or pressing Cmd/Ctrl+/ opens it.
+  // Cmd/Ctrl+Shift+I toggles edit mode in both directions (the palette also
+  // has a "Toggle edit mode" command for mouse/tablet users).
   type CommandCategory = 'markdown' | 'app'
   type Command = {
     id: string
@@ -1025,22 +1025,21 @@ async function mount(root: HTMLElement): Promise<void> {
     }
   })
 
-  // Cmd/Ctrl+I enters edit mode from read mode only — in edit mode it falls
-  // through to Milkdown as the standard italic shortcut. Escape exits edit
-  // mode (palette closing takes priority when the palette is open).
-  // The command palette has a "Toggle edit mode" command for mouse/tablet users
-  // who need an explicit toggle in both directions.
+  // Cmd/Ctrl+Shift+I toggles edit mode in both directions. Cmd/Ctrl+I (no
+  // shift) is reserved for Milkdown's italic shortcut — never overridden.
+  // Escape exits edit mode (palette closing takes priority when open).
   // Cmd/Ctrl+/ toggles the menu panel (mirrors clicking the logo).
   window.addEventListener('keydown', (event) => {
     if (
       (event.metaKey || event.ctrlKey) &&
-      !event.shiftKey &&
+      event.shiftKey &&
       !event.altKey &&
-      event.code === 'KeyI' &&
-      !editMode
+      event.code === 'KeyI'
     ) {
+      // Cmd/Ctrl+Shift+I toggles edit mode in both directions.
+      // Cmd+I (no shift) is reserved for Milkdown's italic — never overridden.
       event.preventDefault()
-      setEditMode(true)
+      setEditMode(!editMode)
     } else if (
       (event.metaKey || event.ctrlKey) &&
       !event.altKey &&
