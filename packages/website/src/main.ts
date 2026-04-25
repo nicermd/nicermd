@@ -122,6 +122,111 @@ body.is-editing .mode-indicator { color: #ea580c; }
 .mode-indicator.is-app-logo rect { stroke: #ea580c; }
 .mode-indicator.is-app-logo text { fill: #2563eb; }
 
+/* Format bar — floating, rounded toolbar that surfaces while editing when the mouse
+   is in motion, then fades after 1s of stillness. Inspired by iPhone Notes / Obsidian
+   on iOS: discreet, common formatting only. When in edit mode the body gets bottom
+   padding so users can scroll past the doc end without the bar covering text. */
+.format-bar {
+  position: fixed;
+  left: 50%;
+  bottom: max(1.25rem, calc(env(safe-area-inset-bottom) + 1rem));
+  transform: translateX(-50%) translateY(8px);
+  background: rgba(255, 255, 255, 0.96);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  padding: 4px 6px;
+  display: none;
+  flex-direction: column;
+  align-items: stretch;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 180ms ease, transform 180ms ease;
+  z-index: 100;
+  max-width: calc(100vw - 1rem);
+}
+body.is-editing .format-bar { display: flex; }
+.format-bar.is-visible {
+  opacity: 1;
+  pointer-events: auto;
+  transform: translateX(-50%) translateY(0);
+}
+.format-bar-row {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+.format-btn {
+  -webkit-appearance: none;
+  appearance: none;
+  border: none;
+  background: transparent;
+  color: #1f2937;
+  font: inherit;
+  padding: 0 8px;
+  min-width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  font-size: 0.95rem;
+  font-family: system-ui, -apple-system, sans-serif;
+  transition: background-color 120ms ease;
+}
+.format-btn:hover, .format-btn:focus-visible {
+  background: rgba(0, 0, 0, 0.06);
+  outline: none;
+}
+.format-btn:active { background: rgba(0, 0, 0, 0.1); }
+.format-btn.is-bold { font-weight: 800; }
+.format-btn.is-italic { font-style: italic; }
+.format-btn.is-strike { text-decoration: line-through; }
+.format-btn.is-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.85rem; }
+.format-bar-divider {
+  width: 1px;
+  height: 20px;
+  background: rgba(0, 0, 0, 0.1);
+  margin: 0 4px;
+}
+/* Edit FAB — round pencil button bottom-right. Surfaces on scroll-up (re-engagement
+   gesture), hides on scroll-down. Sits above iOS Safari's bottom toolbar via safe-area
+   inset + a clearance margin. Only shown in read mode. */
+.edit-fab {
+  position: fixed;
+  right: 0.875rem;
+  bottom: max(1.5rem, calc(env(safe-area-inset-bottom) + 4rem));
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  border: none;
+  background: #ffffff;
+  color: #ea580c;
+  display: grid;
+  place-items: center;
+  cursor: pointer;
+  padding: 0;
+  -webkit-appearance: none;
+  appearance: none;
+  font: inherit;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(234, 88, 12, 0.6);
+  opacity: 0;
+  transform: translateY(8px);
+  pointer-events: none;
+  transition: opacity 200ms ease, transform 200ms ease;
+}
+.edit-fab.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+.edit-fab:hover { box-shadow: 0 6px 18px rgba(0, 0, 0, 0.16), 0 0 0 1.5px rgba(234, 88, 12, 0.85); }
+.edit-fab:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; }
+.edit-fab svg { width: 22px; height: 22px; display: block; }
+body.is-editing .edit-fab { display: none; }
+
 /* Command palette — centred over the reading column, ~15% from the top.
    Raycast / VS Code pattern. Width matches the reading column (720px) capped
    to the viewport on narrow screens. */
@@ -309,11 +414,31 @@ async function mount(root: HTMLElement): Promise<void> {
     <article class="nicer-doc app-pane" id="source-pane" hidden>
       <textarea class="source-textarea" id="source-textarea" spellcheck="false" autocapitalize="off" autocorrect="off"></textarea>
     </article>
+    <button class="edit-fab" id="edit-fab" type="button" aria-label="Edit" title="Edit (Cmd/Ctrl+I)">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M12 20h9"/>
+        <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/>
+      </svg>
+    </button>
+    <div class="format-bar" id="format-bar" role="toolbar" aria-label="Formatting">
+      <div class="format-bar-row">
+        <button class="format-btn is-bold" data-fmt="bold" type="button" aria-label="Bold" title="Bold">B</button>
+        <button class="format-btn is-italic" data-fmt="italic" type="button" aria-label="Italic" title="Italic">I</button>
+        <button class="format-btn is-strike" data-fmt="strike" type="button" aria-label="Strikethrough" title="Strikethrough">S</button>
+        <button class="format-btn is-code" data-fmt="code" type="button" aria-label="Inline code" title="Inline code">&lt;/&gt;</button>
+        <span class="format-bar-divider" aria-hidden="true"></span>
+        <button class="format-btn" data-fmt="ul" type="button" aria-label="Bullet list" title="Bullet list">—</button>
+        <button class="format-btn" data-fmt="ol" type="button" aria-label="Numbered list" title="Numbered list">1.</button>
+        <button class="format-btn" data-fmt="task" type="button" aria-label="Task list" title="Task list">☐</button>
+      </div>
+    </div>
   `
   const container = root.querySelector<HTMLElement>('#nicer-pane')!
   const sourcePane = root.querySelector<HTMLElement>('#source-pane')!
   const sourceTextarea = root.querySelector<HTMLTextAreaElement>('#source-textarea')!
   const modeIndicator = root.querySelector<HTMLButtonElement>('#mode-indicator')!
+  const editFab = root.querySelector<HTMLButtonElement>('#edit-fab')!
+  const formatBar = root.querySelector<HTMLDivElement>('#format-bar')!
   const commandPalette = root.querySelector<HTMLDivElement>('#command-palette')!
   const paletteInput = root.querySelector<HTMLInputElement>('#command-palette-input')!
   const paletteList = root.querySelector<HTMLDivElement>('#command-palette-list')!
@@ -833,6 +958,56 @@ async function mount(root: HTMLElement): Promise<void> {
 
   // Show the logo briefly on first load.
   flashIndicator()
+
+  // Edit FAB: surfaces on scroll-up, hides on scroll-down. Quiet on first load
+  // (only appears once the user starts re-engaging upward), and hidden in edit mode.
+  // Click enters edit mode. 6px threshold dampens jitter from sub-pixel/inertial scroll.
+  editFab.addEventListener('click', () => setEditMode(true))
+  let lastScrollY = window.scrollY
+  window.addEventListener(
+    'scroll',
+    () => {
+      if (editMode) return
+      const y = window.scrollY
+      const delta = y - lastScrollY
+      if (Math.abs(delta) < 6) return
+      if (delta < 0 && y > 40) editFab.classList.add('is-visible')
+      else editFab.classList.remove('is-visible')
+      lastScrollY = y
+    },
+    { passive: true },
+  )
+
+  // Format bar: in edit mode, surface on mouse motion, hide after 1s of stillness.
+  // Buttons use mousedown→preventDefault so the editor selection isn't lost on click.
+  const formatActions: Record<string, () => void> = {
+    bold: runMilkdown(toggleStrongCommand),
+    italic: runMilkdown(toggleEmphasisCommand),
+    strike: runMilkdown(toggleStrikethroughCommand),
+    code: runMilkdown(toggleInlineCodeCommand),
+    ul: runMilkdown(wrapInBulletListCommand),
+    ol: runMilkdown(wrapInOrderedListCommand),
+    task: wrapInTaskList(),
+  }
+  formatBar.querySelectorAll<HTMLButtonElement>('.format-btn').forEach((btn) => {
+    btn.addEventListener('mousedown', (event) => event.preventDefault())
+    btn.addEventListener('click', () => {
+      const action = formatActions[btn.dataset.fmt ?? '']
+      if (action) action()
+    })
+  })
+
+  let formatBarTimer: number | undefined
+  function showFormatBar(): void {
+    if (!editMode) return
+    formatBar.classList.add('is-visible')
+    if (formatBarTimer !== undefined) clearTimeout(formatBarTimer)
+    formatBarTimer = window.setTimeout(() => {
+      formatBar.classList.remove('is-visible')
+      formatBarTimer = undefined
+    }, 1000)
+  }
+  window.addEventListener('mousemove', showFormatBar, { passive: true })
 
   // Toggle full-viewport fullscreen on Cmd/Ctrl+Shift+F. Escape is handled by the browser.
   // Cmd/Ctrl+Shift+M toggles the raw markdown source view.
