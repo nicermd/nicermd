@@ -4,7 +4,7 @@
 // no state about the document.
 
 use tauri::menu::{MenuBuilder, SubmenuBuilder, PredefinedMenuItem, MenuItemBuilder};
-use tauri::{AppHandle, Emitter, Manager, Wry};
+use tauri::{AppHandle, Emitter, Wry};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
