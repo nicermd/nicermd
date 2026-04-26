@@ -2,14 +2,13 @@
 //
 // Mode order (nicest → least nice):
 //   1 Read              nicermd-core HTML, no editor
-//   2 WYSIWYG           Tiptap (placeholder for now)
-//   3 Themed code       CM + theme decorations (placeholder for now)
-//   4 Code + preview    CM source + nicermd-core preview, live-updating
-//   5 Raw code          CM, syntax highlighting only
+//   2 WYSIWYG           Tiptap (lazy-loaded on first enter)
+//   3 Code + preview    CM source + nicermd-core preview, live-updating
+//   4 Raw code          CM, syntax highlighting only
 //
 // Each mode is a function (parent, markdown) → ModeHandle. Switching:
 // capture text via getMarkdown(), destroy(), mount the next mode with the
-// captured text. Cmd/Ctrl + 1..5 cycles modes.
+// captured text. Cmd/Ctrl + 1..4 jumps directly; Cmd/Ctrl+Shift+M cycles.
 
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap, drawSelection, lineNumbers } from '@codemirror/view'
@@ -118,37 +117,49 @@ function mountRead(parent: HTMLElement, markdown: string): ModeHandle {
   }
 }
 
-function mountWysiwygPlaceholder(parent: HTMLElement, markdown: string): ModeHandle {
-  const div = document.createElement('div')
-  div.className = 'mode-placeholder'
-  const heading = document.createElement('h2')
-  heading.textContent = 'Mode 2 — WYSIWYG (placeholder)'
-  const note = document.createElement('p')
-  note.textContent =
-    'Tiptap will mount here, lazy-loaded on first enter. For now this proves the mode-switch carries text in/out cleanly.'
-  const sample = document.createElement('pre')
-  sample.textContent = markdown.slice(0, 400) + (markdown.length > 400 ? '…' : '')
-  div.append(heading, note, sample)
-  parent.appendChild(div)
-  return {
-    destroy: () => div.remove(),
-    getMarkdown: () => markdown,
-  }
-}
+// Cached after the first import so re-entering mode 2 is instant.
+let wysiwygModule: Promise<typeof import('./wysiwyg-engine')> | null = null
 
-function mountThemedCodePlaceholder(parent: HTMLElement, markdown: string): ModeHandle {
-  const div = document.createElement('div')
-  div.className = 'mode-placeholder'
-  const heading = document.createElement('h2')
-  heading.textContent = 'Mode 3 — Themed code (placeholder)'
-  const note = document.createElement('p')
-  note.textContent =
-    'CodeMirror with theme decorations applied to markers (#, **, etc.) — markers stay visible, styling tracks the theme. Decoration work from v0.2-cm-prototype ports here.'
-  div.append(heading, note)
-  parent.appendChild(div)
+function mountWysiwyg(parent: HTMLElement, initialMarkdown: string): ModeHandle {
+  const wrap = document.createElement('div')
+  wrap.className = 'mode-wysiwyg'
+  parent.appendChild(wrap)
+
+  const surface = document.createElement('div')
+  surface.className = 'mode-wysiwyg__surface'
+  wrap.appendChild(surface)
+
+  const status = document.createElement('div')
+  status.className = 'mode-wysiwyg__status'
+  status.textContent = 'Loading WYSIWYG engine…'
+  wrap.appendChild(status)
+
+  // Mutable state so destroy() can short-circuit a still-loading mount, and
+  // getMarkdown() can fall back to the original text before the engine is up.
+  let destroyed = false
+  let handle: import('./wysiwyg-engine').WysiwygHandle | null = null
+  let latestMarkdown = initialMarkdown
+
+  if (!wysiwygModule) wysiwygModule = import('./wysiwyg-engine')
+
+  void wysiwygModule
+    .then((mod) => {
+      if (destroyed) return
+      status.remove()
+      handle = mod.createWysiwyg(surface, latestMarkdown)
+    })
+    .catch((err: unknown) => {
+      if (destroyed) return
+      status.textContent = `WYSIWYG failed to load: ${String(err)}`
+    })
+
   return {
-    destroy: () => div.remove(),
-    getMarkdown: () => markdown,
+    destroy: () => {
+      destroyed = true
+      if (handle) handle.destroy()
+      wrap.remove()
+    },
+    getMarkdown: () => (handle ? handle.getMarkdown() : latestMarkdown),
   }
 }
 
@@ -211,10 +222,9 @@ function mountRawCode(parent: HTMLElement, markdown: string): ModeHandle {
 
 const MODES: ModeDef[] = [
   { key: 1, label: 'Read', mount: mountRead },
-  { key: 2, label: 'WYSIWYG', mount: mountWysiwygPlaceholder },
-  { key: 3, label: 'Themed code', mount: mountThemedCodePlaceholder },
-  { key: 4, label: 'Code + preview', mount: mountCodePlusPreview },
-  { key: 5, label: 'Raw code', mount: mountRawCode },
+  { key: 2, label: 'WYSIWYG', mount: mountWysiwyg },
+  { key: 3, label: 'Code + preview', mount: mountCodePlusPreview },
+  { key: 4, label: 'Raw code', mount: mountRawCode },
 ]
 
 class Harness {
@@ -274,7 +284,7 @@ function boot(): void {
       return
     }
     const n = Number(event.key)
-    if (Number.isInteger(n) && n >= 1 && n <= 5) {
+    if (Number.isInteger(n) && n >= 1 && n <= 4) {
       event.preventDefault()
       harness.switchTo(n)
     }
