@@ -26,6 +26,7 @@ import { render as renderMarkdown } from 'nicermd-core'
 
 import showcase from './samples/showcase.md?raw'
 import { setupTauriBridge } from './tauri-bridge'
+import { setupFileDrop } from './file-drop'
 import { initTheme } from './themes'
 import { openThemePicker } from './theme-picker'
 import './main.css'
@@ -303,6 +304,20 @@ export class Harness {
     this.currentHandle?.setMarkdown?.(md)
   }
 
+  // Hard replace the document — destroys the active mode and remounts it
+  // with the new markdown. Used by drag-drop and (future) Open File so
+  // editing modes (which don't implement setMarkdown) can swap content.
+  replaceDoc(md: string): void {
+    this.currentMarkdown = md
+    if (!this.currentHandle) return
+    const key = this.currentMode
+    this.currentHandle.destroy()
+    this.currentHandle = null
+    const next = MODES.find((m) => m.key === key)
+    if (!next) return
+    this.currentHandle = next.mount(this.host, this.currentMarkdown, this.handleLocalChange)
+  }
+
   getCurrentMode(): { key: number; label: string } {
     const def = MODES.find((m) => m.key === this.currentMode)
     return { key: this.currentMode, label: def?.label ?? '' }
@@ -393,6 +408,8 @@ function finish(harness: Harness): void {
   // harness so File / View / Cycle menu items dispatch the right action.
   void setupTauriBridge(harness)
 
+  setupFileDrop(harness)
+
   window.addEventListener('keydown', (event) => {
     const meta = event.metaKey || event.ctrlKey
     if (!meta) return
@@ -412,6 +429,12 @@ function finish(harness: Harness): void {
       if (event.code === 'KeyM') {
         event.preventDefault()
         harness.cycle()
+        return
+      }
+      if (event.code === 'KeyF') {
+        event.preventDefault()
+        void toggleFullscreen()
+        return
       }
       return
     }
@@ -421,6 +444,24 @@ function finish(harness: Harness): void {
       harness.switchTo(n)
     }
   })
+}
+
+// Cmd/Ctrl + Shift + F — toggle fullscreen. Inside Tauri the native window
+// API gives macOS-native fullscreen (menu bar hidden, dock hidden); in plain
+// browser contexts the HTML5 Fullscreen API does the equivalent on the page.
+async function toggleFullscreen(): Promise<void> {
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+    const { getCurrentWindow } = await import('@tauri-apps/api/window')
+    const win = getCurrentWindow()
+    const fs = await win.isFullscreen()
+    await win.setFullscreen(!fs)
+    return
+  }
+  if (document.fullscreenElement) {
+    void document.exitFullscreen()
+  } else {
+    void document.documentElement.requestFullscreen()
+  }
 }
 
 void boot()
