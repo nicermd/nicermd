@@ -8,6 +8,16 @@
   "permissions": [
     "core:default",
     "core:window:allow-set-fullscreen",
-    "core:window:allow-is-fullscreen"
+    "core:window:allow-is-fullscreen",
+    "dialog:default",
+    "fs:default",
+    "fs:allow-read-text-file",
+    "fs:allow-write-text-file",
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        { "path": "**" }
+      ]
+    }
   ]
 }

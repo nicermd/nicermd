@@ -24,9 +24,20 @@ A quick reference for everything wired in nicermd.
 
 ## File
 
-| Action                                                       | Behaviour                                              |
-|--------------------------------------------------------------|--------------------------------------------------------|
-| Drag a `.md` / `.markdown` / `.mdx` file onto the window     | Loads the file into the active mode; replaces current text. Visual overlay confirms the drop region. Save-back not yet wired. |
+| Shortcut                       | Action                                                                                              |
+|--------------------------------|-----------------------------------------------------------------------------------------------------|
+| `Cmd` + `O`                    | Open file via system dialog                                                                         |
+| `Cmd` + `S`                    | Save — writes back to where the file came from (Tauri path or File System Access handle)            |
+| `Cmd` + `Shift` + `S`          | Save As — always opens the save dialog                                                              |
+| Drag a `.md` / `.markdown` / `.mdx` onto the window | Loads the file into the active mode; subsequent `Cmd+S` falls through to Save-As (no path / handle). |
+
+Save-back support depends on runtime:
+
+- **Tauri (desktop):** `plugin-dialog` for the file picker, `plugin-fs` for read/write. Real OS-level paths.
+- **Chromium browsers:** File System Access API (`showOpenFilePicker` / `showSaveFilePicker`) — true in-place write.
+- **Firefox / Safari:** `<input type="file">` to open, downloads `.md` for save (Save-As only — no in-place write available).
+
+Drag-drop in Tauri is configured to use HTML5 events (`dragDropEnabled: false`); same code path as the browser.
 
 ## Themes
 
@@ -75,8 +86,6 @@ Reserved bindings that haven't landed yet. Subject to change before they ship.
 
 | Shortcut              | Action                                    | Status        |
 |-----------------------|-------------------------------------------|---------------|
-| `Cmd` + `S`           | Save in place (FSA / Tauri) or download   | Not yet wired |
-| `Cmd` + `O`           | Open file via system dialog               | Not yet wired |
 | `Cmd` + `/`           | Open command palette                      | Not yet wired |
 | `Cmd` + `.`           | Toggle focus mode (Tauri only)            | Not yet wired |
 | `Esc`                 | Priority chain: close palette → exit modal → exit focus | Not yet wired |

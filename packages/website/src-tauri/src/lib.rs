@@ -3,12 +3,14 @@
 // listens for (file-open, save, focus-mode-toggle, mode-switch); Rust holds
 // no state about the document.
 
-use tauri::menu::{MenuBuilder, SubmenuBuilder, PredefinedMenuItem, MenuItemBuilder};
+use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Wry};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -28,7 +30,11 @@ pub fn run() {
 
 fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
     let app_submenu = SubmenuBuilder::new(app, "Nicer.md")
-        .item(&PredefinedMenuItem::about(app, Some("About Nicer.md"), None)?)
+        .item(&PredefinedMenuItem::about(
+            app,
+            Some("About Nicer.md"),
+            None,
+        )?)
         .separator()
         .item(&PredefinedMenuItem::services(app, None)?)
         .separator()
@@ -40,11 +46,27 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
         .build()?;
 
     let file_submenu = SubmenuBuilder::new(app, "File")
-        .item(&MenuItemBuilder::with_id("file-new", "New").accelerator("CmdOrCtrl+N").build(app)?)
-        .item(&MenuItemBuilder::with_id("file-open", "Open…").accelerator("CmdOrCtrl+O").build(app)?)
+        .item(
+            &MenuItemBuilder::with_id("file-new", "New")
+                .accelerator("CmdOrCtrl+N")
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::with_id("file-open", "Open…")
+                .accelerator("CmdOrCtrl+O")
+                .build(app)?,
+        )
         .separator()
-        .item(&MenuItemBuilder::with_id("file-save", "Save").accelerator("CmdOrCtrl+S").build(app)?)
-        .item(&MenuItemBuilder::with_id("file-save-as", "Save As…").accelerator("CmdOrCtrl+Shift+S").build(app)?)
+        .item(
+            &MenuItemBuilder::with_id("file-save", "Save")
+                .accelerator("CmdOrCtrl+S")
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::with_id("file-save-as", "Save As…")
+                .accelerator("CmdOrCtrl+Shift+S")
+                .build(app)?,
+        )
         .build()?;
 
     let edit_submenu = SubmenuBuilder::new(app, "Edit")
@@ -58,14 +80,38 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
         .build()?;
 
     let view_submenu = SubmenuBuilder::new(app, "View")
-        .item(&MenuItemBuilder::with_id("view-mode-1", "Read").accelerator("CmdOrCtrl+1").build(app)?)
-        .item(&MenuItemBuilder::with_id("view-mode-2", "WYSIWYG").accelerator("CmdOrCtrl+2").build(app)?)
-        .item(&MenuItemBuilder::with_id("view-mode-3", "Code + preview").accelerator("CmdOrCtrl+3").build(app)?)
-        .item(&MenuItemBuilder::with_id("view-mode-4", "Raw code").accelerator("CmdOrCtrl+4").build(app)?)
+        .item(
+            &MenuItemBuilder::with_id("view-mode-1", "Read")
+                .accelerator("CmdOrCtrl+1")
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::with_id("view-mode-2", "WYSIWYG")
+                .accelerator("CmdOrCtrl+2")
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::with_id("view-mode-3", "Code + preview")
+                .accelerator("CmdOrCtrl+3")
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::with_id("view-mode-4", "Raw code")
+                .accelerator("CmdOrCtrl+4")
+                .build(app)?,
+        )
         .separator()
-        .item(&MenuItemBuilder::with_id("view-cycle-mode", "Cycle Modes").accelerator("CmdOrCtrl+Shift+M").build(app)?)
+        .item(
+            &MenuItemBuilder::with_id("view-cycle-mode", "Cycle Modes")
+                .accelerator("CmdOrCtrl+Shift+M")
+                .build(app)?,
+        )
         .separator()
-        .item(&MenuItemBuilder::with_id("view-focus", "Focus Mode").accelerator("CmdOrCtrl+.").build(app)?)
+        .item(
+            &MenuItemBuilder::with_id("view-focus", "Focus Mode")
+                .accelerator("CmdOrCtrl+.")
+                .build(app)?,
+        )
         .item(&PredefinedMenuItem::fullscreen(app, None)?)
         .build()?;
 

@@ -10,6 +10,7 @@
 // dragenter/leave events from child elements correctly.
 
 import type { Harness } from './main'
+import { clearSource } from './doc-source'
 
 const ACCEPTED_EXT = /\.(md|markdown|mdx)$/i
 
@@ -80,6 +81,10 @@ async function handleDrop(event: DragEvent, harness: Harness): Promise<void> {
   }
   try {
     const text = await file.text()
+    // Drag-drop is anonymous — the browser doesn't give us a path or
+    // writable handle. Clear any prior source so a subsequent Cmd+S
+    // falls through to Save As rather than overwriting the wrong file.
+    clearSource()
     harness.replaceDoc(text)
   } catch (err) {
     console.error('[file-drop] read failed:', err)
