@@ -759,3 +759,29 @@ body,
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+/* --- File drop overlay --- */
+.file-drop-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 900;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  pointer-events: none;
+}
+.file-drop-overlay--active {
+  display: flex;
+}
+.file-drop-overlay__text {
+  padding: 1rem 2rem;
+  font-size: 1.4rem;
+  font-weight: 500;
+  font-family: var(--font-body);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  border: 3px dashed var(--accent);
+  border-radius: 12px;
+  letter-spacing: 0.02em;
+}

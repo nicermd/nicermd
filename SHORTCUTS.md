@@ -16,6 +16,18 @@ A quick reference for everything wired in nicermd.
 | `Cmd` + `4`           | Switch to **Mode 4 — Raw code**     |
 | `Cmd` + `Shift` + `M` | Cycle modes 1 → 2 → 3 → 4 → 1       |
 
+## Window
+
+| Shortcut              | Action                                              |
+|-----------------------|-----------------------------------------------------|
+| `Cmd` + `Shift` + `F` | Toggle fullscreen (native macOS fullscreen in Tauri, HTML5 Fullscreen API in browser) |
+
+## File
+
+| Action                                                       | Behaviour                                              |
+|--------------------------------------------------------------|--------------------------------------------------------|
+| Drag a `.md` / `.markdown` / `.mdx` file onto the window     | Loads the file into the active mode; replaces current text. Visual overlay confirms the drop region. Save-back not yet wired. |
+
 ## Themes
 
 | Shortcut             | Action                                             |
@@ -64,9 +76,8 @@ Reserved bindings that haven't landed yet. Subject to change before they ship.
 | Shortcut              | Action                                    | Status        |
 |-----------------------|-------------------------------------------|---------------|
 | `Cmd` + `S`           | Save in place (FSA / Tauri) or download   | Not yet wired |
-| `Cmd` + `O`           | Open file                                 | Not yet wired |
+| `Cmd` + `O`           | Open file via system dialog               | Not yet wired |
 | `Cmd` + `/`           | Open command palette                      | Not yet wired |
-| `Cmd` + `Shift` + `F` | Enter / exit full screen                  | Not yet wired |
 | `Cmd` + `.`           | Toggle focus mode (Tauri only)            | Not yet wired |
 | `Esc`                 | Priority chain: close palette → exit modal → exit focus | Not yet wired |
 
