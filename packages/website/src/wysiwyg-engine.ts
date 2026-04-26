@@ -5,6 +5,10 @@
 
 import { Editor } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
+import { Table } from '@tiptap/extension-table'
+import { TableRow } from '@tiptap/extension-table-row'
+import { TableCell } from '@tiptap/extension-table-cell'
+import { TableHeader } from '@tiptap/extension-table-header'
 import { Markdown } from 'tiptap-markdown'
 import type { MarkdownStorage } from 'tiptap-markdown'
 
@@ -26,6 +30,12 @@ export function createWysiwyg(
         // click-through happens via the format bar / keyboard later.
         link: { openOnClick: false },
       }),
+      // GFM tables — StarterKit doesn't bundle these, so add them
+      // explicitly. resizable lets users drag column borders.
+      Table.configure({ resizable: true }),
+      TableRow,
+      TableHeader,
+      TableCell,
       Markdown.configure({
         html: false,
         linkify: true,
