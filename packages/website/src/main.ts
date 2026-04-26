@@ -25,6 +25,7 @@ import { tags as t } from '@lezer/highlight'
 import { render as renderMarkdown } from 'nicermd-core'
 
 import showcase from './samples/showcase.md?raw'
+import { setupTauriBridge } from './tauri-bridge'
 import './main.css'
 
 interface ModeHandle {
@@ -333,6 +334,12 @@ async function boot(): Promise<void> {
   if (!root) throw new Error('#app root missing')
   root.innerHTML = ''
 
+  // Mark the document so CSS can leave clearance for the Tauri title-bar
+  // overlay (traffic-light area on macOS, ~22px tall top-left).
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+    document.documentElement.dataset.tauri = '1'
+  }
+
   const host = document.createElement('div')
   host.className = 'mode-host'
   root.appendChild(host)
@@ -361,6 +368,10 @@ async function boot(): Promise<void> {
 
 function finish(harness: Harness): void {
   harness.switchTo(1)
+
+  // No-op outside Tauri. Inside Tauri, wires native menu events to the
+  // harness so File / View / Cycle menu items dispatch the right action.
+  void setupTauriBridge(harness)
 
   window.addEventListener('keydown', (event) => {
     const meta = event.metaKey || event.ctrlKey
