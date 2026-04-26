@@ -551,20 +551,20 @@ body,
   z-index: 1000;
   background: rgba(0, 0, 0, 0.4);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
-  padding: 6vh 1rem;
+  padding: 1.5rem 1rem;
   overflow-y: auto;
 }
 
 .theme-picker {
   width: 100%;
-  max-width: 760px;
+  max-width: 880px;
   background: var(--bg);
   color: var(--fg);
   border: 1px solid var(--border);
   border-radius: 10px;
-  padding: 1.5rem 1.5rem 1.25rem;
+  padding: 1rem 1.1rem 0.9rem;
   box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
 }
 
@@ -572,11 +572,11 @@ body,
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 1rem;
+  margin-bottom: 0.75rem;
 }
 .theme-picker__title {
   margin: 0;
-  font-size: 1.1rem;
+  font-size: 0.95rem;
   font-weight: 600;
   font-family: var(--font-body);
 }
@@ -584,7 +584,7 @@ body,
   background: transparent;
   border: none;
   color: var(--muted);
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   line-height: 1;
   cursor: pointer;
   padding: 0 0.4rem;
@@ -595,30 +595,21 @@ body,
   background: var(--surface);
 }
 
-.theme-picker__subtitle {
-  margin: 1.25rem 0 0.5rem;
-  font-size: 0.78rem;
-  font-weight: 500;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-}
-
 .theme-picker__grid {
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
 }
 
 .theme-card {
   border: 1px solid var(--border);
-  border-radius: 8px;
+  border-radius: 6px;
   background: var(--bg);
   color: var(--fg);
-  padding: 0.7rem 0.75rem 0.6rem;
+  padding: 0.45rem 0.5rem 0.4rem;
   display: flex;
   flex-direction: column;
-  gap: 0.55rem;
+  gap: 0.4rem;
   cursor: pointer;
   font-family: var(--font-body);
   transition: transform 100ms ease;
@@ -634,20 +625,20 @@ body,
 
 .theme-card__preview {
   flex: 1;
-  min-height: 80px;
+  min-height: 56px;
   display: flex;
   flex-direction: column;
-  gap: 0.2rem;
-  padding: 0.4rem 0.45rem;
+  gap: 0.15rem;
+  padding: 0.3rem 0.35rem;
   background: var(--bg);
   color: var(--fg);
   border-radius: 4px;
-  font-size: 11px;
-  line-height: 1.35;
+  font-size: 10.5px;
+  line-height: 1.3;
 }
 .theme-card__sample-heading {
   font-weight: 700;
-  font-size: 13px;
+  font-size: 12px;
   color: var(--cm-heading);
   font-family: var(--font-body);
 }
@@ -670,23 +661,16 @@ body,
 .theme-card__footer {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 0.4rem;
   border-top: 1px dashed var(--border);
-  padding-top: 0.45rem;
+  padding-top: 0.3rem;
 }
 .theme-card__name {
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 500;
-}
-.theme-card__badge {
-  font-size: 0.62rem;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--muted);
-  border: 1px solid var(--border);
-  padding: 1px 6px;
-  border-radius: 999px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
 }
 
 .theme-card--placeholder {
@@ -707,31 +691,33 @@ body,
 }
 
 .theme-picker__custom {
-  margin-top: 1rem;
+  margin-top: 0.7rem;
   display: flex;
-  flex-direction: column;
-  gap: 0.4rem;
+  align-items: center;
+  gap: 0.5rem;
 }
 .theme-picker__custom-label {
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 500;
   color: var(--muted);
   text-transform: uppercase;
   letter-spacing: 0.08em;
+  white-space: nowrap;
 }
 .theme-picker__custom-row {
   display: flex;
-  gap: 0.5rem;
+  flex: 1;
+  gap: 0.4rem;
 }
 .theme-picker__custom-input {
   flex: 1;
   background: var(--bg);
   color: var(--fg);
   border: 1px solid var(--border);
-  border-radius: 6px;
-  padding: 0.5rem 0.7rem;
+  border-radius: 5px;
+  padding: 0.35rem 0.6rem;
   font-family: var(--font-code);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   min-width: 0;
 }
 .theme-picker__custom-input:focus {
@@ -742,17 +728,22 @@ body,
   background: var(--accent);
   color: var(--bg);
   border: 1px solid var(--accent);
-  border-radius: 6px;
-  padding: 0 1rem;
+  border-radius: 5px;
+  padding: 0 0.85rem;
   font-family: var(--font-body);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   cursor: pointer;
 }
 .theme-picker__custom-apply:hover {
   filter: brightness(1.05);
 }
 
-@media (max-width: 600px) {
+@media (max-width: 800px) {
+  .theme-picker__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 560px) {
   .theme-picker__grid {
     grid-template-columns: repeat(2, 1fr);
   }
