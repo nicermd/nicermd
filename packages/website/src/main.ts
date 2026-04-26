@@ -27,6 +27,7 @@ import { render as renderMarkdown } from 'nicermd-core'
 import showcase from './samples/showcase.md?raw'
 import { setupTauriBridge } from './tauri-bridge'
 import { setupFileDrop } from './file-drop'
+import { openFile, saveFile } from './doc-source'
 import { initTheme } from './themes'
 import { openThemePicker } from './theme-picker'
 import './main.css'
@@ -323,6 +324,12 @@ export class Harness {
     return { key: this.currentMode, label: def?.label ?? '' }
   }
 
+  // Live current text — pulls from the active mode if mounted (so cursor
+  // edits are included), otherwise falls back to the cached value.
+  getMarkdown(): string {
+    return this.currentHandle?.getMarkdown() ?? this.currentMarkdown
+  }
+
   private readonly handleLocalChange = (md: string): void => {
     this.currentMarkdown = md
     this.localChangeListener?.(md)
@@ -436,6 +443,21 @@ function finish(harness: Harness): void {
         void toggleFullscreen()
         return
       }
+      if (event.code === 'KeyS') {
+        event.preventDefault()
+        void saveFile(harness, { saveAs: true })
+        return
+      }
+      return
+    }
+    if (event.code === 'KeyS') {
+      event.preventDefault()
+      void saveFile(harness)
+      return
+    }
+    if (event.code === 'KeyO') {
+      event.preventDefault()
+      void openFile(harness)
       return
     }
     const n = Number(event.key)

@@ -7,11 +7,13 @@
 //   menu:view-cycle ()         — cycle modes
 //   menu:view-focus-toggle ()  — focus mode toggle (TODO)
 //   menu:file-new ()           — TODO
-//   menu:file-open ()          — TODO
-//   menu:file-save ()          — TODO
-//   menu:file-save-as ()       — TODO
+//   menu:file-open ()          — opens system file dialog
+//   menu:file-save ()          — writes back to current source, falls
+//                                through to Save As if anonymous
+//   menu:file-save-as ()       — always opens save dialog
 
 import type { Harness } from './main'
+import { openFile, saveFile } from './doc-source'
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
@@ -36,9 +38,16 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
     console.log('[tauri] menu:view-focus-toggle')
   })
 
-  for (const id of ['file-new', 'file-open', 'file-save', 'file-save-as'] as const) {
-    await listen(`menu:${id}`, () => {
-      console.log(`[tauri] menu:${id}`)
-    })
-  }
+  await listen('menu:file-open', () => {
+    void openFile(harness)
+  })
+  await listen('menu:file-save', () => {
+    void saveFile(harness)
+  })
+  await listen('menu:file-save-as', () => {
+    void saveFile(harness, { saveAs: true })
+  })
+  await listen('menu:file-new', () => {
+    console.log('[tauri] menu:file-new (not yet wired)')
+  })
 }
