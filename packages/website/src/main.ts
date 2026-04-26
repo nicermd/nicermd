@@ -25,7 +25,11 @@ import { tags as t } from '@lezer/highlight'
 import { render as renderMarkdown } from 'nicermd-core'
 
 import showcase from './samples/showcase.md?raw'
+import { initTheme } from './themes'
+import { openThemePicker } from './theme-picker'
 import './main.css'
+
+const THEME_STORAGE_KEY = 'nicermd:theme'
 
 interface ModeHandle {
   destroy(): void
@@ -44,55 +48,55 @@ interface ModeDef {
   mount: (parent: HTMLElement, markdown: string, onChange?: OnChange) => ModeHandle
 }
 
-// GitHub markdown source highlight palette — markers (#, **, *, _, `, ~~,
-// list bullets, --- rules) get GitHub's "danger" red; link text blue; URLs
-// and quotes green; emphasis/strong styled with weight + italic on the
-// content tokens themselves so headings and bold lines read as intended.
-const githubMdHighlight = HighlightStyle.define([
-  { tag: t.processingInstruction, color: '#cf222e' },
-  { tag: t.contentSeparator, color: '#cf222e' },
-  { tag: t.heading1, fontWeight: '700', color: '#0550ae' },
-  { tag: t.heading2, fontWeight: '700', color: '#0550ae' },
-  { tag: t.heading3, fontWeight: '700', color: '#0550ae' },
-  { tag: t.heading4, fontWeight: '700', color: '#0550ae' },
-  { tag: t.heading5, fontWeight: '700', color: '#0550ae' },
-  { tag: t.heading6, fontWeight: '700', color: '#0550ae' },
+// Markdown source highlight palette — colours come from CSS variables so
+// the active theme drives them. Tokens: markers (#, **, *, _, `, ~~, list
+// bullets, --- rules) → --cm-marker. Heading text, inline code, link text,
+// URLs, quotes each get their own var. The theme system flips the data-
+// attribute on <html>; CM picks up the change via the cascading vars.
+const mdHighlight = HighlightStyle.define([
+  { tag: t.processingInstruction, color: 'var(--cm-marker)' },
+  { tag: t.contentSeparator, color: 'var(--cm-marker)' },
+  { tag: t.heading1, fontWeight: '700', color: 'var(--cm-heading)' },
+  { tag: t.heading2, fontWeight: '700', color: 'var(--cm-heading)' },
+  { tag: t.heading3, fontWeight: '700', color: 'var(--cm-heading)' },
+  { tag: t.heading4, fontWeight: '700', color: 'var(--cm-heading)' },
+  { tag: t.heading5, fontWeight: '700', color: 'var(--cm-heading)' },
+  { tag: t.heading6, fontWeight: '700', color: 'var(--cm-heading)' },
   { tag: t.strong, fontWeight: '700' },
   { tag: t.emphasis, fontStyle: 'italic' },
   { tag: t.strikethrough, textDecoration: 'line-through' },
-  { tag: t.link, color: '#0969da' },
-  { tag: t.url, color: '#1a7f37' },
-  { tag: t.monospace, color: '#0550ae' },
-  { tag: t.quote, color: '#1a7f37' },
-  { tag: t.meta, color: '#cf222e' },
+  { tag: t.link, color: 'var(--cm-link)' },
+  { tag: t.url, color: 'var(--cm-url)' },
+  { tag: t.monospace, color: 'var(--cm-monospace)' },
+  { tag: t.quote, color: 'var(--cm-quote)' },
+  { tag: t.meta, color: 'var(--cm-marker)' },
 ])
 
-const githubCodeTheme = EditorView.theme({
+const editorTheme = EditorView.theme({
   '&': {
-    backgroundColor: '#ffffff',
-    color: '#1f2328',
-    fontFamily: 'ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace',
+    backgroundColor: 'var(--cm-bg)',
+    color: 'var(--cm-fg)',
+    fontFamily: 'var(--font-code)',
     fontSize: '13px',
     lineHeight: '1.55',
   },
   '.cm-content': {
-    caretColor: '#0969da',
+    caretColor: 'var(--cm-caret)',
   },
   '.cm-cursor': {
-    borderLeftColor: '#0969da',
+    borderLeftColor: 'var(--cm-caret)',
   },
   '.cm-selectionBackground, ::selection': {
-    backgroundColor: 'rgba(9, 105, 218, 0.18)',
+    backgroundColor: 'var(--cm-selection)',
   },
   '.cm-scroller': {
     fontFamily: 'inherit',
     lineHeight: 'inherit',
   },
-  // GitHub-style line numbers — narrow gutter, muted color, right-aligned.
   '.cm-gutters': {
-    backgroundColor: '#ffffff',
+    backgroundColor: 'var(--cm-gutter-bg)',
     border: 'none',
-    color: '#8c959f',
+    color: 'var(--cm-gutter-fg)',
     fontFamily: 'inherit',
     fontSize: '12px',
     paddingRight: '12px',
@@ -102,7 +106,7 @@ const githubCodeTheme = EditorView.theme({
   },
   '.cm-activeLineGutter': {
     backgroundColor: 'transparent',
-    color: '#1f2328',
+    color: 'var(--cm-fg)',
   },
 })
 
@@ -112,8 +116,8 @@ const codeMirrorBase = [
   lineNumbers(),
   EditorView.lineWrapping,
   markdown({ extensions: [GFM] }),
-  syntaxHighlighting(githubMdHighlight),
-  githubCodeTheme,
+  syntaxHighlighting(mdHighlight),
+  editorTheme,
   keymap.of([...defaultKeymap, ...historyKeymap]),
 ]
 
@@ -329,6 +333,17 @@ export class Harness {
 }
 
 async function boot(): Promise<void> {
+  initTheme()
+
+  // Auto-open the theme picker on first-ever visit so users see the
+  // catalog up front. Detected by absence of the localStorage key.
+  let openPickerOnFirstLoad = false
+  try {
+    openPickerOnFirstLoad = localStorage.getItem(THEME_STORAGE_KEY) === null
+  } catch {
+    // localStorage may be unavailable; skip the auto-open.
+  }
+
   const root = document.querySelector<HTMLElement>('#app')
   if (!root) throw new Error('#app root missing')
   root.innerHTML = ''
@@ -338,6 +353,7 @@ async function boot(): Promise<void> {
   root.appendChild(host)
 
   let bootMarkdown: string = showcase
+  let harness: Harness
   // Tree-shake gate: import.meta.env.DEV is a compile-time `false` in
   // `pnpm build`, so the entire branch (and ./dev-features) is dead-code-
   // eliminated from production bundles.
@@ -345,18 +361,22 @@ async function boot(): Promise<void> {
     try {
       const dev = await import('./dev-features')
       bootMarkdown = dev.bootDoc
-      // setupDev wires its own listeners; harness already exists below.
-      const harness = new Harness(host, bootMarkdown)
+      harness = new Harness(host, bootMarkdown)
       dev.setupDev(harness, root)
-      finish(harness)
-      return
     } catch (err) {
       console.error('Dev features failed to load:', err)
+      harness = new Harness(host, bootMarkdown)
     }
+  } else {
+    harness = new Harness(host, bootMarkdown)
   }
-
-  const harness = new Harness(host, bootMarkdown)
   finish(harness)
+
+  if (openPickerOnFirstLoad) {
+    // Defer one tick so the harness paints first; otherwise the picker
+    // overlay can sit on top of an empty document for a frame.
+    setTimeout(() => openThemePicker(), 0)
+  }
 }
 
 function finish(harness: Harness): void {
@@ -364,9 +384,21 @@ function finish(harness: Harness): void {
 
   window.addEventListener('keydown', (event) => {
     const meta = event.metaKey || event.ctrlKey
-    if (!meta || event.altKey) return
+    if (!meta) return
+
+    // Cmd/Ctrl + Alt/Option + T — open the theme picker. Uses event.code
+    // because macOS Alt produces special characters (e.g. "†"), but the
+    // physical key code is stable. Alt over Shift because Chrome reserves
+    // Cmd+Shift+T for "reopen closed tab" and preventDefault can't override.
+    if (event.altKey && event.code === 'KeyT') {
+      event.preventDefault()
+      openThemePicker()
+      return
+    }
+    if (event.altKey) return
+
     if (event.shiftKey) {
-      if (event.key === 'M' || event.key === 'm') {
+      if (event.code === 'KeyM') {
         event.preventDefault()
         harness.cycle()
       }

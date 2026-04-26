@@ -16,6 +16,16 @@ A quick reference for everything wired in nicermd.
 | `Cmd` + `4`           | Switch to **Mode 4 — Raw code**     |
 | `Cmd` + `Shift` + `M` | Cycle modes 1 → 2 → 3 → 4 → 1       |
 
+## Themes
+
+| Shortcut             | Action                                             |
+|----------------------|----------------------------------------------------|
+| `Cmd` + `Alt` + `T`  | Open theme picker (arrows preview live, Enter commits, Esc reverts) |
+
+The picker also auto-opens on first-ever visit (when no theme has been chosen yet) and lists all built-in themes plus a "Coming soon" row of placeholder themes. A custom-theme URL field is scaffolded; fetching is deferred to a follow-up.
+
+`Cmd` + `Alt` + `T` was picked over `Cmd` + `Shift` + `T` because Chrome reserves `Cmd+Shift+T` for "reopen closed tab" — `preventDefault` cannot override that browser-level accelerator.
+
 The four modes:
 
 1. **Read** — rendered HTML via `nicermd-core`, no editor.
