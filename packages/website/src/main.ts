@@ -9,6 +9,11 @@
 // Each mode is a function (parent, markdown) → ModeHandle. Switching:
 // capture text via getMarkdown(), destroy(), mount the next mode with the
 // captured text. Cmd/Ctrl + 1..4 jumps directly; Cmd/Ctrl+Shift+M cycles.
+//
+// Dev-only aids (cross-tab broadcast sync, mode label pill, ?freeze=1,
+// stress.md as boot doc) live in ./dev-features. They're loaded lazily
+// and only when `import.meta.env.DEV && ?dev=1` — production builds
+// tree-shake the entire dev module out.
 
 import { EditorState } from '@codemirror/state'
 import { EditorView, keymap, drawSelection, lineNumbers } from '@codemirror/view'
@@ -19,14 +24,15 @@ import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'
 import { render as renderMarkdown } from 'nicermd-core'
 
-import stress from './samples/stress.md?raw'
+import showcase from './samples/showcase.md?raw'
 import './main.css'
 
 interface ModeHandle {
   destroy(): void
   getMarkdown(): string
   // Optional — only modes that can re-render without disturbing user
-  // editing state implement this. Used to receive cross-tab updates.
+  // editing state implement this. Used by dev-features for cross-tab
+  // updates; production code paths don't currently call it.
   setMarkdown?: (markdown: string) => void
 }
 
@@ -257,38 +263,49 @@ const MODES: ModeDef[] = [
   { key: 4, label: 'Raw code', mount: mountRawCode },
 ]
 
-// Cross-tab sync: every tab broadcasts its current markdown when an editor
-// emits an onChange. Receiving tabs update their currentMarkdown and, if
-// the active mode supports setMarkdown (currently mode 1 read), re-render
-// in place. Editing modes ignore incoming broadcasts to preserve cursor
-// state. ?freeze=1 disables receiving — for a "before" snapshot tab.
-class Harness {
+// Mode-switching engine. Owns no UI chrome and no cross-tab sync — those
+// are layered in via callbacks (onLocalChange, onModeChange) and the
+// public setMarkdown hook so dev-features.ts (or future product chrome)
+// can subscribe without the harness knowing they exist.
+export class Harness {
   private currentMode = 1
   private currentHandle: ModeHandle | null = null
-  private currentMarkdown = stress
-  private readonly channel = new BroadcastChannel('nicermd-spike')
-  private readonly tabId =
-    typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : String(Math.random())
-  private readonly frozen: boolean
+  private currentMarkdown: string
+  private localChangeListener: OnChange | null = null
+  private modeChangeListener: ((key: number, label: string) => void) | null = null
 
   constructor(
     private readonly host: HTMLElement,
-    private readonly label: HTMLElement,
+    initialMarkdown: string,
   ) {
-    this.frozen = new URLSearchParams(window.location.search).get('freeze') === '1'
-    if (!this.frozen) {
-      this.channel.addEventListener('message', (event) => {
-        const data = event.data as { tabId: string; markdown: string } | undefined
-        if (!data || data.tabId === this.tabId) return
-        this.currentMarkdown = data.markdown
-        this.currentHandle?.setMarkdown?.(data.markdown)
-      })
-    }
+    this.currentMarkdown = initialMarkdown
+  }
+
+  onLocalChange(cb: OnChange): void {
+    this.localChangeListener = cb
+  }
+
+  onModeChange(cb: (key: number, label: string) => void): void {
+    this.modeChangeListener = cb
+  }
+
+  // External markdown injection — for dev-features cross-tab sync, and
+  // any future feature that needs to push text into the current mode.
+  // Only modes that expose setMarkdown actually update; editing modes
+  // ignore the call to preserve cursor/selection state.
+  setMarkdown(md: string): void {
+    this.currentMarkdown = md
+    this.currentHandle?.setMarkdown?.(md)
+  }
+
+  getCurrentMode(): { key: number; label: string } {
+    const def = MODES.find((m) => m.key === this.currentMode)
+    return { key: this.currentMode, label: def?.label ?? '' }
   }
 
   private readonly handleLocalChange = (md: string): void => {
     this.currentMarkdown = md
-    this.channel.postMessage({ tabId: this.tabId, markdown: md })
+    this.localChangeListener?.(md)
   }
 
   switchTo(key: number): void {
@@ -302,8 +319,7 @@ class Harness {
     if (!next) return
     this.currentMode = key
     this.currentHandle = next.mount(this.host, this.currentMarkdown, this.handleLocalChange)
-    const suffix = this.frozen ? ' · frozen' : ''
-    this.label.textContent = `Mode ${key} · ${next.label}${suffix}`
+    this.modeChangeListener?.(key, next.label)
   }
 
   cycle(): void {
@@ -312,20 +328,38 @@ class Harness {
   }
 }
 
-function boot(): void {
+async function boot(): Promise<void> {
   const root = document.querySelector<HTMLElement>('#app')
   if (!root) throw new Error('#app root missing')
   root.innerHTML = ''
-
-  const label = document.createElement('div')
-  label.className = 'mode-label'
-  root.appendChild(label)
 
   const host = document.createElement('div')
   host.className = 'mode-host'
   root.appendChild(host)
 
-  const harness = new Harness(host, label)
+  let bootMarkdown: string = showcase
+  // Tree-shake gate: import.meta.env.DEV is a compile-time `false` in
+  // `pnpm build`, so the entire branch (and ./dev-features) is dead-code-
+  // eliminated from production bundles.
+  if (import.meta.env.DEV && new URLSearchParams(window.location.search).has('dev')) {
+    try {
+      const dev = await import('./dev-features')
+      bootMarkdown = dev.bootDoc
+      // setupDev wires its own listeners; harness already exists below.
+      const harness = new Harness(host, bootMarkdown)
+      dev.setupDev(harness, root)
+      finish(harness)
+      return
+    } catch (err) {
+      console.error('Dev features failed to load:', err)
+    }
+  }
+
+  const harness = new Harness(host, bootMarkdown)
+  finish(harness)
+}
+
+function finish(harness: Harness): void {
   harness.switchTo(1)
 
   window.addEventListener('keydown', (event) => {
@@ -346,4 +380,4 @@ function boot(): void {
   })
 }
 
-boot()
+void boot()
