@@ -41,6 +41,12 @@ The active filename appears in the Tauri title strip (centered, between the traf
 
 Closing the window (browser tab close / Tauri window close) prompts to discard if there are unsaved edits.
 
+## Autosave
+
+Edits are debounced-snapshotted to `localStorage` 1.5s after typing stops. The backup is cleared on a successful Save / Open / New. On startup, if a recent (<24h) backup is found that doesn't match the current loaded doc, a small banner offers **Restore** or **Discard**.
+
+The backup is single-slot — it covers "I crashed mid-edit and want my work back." It does not cover multiple simultaneous documents.
+
 Save-back support depends on runtime:
 
 - **Tauri (desktop):** `plugin-dialog` for the file picker, `plugin-fs` for read/write. Real OS-level paths.
