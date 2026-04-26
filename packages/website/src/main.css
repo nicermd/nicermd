@@ -122,24 +122,85 @@ body,
 .mode-read th { font-weight: 600; border-bottom-width: 2px; }
 .mode-read img { max-width: 100%; border-radius: 4px; }
 
-/* Mode 2/3 — placeholders */
-.mode-placeholder {
+/* Mode 2 — Tiptap WYSIWYG */
+.mode-wysiwyg {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+}
+.mode-wysiwyg__surface {
   max-width: var(--reading-width);
   margin: 0 auto;
-  padding: 4rem 1rem;
+  padding: 3rem 1rem 6rem;
   width: 100%;
+  flex: 1;
 }
-.mode-placeholder h2 { margin-top: 0; font-weight: 600; }
-.mode-placeholder p { color: var(--muted); }
-.mode-placeholder pre {
+.mode-wysiwyg__status {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 14px;
+  color: var(--muted);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0.6rem 1.2rem;
+  border-radius: 999px;
+  border: 1px solid var(--rule);
+}
+.mode-wysiwyg .ProseMirror {
+  outline: none;
+  min-height: 60vh;
+}
+.mode-wysiwyg .ProseMirror h1,
+.mode-wysiwyg .ProseMirror h2,
+.mode-wysiwyg .ProseMirror h3 {
+  line-height: 1.25;
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+}
+.mode-wysiwyg .ProseMirror h1 { font-size: 2.1em; }
+.mode-wysiwyg .ProseMirror h2 { font-size: 1.55em; }
+.mode-wysiwyg .ProseMirror h3 { font-size: 1.2em; }
+.mode-wysiwyg .ProseMirror p,
+.mode-wysiwyg .ProseMirror ul,
+.mode-wysiwyg .ProseMirror ol,
+.mode-wysiwyg .ProseMirror blockquote,
+.mode-wysiwyg .ProseMirror table,
+.mode-wysiwyg .ProseMirror pre {
+  margin: 0 0 1em;
+}
+.mode-wysiwyg .ProseMirror a { color: var(--link); }
+.mode-wysiwyg .ProseMirror code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 0.9em;
+  background: var(--code-bg);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+.mode-wysiwyg .ProseMirror pre {
   background: var(--code-bg);
   padding: 0.85em 1em;
   border-radius: 6px;
+  overflow-x: auto;
   font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 13px;
-  white-space: pre-wrap;
-  margin-top: 1.5em;
-  color: var(--fg);
+  font-size: 0.9em;
+}
+.mode-wysiwyg .ProseMirror pre code {
+  background: transparent;
+  padding: 0;
+}
+.mode-wysiwyg .ProseMirror blockquote {
+  border-left: 3px solid var(--rule);
+  margin-left: 0;
+  padding-left: 1em;
+  color: var(--muted);
+}
+.mode-wysiwyg .ProseMirror hr {
+  border: none;
+  border-top: 1px solid var(--rule);
+  margin: 2em 0;
 }
 
 /* Mode 4 — code + preview */
