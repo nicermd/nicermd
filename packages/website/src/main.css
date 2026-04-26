@@ -202,6 +202,42 @@ body,
   border-top: 1px solid var(--rule);
   margin: 2em 0;
 }
+.mode-wysiwyg .ProseMirror table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+  table-layout: fixed;
+  overflow: hidden;
+  margin: 0 0 1em;
+}
+.mode-wysiwyg .ProseMirror th,
+.mode-wysiwyg .ProseMirror td {
+  padding: 0.5em 0.75em;
+  border: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+  position: relative;
+  min-width: 4em;
+}
+.mode-wysiwyg .ProseMirror th {
+  font-weight: 600;
+  background: #f8fafc;
+}
+.mode-wysiwyg .ProseMirror .selectedCell {
+  background: rgba(37, 99, 235, 0.1);
+}
+.mode-wysiwyg .ProseMirror .column-resize-handle {
+  position: absolute;
+  right: -2px;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: rgba(37, 99, 235, 0.5);
+  pointer-events: none;
+}
+.mode-wysiwyg .ProseMirror.resize-cursor {
+  cursor: col-resize;
+}
 
 /* Mode 4 — code + preview */
 .mode-split {
