@@ -12,11 +12,12 @@
 // captured text. Cmd/Ctrl + 1..5 cycles modes.
 
 import { EditorState } from '@codemirror/state'
-import { EditorView, keymap, drawSelection } from '@codemirror/view'
+import { EditorView, keymap, drawSelection, lineNumbers } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
 import { GFM } from '@lezer/markdown'
-import { syntaxHighlighting, defaultHighlightStyle } from '@codemirror/language'
+import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
+import { tags as t } from '@lezer/highlight'
 import { render as renderMarkdown } from 'nicermd-core'
 
 import showcase from './samples/showcase.md?raw'
@@ -33,12 +34,76 @@ interface ModeDef {
   mount: (parent: HTMLElement, markdown: string) => ModeHandle
 }
 
+// GitHub markdown source highlight palette — markers (#, **, *, _, `, ~~,
+// list bullets, --- rules) get GitHub's "danger" red; link text blue; URLs
+// and quotes green; emphasis/strong styled with weight + italic on the
+// content tokens themselves so headings and bold lines read as intended.
+const githubMdHighlight = HighlightStyle.define([
+  { tag: t.processingInstruction, color: '#cf222e' },
+  { tag: t.contentSeparator, color: '#cf222e' },
+  { tag: t.heading1, fontWeight: '700', color: '#0550ae' },
+  { tag: t.heading2, fontWeight: '700', color: '#0550ae' },
+  { tag: t.heading3, fontWeight: '700', color: '#0550ae' },
+  { tag: t.heading4, fontWeight: '700', color: '#0550ae' },
+  { tag: t.heading5, fontWeight: '700', color: '#0550ae' },
+  { tag: t.heading6, fontWeight: '700', color: '#0550ae' },
+  { tag: t.strong, fontWeight: '700' },
+  { tag: t.emphasis, fontStyle: 'italic' },
+  { tag: t.strikethrough, textDecoration: 'line-through' },
+  { tag: t.link, color: '#0969da' },
+  { tag: t.url, color: '#1a7f37' },
+  { tag: t.monospace, color: '#0550ae' },
+  { tag: t.quote, color: '#1a7f37' },
+  { tag: t.meta, color: '#cf222e' },
+])
+
+const githubCodeTheme = EditorView.theme({
+  '&': {
+    backgroundColor: '#ffffff',
+    color: '#1f2328',
+    fontFamily: 'ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace',
+    fontSize: '13px',
+    lineHeight: '1.55',
+  },
+  '.cm-content': {
+    caretColor: '#0969da',
+  },
+  '.cm-cursor': {
+    borderLeftColor: '#0969da',
+  },
+  '.cm-selectionBackground, ::selection': {
+    backgroundColor: 'rgba(9, 105, 218, 0.18)',
+  },
+  '.cm-scroller': {
+    fontFamily: 'inherit',
+    lineHeight: 'inherit',
+  },
+  // GitHub-style line numbers — narrow gutter, muted color, right-aligned.
+  '.cm-gutters': {
+    backgroundColor: '#ffffff',
+    border: 'none',
+    color: '#8c959f',
+    fontFamily: 'inherit',
+    fontSize: '12px',
+    paddingRight: '12px',
+  },
+  '.cm-gutterElement': {
+    padding: '0 4px 0 8px',
+  },
+  '.cm-activeLineGutter': {
+    backgroundColor: 'transparent',
+    color: '#1f2328',
+  },
+})
+
 const codeMirrorBase = [
   history(),
   drawSelection(),
+  lineNumbers(),
   EditorView.lineWrapping,
   markdown({ extensions: [GFM] }),
-  syntaxHighlighting(defaultHighlightStyle, { fallback: true }),
+  syntaxHighlighting(githubMdHighlight),
+  githubCodeTheme,
   keymap.of([...defaultKeymap, ...historyKeymap]),
 ]
 
@@ -175,6 +240,11 @@ class Harness {
     this.currentHandle = next.mount(this.host, this.currentMarkdown)
     this.label.textContent = `Mode ${key} · ${next.label}`
   }
+
+  cycle(): void {
+    const next = (this.currentMode % MODES.length) + 1
+    this.switchTo(next)
+  }
 }
 
 function boot(): void {
@@ -195,7 +265,14 @@ function boot(): void {
 
   window.addEventListener('keydown', (event) => {
     const meta = event.metaKey || event.ctrlKey
-    if (!meta || event.shiftKey || event.altKey) return
+    if (!meta || event.altKey) return
+    if (event.shiftKey) {
+      if (event.key === 'M' || event.key === 'm') {
+        event.preventDefault()
+        harness.cycle()
+      }
+      return
+    }
     const n = Number(event.key)
     if (Number.isInteger(n) && n >= 1 && n <= 5) {
       event.preventDefault()

@@ -153,13 +153,8 @@ body,
   border-right: 1px solid var(--rule);
   overflow: auto;
 }
-.mode-split__editor .cm-editor {
-  height: 100%;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 14px;
-}
-.mode-split__editor .cm-scroller { font-family: inherit; }
-.mode-split__editor .cm-content { padding: 1.5rem 1.25rem; }
+.mode-split__editor .cm-editor { height: 100%; }
+.mode-split__editor .cm-content { padding: 1rem 0.75rem; }
 .mode-split__preview {
   overflow: auto;
   padding: 2rem 2rem 4rem;
@@ -202,13 +197,8 @@ body,
   min-height: 0;
   overflow: auto;
 }
-.mode-raw .cm-editor {
-  height: 100%;
-  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-  font-size: 14px;
-}
-.mode-raw .cm-scroller { font-family: inherit; }
-.mode-raw .cm-content { padding: 2rem 1.5rem 4rem; }
+.mode-raw .cm-editor { height: 100%; }
+.mode-raw .cm-content { padding: 1rem 1rem 4rem; }
 
 /* CM globals */
 .cm-editor.cm-focused { outline: none; }
