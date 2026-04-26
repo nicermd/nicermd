@@ -19,7 +19,7 @@ import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'
 import { render as renderMarkdown } from 'nicermd-core'
 
-import showcase from './samples/showcase.md?raw'
+import stress from './samples/stress.md?raw'
 import './main.css'
 
 interface ModeHandle {
@@ -265,7 +265,7 @@ const MODES: ModeDef[] = [
 class Harness {
   private currentMode = 1
   private currentHandle: ModeHandle | null = null
-  private currentMarkdown = showcase
+  private currentMarkdown = stress
   private readonly channel = new BroadcastChannel('nicermd-spike')
   private readonly tabId =
     typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : String(Math.random())

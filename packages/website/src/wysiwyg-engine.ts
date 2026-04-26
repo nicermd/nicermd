@@ -21,7 +21,11 @@ export function createWysiwyg(
   const editor = new Editor({
     element: parent,
     extensions: [
-      StarterKit,
+      StarterKit.configure({
+        // Default opens links on click — fights editing. Off here so a
+        // click-through happens via the format bar / keyboard later.
+        link: { openOnClick: false },
+      }),
       Markdown.configure({
         html: false,
         linkify: true,
