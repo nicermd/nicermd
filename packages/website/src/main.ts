@@ -27,7 +27,8 @@ import { render as renderMarkdown } from 'nicermd-core'
 import showcase from './samples/showcase.md?raw'
 import { setupTauriBridge } from './tauri-bridge'
 import { setupFileDrop } from './file-drop'
-import { openFile, saveFile } from './doc-source'
+import { openFile, saveFile, newFile, setDocState, isDirty, markDirty } from './doc-source'
+import { setupTitle } from './title'
 import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from './zoom'
 import { initTheme } from './themes'
 import { openThemePicker } from './theme-picker'
@@ -279,8 +280,8 @@ export class Harness {
   private currentMode = 1
   private currentHandle: ModeHandle | null = null
   private currentMarkdown: string
-  private localChangeListener: OnChange | null = null
-  private modeChangeListener: ((key: number, label: string) => void) | null = null
+  private localChangeListeners = new Set<OnChange>()
+  private modeChangeListeners = new Set<(key: number, label: string) => void>()
 
   constructor(
     private readonly host: HTMLElement,
@@ -290,11 +291,11 @@ export class Harness {
   }
 
   onLocalChange(cb: OnChange): void {
-    this.localChangeListener = cb
+    this.localChangeListeners.add(cb)
   }
 
   onModeChange(cb: (key: number, label: string) => void): void {
-    this.modeChangeListener = cb
+    this.modeChangeListeners.add(cb)
   }
 
   // External markdown injection — for dev-features cross-tab sync, and
@@ -333,7 +334,7 @@ export class Harness {
 
   private readonly handleLocalChange = (md: string): void => {
     this.currentMarkdown = md
-    this.localChangeListener?.(md)
+    this.localChangeListeners.forEach((cb) => cb(md))
   }
 
   switchTo(key: number): void {
@@ -347,7 +348,7 @@ export class Harness {
     if (!next) return
     this.currentMode = key
     this.currentHandle = next.mount(this.host, this.currentMarkdown, this.handleLocalChange)
-    this.modeChangeListener?.(key, next.label)
+    this.modeChangeListeners.forEach((cb) => cb(key, next.label))
   }
 
   cycle(): void {
@@ -400,6 +401,17 @@ async function boot(): Promise<void> {
   } else {
     harness = new Harness(host, bootMarkdown)
   }
+
+  // Establish the dirty baseline. Boot doc has no name — shown as
+  // "Untitled" in the title; not dirty until user edits.
+  setDocState(bootMarkdown, null, null)
+  // markDirty must be the first onLocalChange listener so the title
+  // refresh listener (added by setupTitle) reads dirty=true on user
+  // edits. Set iteration follows insertion order.
+  harness.onLocalChange(() => markDirty())
+  setupTitle(harness, root)
+  setupCloseGuard(harness)
+
   finish(harness)
 
   if (openPickerOnFirstLoad) {
@@ -462,6 +474,10 @@ function finish(harness: Harness): void {
       void openFile(harness)
       return
     }
+    // Cmd+N is browser-reserved (new window) and preventDefault can't
+    // override; in Tauri the File menu's accelerator handles it at OS
+    // level. So we don't bind it here. Browser users get File→New via
+    // future button / palette.
     // Tauri-only browser-style zoom. In plain browsers Cmd+= / Cmd+- /
     // Cmd+0 are handled natively, so we only intercept in Tauri.
     if (isZoomTauri()) {
@@ -492,12 +508,14 @@ function finish(harness: Harness): void {
 // Cmd/Ctrl + Shift + F — toggle fullscreen. Inside Tauri the native window
 // API gives macOS-native fullscreen (menu bar hidden, dock hidden); in plain
 // browser contexts the HTML5 Fullscreen API does the equivalent on the page.
+// Also flips data-fullscreen on <html> so CSS can hide the title strip.
 async function toggleFullscreen(): Promise<void> {
   if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
     const { getCurrentWindow } = await import('@tauri-apps/api/window')
     const win = getCurrentWindow()
     const fs = await win.isFullscreen()
     await win.setFullscreen(!fs)
+    document.documentElement.dataset.fullscreen = !fs ? '1' : '0'
     return
   }
   if (document.fullscreenElement) {
@@ -505,6 +523,38 @@ async function toggleFullscreen(): Promise<void> {
   } else {
     void document.documentElement.requestFullscreen()
   }
+}
+
+// Browser: beforeunload guard prompts before navigating away with unsaved
+// edits. Tauri close-requested guard does the equivalent for the desktop
+// window via plugin-dialog.
+function setupCloseGuard(harness: Harness): void {
+  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
+    setupTauriCloseGuard(harness)
+    return
+  }
+  window.addEventListener('beforeunload', (event) => {
+    if (isDirty()) {
+      event.preventDefault()
+      // Legacy support — modern browsers ignore this string but require
+      // the assignment for the prompt to fire.
+      event.returnValue = ''
+    }
+  })
+}
+
+async function setupTauriCloseGuard(harness: Harness): Promise<void> {
+  const { getCurrentWindow } = await import('@tauri-apps/api/window')
+  const win = getCurrentWindow()
+  await win.onCloseRequested(async (event) => {
+    if (!isDirty()) return
+    const { ask } = await import('@tauri-apps/plugin-dialog')
+    const ok = await ask('Discard unsaved changes and quit?', {
+      title: 'Nicer.md',
+      kind: 'warning',
+    })
+    if (!ok) event.preventDefault()
+  })
 }
 
 void boot()

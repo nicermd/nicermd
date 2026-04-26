@@ -16,17 +16,57 @@
 import type { Harness } from './main'
 
 type DocSource =
-  | { kind: 'tauri-path'; path: string; name: string }
-  | { kind: 'fsa'; handle: FileSystemFileHandle; name: string }
+  | { kind: 'tauri-path'; path: string }
+  | { kind: 'fsa'; handle: FileSystemFileHandle }
 
+// State tracked here:
+//   - currentSource: where to write back on Cmd+S (null = anonymous)
+//   - currentName:   what to display in the title (null = "Untitled")
+//   - dirty:         user-typed-since-last-save flag
+//
+// We track dirty as a boolean (set true only on real user edits via
+// markDirty) rather than comparing current text to a baseline string.
+// Reasons: Tiptap (mode 2) normalises whitespace and marker style on
+// parse, so the editor's serialised output of an unedited file doesn't
+// match the raw on-disk bytes — a text-comparison approach would mark
+// such files dirty the moment they were opened in mode 2 or after any
+// mode switch through mode 2. Boolean state avoids that false positive.
+// Cost: typing then reverting keeps dirty on until next save (most
+// editors behave the same way).
 let currentSource: DocSource | null = null
+let currentName: string | null = null
+let dirty = false
 
-export function clearSource(): void {
-  currentSource = null
+const SOURCE_CHANGED = 'nicermd:source-changed'
+
+function notifySourceChanged(): void {
+  document.dispatchEvent(new CustomEvent(SOURCE_CHANGED))
 }
 
-export function getSourceName(): string | null {
-  return currentSource?.name ?? null
+// Identity setter — used by boot, open, save, drag-drop, new. Clears
+// the dirty flag (we just loaded or saved, so by definition the editor
+// is in sync with the source). Updates display name + source; always
+// fires the source-changed event so the title manager can refresh.
+export function setDocState(_text: string, name: string | null, source: DocSource | null): void {
+  dirty = false
+  currentName = name
+  currentSource = source
+  notifySourceChanged()
+}
+
+// Called by main.ts on every harness onLocalChange (real user edit).
+export function markDirty(): void {
+  if (dirty) return
+  dirty = true
+  notifySourceChanged()
+}
+
+export function isDirty(): boolean {
+  return dirty
+}
+
+export function getCurrentName(): string | null {
+  return currentName
 }
 
 const ACCEPT_FILTERS = {
@@ -74,7 +114,7 @@ async function openViaTauri(harness: Harness): Promise<void> {
   })
   if (typeof result !== 'string') return
   const text = await readTextFile(result)
-  currentSource = { kind: 'tauri-path', path: result, name: basename(result) }
+  setDocState(text, basename(result), { kind: 'tauri-path', path: result })
   harness.replaceDoc(text)
 }
 
@@ -92,7 +132,7 @@ async function openViaFsa(
   }
   const file = await handle.getFile()
   const text = await file.text()
-  currentSource = { kind: 'fsa', handle, name: file.name }
+  setDocState(text, file.name, { kind: 'fsa', handle })
   harness.replaceDoc(text)
 }
 
@@ -107,7 +147,8 @@ async function openViaInputFallback(harness: Harness): Promise<void> {
       const file = input.files?.[0]
       if (file) {
         const text = await file.text()
-        currentSource = null // anonymous — no write-back path
+        // No save-back path in this fallback — record name only.
+        setDocState(text, file.name, null)
         harness.replaceDoc(text)
       }
       input.remove()
@@ -128,12 +169,14 @@ export async function saveFile(harness: Harness, options?: { saveAs?: boolean })
   if (currentSource.kind === 'tauri-path') {
     const { writeTextFile } = await import('@tauri-apps/plugin-fs')
     await writeTextFile(currentSource.path, text)
+    setDocState(text, currentName, currentSource)
     return
   }
   if (currentSource.kind === 'fsa') {
     const writable = await currentSource.handle.createWritable()
     await writable.write(text)
     await writable.close()
+    setDocState(text, currentName, currentSource)
     return
   }
 }
@@ -157,12 +200,12 @@ async function saveAsViaTauri(text: string): Promise<void> {
   const { save } = await import('@tauri-apps/plugin-dialog')
   const { writeTextFile } = await import('@tauri-apps/plugin-fs')
   const path = await save({
-    defaultPath: currentSource && currentSource.kind === 'tauri-path' ? currentSource.path : 'untitled.md',
+    defaultPath: currentSource && currentSource.kind === 'tauri-path' ? currentSource.path : (currentName ?? 'untitled.md'),
     filters: TAURI_FILE_FILTERS,
   })
   if (typeof path !== 'string') return
   await writeTextFile(path, text)
-  currentSource = { kind: 'tauri-path', path, name: basename(path) }
+  setDocState(text, basename(path), { kind: 'tauri-path', path })
 }
 
 async function saveAsViaFsa(
@@ -172,7 +215,7 @@ async function saveAsViaFsa(
   let handle: FileSystemFileHandle
   try {
     handle = await show({
-      suggestedName: currentSource?.name ?? 'untitled.md',
+      suggestedName: currentName ?? 'untitled.md',
       types: [ACCEPT_FILTERS],
     })
   } catch (err) {
@@ -183,7 +226,7 @@ async function saveAsViaFsa(
   await writable.write(text)
   await writable.close()
   const file = await handle.getFile()
-  currentSource = { kind: 'fsa', handle, name: file.name }
+  setDocState(text, file.name, { kind: 'fsa', handle })
 }
 
 function saveAsViaDownload(text: string): void {
@@ -191,11 +234,32 @@ function saveAsViaDownload(text: string): void {
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = currentSource?.name ?? 'untitled.md'
+  a.download = currentName ?? 'untitled.md'
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)
   URL.revokeObjectURL(url)
+  // Note: download fallback can't track that the user actually saved
+  // so we don't update loadedText here — dirty state stays as-is.
+}
+
+// --- New ----------------------------------------------------------------
+
+export async function newFile(harness: Harness, defaultText: string = ''): Promise<void> {
+  if (isDirty()) {
+    const confirmed = await confirmDiscard()
+    if (!confirmed) return
+  }
+  setDocState(defaultText, null, null)
+  harness.replaceDoc(defaultText)
+}
+
+async function confirmDiscard(): Promise<boolean> {
+  if (isTauri()) {
+    const { ask } = await import('@tauri-apps/plugin-dialog')
+    return ask('Discard unsaved changes?', { title: 'Nicer.md', kind: 'warning' })
+  }
+  return window.confirm('Discard unsaved changes?')
 }
 
 // --- File System Access API minimal types -------------------------------

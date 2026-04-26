@@ -31,10 +31,15 @@ Zoom range is 50%–300% in 10% steps; the level persists in `localStorage` and 
 
 | Shortcut                       | Action                                                                                              |
 |--------------------------------|-----------------------------------------------------------------------------------------------------|
+| `Cmd` + `N`                    | New empty document (prompts to discard unsaved changes if dirty)                                    |
 | `Cmd` + `O`                    | Open file via system dialog                                                                         |
 | `Cmd` + `S`                    | Save — writes back to where the file came from (Tauri path or File System Access handle)            |
 | `Cmd` + `Shift` + `S`          | Save As — always opens the save dialog                                                              |
 | Drag a `.md` / `.markdown` / `.mdx` onto the window | Loads the file into the active mode; subsequent `Cmd+S` falls through to Save-As (no path / handle). |
+
+The active filename appears in the Tauri title strip (centered, between the traffic lights and the right edge) and in the browser tab title (`document.title`). A leading `•` indicates unsaved changes. The title strip hides automatically in macOS-native fullscreen.
+
+Closing the window (browser tab close / Tauri window close) prompts to discard if there are unsaved edits.
 
 Save-back support depends on runtime:
 
