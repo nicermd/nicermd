@@ -24,9 +24,16 @@ const PLACEHOLDERS: PlaceholderTheme[] = [
   { slug: 'solarized-light', name: 'Solarized Light', mode: 'light' },
   { slug: 'solarized-dark', name: 'Solarized Dark', mode: 'dark' },
   { slug: 'slate', name: 'Slate', mode: 'dark' },
+  { slug: 'high-contrast', name: 'High Contrast', mode: 'light' },
+  { slug: 'high-contrast-dark', name: 'High Contrast Dark', mode: 'dark' },
+  { slug: 'sepia', name: 'Sepia', mode: 'light' },
+  { slug: 'newsprint', name: 'Newsprint', mode: 'light' },
+  { slug: 'mono', name: 'Mono', mode: 'light' },
+  { slug: 'forest', name: 'Forest', mode: 'dark' },
+  { slug: 'ocean', name: 'Ocean', mode: 'dark' },
 ]
 
-const GRID_COLS = 3
+const GRID_COLS = 4
 
 let isOpen = false
 
@@ -62,7 +69,8 @@ export function openThemePicker(): void {
   closeBtn.textContent = '×'
   header.append(title, closeBtn)
 
-  // Real-themes grid
+  // Single grid: real themes first, placeholders after. Visually
+  // consistent; placeholders are dimmed and not selectable.
   const grid = document.createElement('div')
   grid.className = 'theme-picker__grid'
   const cards: HTMLElement[] = THEMES.map((theme, idx) => {
@@ -76,14 +84,7 @@ export function openThemePicker(): void {
     grid.appendChild(card)
     return card
   })
-
-  // Placeholder section
-  const placeholderTitle = document.createElement('h3')
-  placeholderTitle.className = 'theme-picker__subtitle'
-  placeholderTitle.textContent = 'Coming soon'
-  const placeholderGrid = document.createElement('div')
-  placeholderGrid.className = 'theme-picker__grid'
-  PLACEHOLDERS.forEach((p) => placeholderGrid.appendChild(createPlaceholderCard(p)))
+  PLACEHOLDERS.forEach((p) => grid.appendChild(createPlaceholderCard(p)))
 
   // Custom URL row (scaffold-only)
   const custom = document.createElement('div')
@@ -107,7 +108,7 @@ export function openThemePicker(): void {
   customRow.append(customInput, customApply)
   custom.append(customLabel, customRow)
 
-  modal.append(header, grid, placeholderTitle, placeholderGrid, custom)
+  modal.append(header, grid, custom)
   backdrop.appendChild(modal)
   document.body.appendChild(backdrop)
 
@@ -206,10 +207,7 @@ function createThemeCard(theme: Theme, selected: boolean): HTMLElement {
   const name = document.createElement('span')
   name.className = 'theme-card__name'
   name.textContent = theme.name
-  const badge = document.createElement('span')
-  badge.className = 'theme-card__badge theme-card__badge--' + theme.mode
-  badge.textContent = theme.mode
-  footer.append(name, badge)
+  footer.append(name)
 
   card.append(preview, footer)
   return card
@@ -232,10 +230,7 @@ function createPlaceholderCard(p: PlaceholderTheme): HTMLElement {
   const name = document.createElement('span')
   name.className = 'theme-card__name'
   name.textContent = p.name
-  const badge = document.createElement('span')
-  badge.className = 'theme-card__badge theme-card__badge--' + p.mode
-  badge.textContent = p.mode
-  footer.append(name, badge)
+  footer.append(name)
 
   card.append(preview, footer)
   return card
