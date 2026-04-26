@@ -9,6 +9,7 @@
     "core:default",
     "core:window:allow-set-fullscreen",
     "core:window:allow-is-fullscreen",
+    "core:webview:allow-set-webview-zoom",
     "dialog:default",
     "fs:default",
     "fs:allow-read-text-file",

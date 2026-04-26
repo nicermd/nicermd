@@ -28,6 +28,7 @@ import showcase from './samples/showcase.md?raw'
 import { setupTauriBridge } from './tauri-bridge'
 import { setupFileDrop } from './file-drop'
 import { openFile, saveFile } from './doc-source'
+import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from './zoom'
 import { initTheme } from './themes'
 import { openThemePicker } from './theme-picker'
 import './main.css'
@@ -416,6 +417,7 @@ function finish(harness: Harness): void {
   void setupTauriBridge(harness)
 
   setupFileDrop(harness)
+  void setupZoom()
 
   window.addEventListener('keydown', (event) => {
     const meta = event.metaKey || event.ctrlKey
@@ -459,6 +461,25 @@ function finish(harness: Harness): void {
       event.preventDefault()
       void openFile(harness)
       return
+    }
+    // Tauri-only browser-style zoom. In plain browsers Cmd+= / Cmd+- /
+    // Cmd+0 are handled natively, so we only intercept in Tauri.
+    if (isZoomTauri()) {
+      if (event.code === 'Equal') {
+        event.preventDefault()
+        void zoomIn()
+        return
+      }
+      if (event.code === 'Minus') {
+        event.preventDefault()
+        void zoomOut()
+        return
+      }
+      if (event.code === 'Digit0') {
+        event.preventDefault()
+        void zoomReset()
+        return
+      }
     }
     const n = Number(event.key)
     if (Number.isInteger(n) && n >= 1 && n <= 4) {
