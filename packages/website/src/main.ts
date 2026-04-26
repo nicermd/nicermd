@@ -25,12 +25,17 @@ import './main.css'
 interface ModeHandle {
   destroy(): void
   getMarkdown(): string
+  // Optional — only modes that can re-render without disturbing user
+  // editing state implement this. Used to receive cross-tab updates.
+  setMarkdown?: (markdown: string) => void
 }
+
+type OnChange = (markdown: string) => void
 
 interface ModeDef {
   key: number
   label: string
-  mount: (parent: HTMLElement, markdown: string) => ModeHandle
+  mount: (parent: HTMLElement, markdown: string, onChange?: OnChange) => ModeHandle
 }
 
 // GitHub markdown source highlight palette — markers (#, **, *, _, `, ~~,
@@ -109,18 +114,27 @@ const codeMirrorBase = [
 function mountRead(parent: HTMLElement, markdown: string): ModeHandle {
   const div = document.createElement('div')
   div.className = 'mode-read'
-  div.innerHTML = renderMarkdown(markdown)
+  let current = markdown
+  div.innerHTML = renderMarkdown(current)
   parent.appendChild(div)
   return {
     destroy: () => div.remove(),
-    getMarkdown: () => markdown,
+    getMarkdown: () => current,
+    setMarkdown: (md) => {
+      current = md
+      div.innerHTML = renderMarkdown(md)
+    },
   }
 }
 
 // Cached after the first import so re-entering mode 2 is instant.
 let wysiwygModule: Promise<typeof import('./wysiwyg-engine')> | null = null
 
-function mountWysiwyg(parent: HTMLElement, initialMarkdown: string): ModeHandle {
+function mountWysiwyg(
+  parent: HTMLElement,
+  initialMarkdown: string,
+  onChange?: OnChange,
+): ModeHandle {
   const wrap = document.createElement('div')
   wrap.className = 'mode-wysiwyg'
   parent.appendChild(wrap)
@@ -146,7 +160,7 @@ function mountWysiwyg(parent: HTMLElement, initialMarkdown: string): ModeHandle 
     .then((mod) => {
       if (destroyed) return
       status.remove()
-      handle = mod.createWysiwyg(surface, latestMarkdown)
+      handle = mod.createWysiwyg(surface, latestMarkdown, onChange)
     })
     .catch((err: unknown) => {
       if (destroyed) return
@@ -163,7 +177,11 @@ function mountWysiwyg(parent: HTMLElement, initialMarkdown: string): ModeHandle 
   }
 }
 
-function mountCodePlusPreview(parent: HTMLElement, markdown: string): ModeHandle {
+function mountCodePlusPreview(
+  parent: HTMLElement,
+  markdown: string,
+  onChange?: OnChange,
+): ModeHandle {
   const wrap = document.createElement('div')
   wrap.className = 'mode-split'
   const editorPane = document.createElement('div')
@@ -184,7 +202,10 @@ function mountCodePlusPreview(parent: HTMLElement, markdown: string): ModeHandle
       extensions: [
         ...codeMirrorBase,
         EditorView.updateListener.of((update) => {
-          if (update.docChanged) renderTo(update.state.doc.toString())
+          if (!update.docChanged) return
+          const md = update.state.doc.toString()
+          renderTo(md)
+          onChange?.(md)
         }),
       ],
     }),
@@ -200,14 +221,23 @@ function mountCodePlusPreview(parent: HTMLElement, markdown: string): ModeHandle
   }
 }
 
-function mountRawCode(parent: HTMLElement, markdown: string): ModeHandle {
+function mountRawCode(
+  parent: HTMLElement,
+  markdown: string,
+  onChange?: OnChange,
+): ModeHandle {
   const wrap = document.createElement('div')
   wrap.className = 'mode-raw'
   parent.appendChild(wrap)
   const view = new EditorView({
     state: EditorState.create({
       doc: markdown,
-      extensions: codeMirrorBase,
+      extensions: [
+        ...codeMirrorBase,
+        EditorView.updateListener.of((update) => {
+          if (update.docChanged) onChange?.(update.state.doc.toString())
+        }),
+      ],
     }),
     parent: wrap,
   })
@@ -227,15 +257,39 @@ const MODES: ModeDef[] = [
   { key: 4, label: 'Raw code', mount: mountRawCode },
 ]
 
+// Cross-tab sync: every tab broadcasts its current markdown when an editor
+// emits an onChange. Receiving tabs update their currentMarkdown and, if
+// the active mode supports setMarkdown (currently mode 1 read), re-render
+// in place. Editing modes ignore incoming broadcasts to preserve cursor
+// state. ?freeze=1 disables receiving — for a "before" snapshot tab.
 class Harness {
   private currentMode = 1
   private currentHandle: ModeHandle | null = null
   private currentMarkdown = showcase
+  private readonly channel = new BroadcastChannel('nicermd-spike')
+  private readonly tabId =
+    typeof crypto.randomUUID === 'function' ? crypto.randomUUID() : String(Math.random())
+  private readonly frozen: boolean
 
   constructor(
     private readonly host: HTMLElement,
     private readonly label: HTMLElement,
-  ) {}
+  ) {
+    this.frozen = new URLSearchParams(window.location.search).get('freeze') === '1'
+    if (!this.frozen) {
+      this.channel.addEventListener('message', (event) => {
+        const data = event.data as { tabId: string; markdown: string } | undefined
+        if (!data || data.tabId === this.tabId) return
+        this.currentMarkdown = data.markdown
+        this.currentHandle?.setMarkdown?.(data.markdown)
+      })
+    }
+  }
+
+  private readonly handleLocalChange = (md: string): void => {
+    this.currentMarkdown = md
+    this.channel.postMessage({ tabId: this.tabId, markdown: md })
+  }
 
   switchTo(key: number): void {
     if (key === this.currentMode && this.currentHandle) return
@@ -247,8 +301,9 @@ class Harness {
     const next = MODES.find((m) => m.key === key)
     if (!next) return
     this.currentMode = key
-    this.currentHandle = next.mount(this.host, this.currentMarkdown)
-    this.label.textContent = `Mode ${key} · ${next.label}`
+    this.currentHandle = next.mount(this.host, this.currentMarkdown, this.handleLocalChange)
+    const suffix = this.frozen ? ' · frozen' : ''
+    this.label.textContent = `Mode ${key} · ${next.label}${suffix}`
   }
 
   cycle(): void {
