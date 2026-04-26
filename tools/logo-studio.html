@@ -1,0 +1,562 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Logo Studio — Nicer.md</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<style>
+  :root {
+    --bg: #fafaf9;
+    --panel: #ffffff;
+    --fg: #1f2328;
+    --muted: #59636e;
+    --border: #d1d9e0;
+    --accent: #f97316;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 1.25rem;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+    font-size: 14px;
+    line-height: 1.5;
+  }
+  h1 { margin: 0 0 0.4rem; font-size: 1.1rem; font-weight: 600; }
+  h2 {
+    margin: 1.2rem 0 0.5rem;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 1.25rem;
+    max-width: 1400px;
+    margin: 0 auto;
+  }
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 1rem 1.1rem 1.1rem;
+  }
+  .controls .row {
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+    margin-bottom: 0.8rem;
+  }
+  .controls label {
+    font-size: 0.78rem;
+    color: var(--muted);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .controls input[type="text"],
+  .controls select {
+    width: 100%;
+    padding: 5px 8px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--panel);
+    color: var(--fg);
+    font: inherit;
+  }
+  .controls input[type="range"] { width: 100%; }
+  .controls input[type="color"] {
+    width: 100%;
+    height: 32px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    padding: 2px;
+    background: var(--panel);
+    cursor: pointer;
+  }
+  .controls .value { color: var(--fg); font-variant-numeric: tabular-nums; }
+  .row-inline {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+  }
+  .actions {
+    display: flex;
+    gap: 0.5rem;
+    margin-top: 1rem;
+    flex-wrap: wrap;
+  }
+  button {
+    flex: 1;
+    min-width: 0;
+    padding: 8px 12px;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    background: var(--panel);
+    color: var(--fg);
+    font: inherit;
+    cursor: pointer;
+  }
+  button:hover { background: #f3f4f6; }
+  button.primary {
+    background: var(--accent);
+    border-color: var(--accent);
+    color: white;
+  }
+  button.primary:hover { filter: brightness(1.05); }
+  .preview { display: flex; flex-direction: column; gap: 1rem; }
+  .hero {
+    display: flex;
+    gap: 1rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .hero canvas {
+    width: 320px;
+    height: 320px;
+    background: transparent;
+  }
+  .hero .dark-backdrop {
+    background: #161b22;
+    padding: 1rem;
+    border-radius: 8px;
+  }
+  .hero .dark-backdrop canvas {
+    width: 320px;
+    height: 320px;
+  }
+  .sizes {
+    display: flex;
+    gap: 1.4rem;
+    align-items: flex-end;
+    flex-wrap: wrap;
+  }
+  .size-cell {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+  }
+  .size-cell canvas {
+    image-rendering: pixelated;
+    background: #f3f4f6;
+    /* a faint checker so transparent corners are visible */
+    background-image:
+      linear-gradient(45deg, #eaeaea 25%, transparent 25%),
+      linear-gradient(-45deg, #eaeaea 25%, transparent 25%),
+      linear-gradient(45deg, transparent 75%, #eaeaea 75%),
+      linear-gradient(-45deg, transparent 75%, #eaeaea 75%);
+    background-size: 8px 8px;
+    background-position: 0 0, 0 4px, 4px -4px, -4px 0;
+  }
+  .size-cell .label {
+    font-size: 0.72rem;
+    color: var(--muted);
+  }
+  .dock-preview {
+    display: flex;
+    gap: 0.4rem;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.4);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    padding: 6px 10px;
+    border-radius: 16px;
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 4px 18px rgba(0, 0, 0, 0.12);
+  }
+  .dock-preview canvas { width: 64px; height: 64px; }
+  .dock-preview .placeholder {
+    width: 64px;
+    height: 64px;
+    border-radius: 14px;
+    background: linear-gradient(135deg, #d1d5db, #9ca3af);
+  }
+</style>
+</head>
+<body>
+<div class="layout">
+
+  <!-- ============== Controls ============== -->
+  <aside class="panel controls">
+    <h1>Logo Studio</h1>
+    <p style="color: var(--muted); font-size: 0.78rem; margin: 0 0 1rem;">
+      Iterate on the Nicer.md app icon. Settings persist locally.
+    </p>
+
+    <h2>Letter</h2>
+    <div class="row">
+      <label>Character <span class="value" id="vLetter"></span></label>
+      <input type="text" id="letter" maxlength="3" value="N" />
+    </div>
+    <div class="row">
+      <label>Font</label>
+      <select id="font">
+        <option value="Charter, Georgia, serif">Charter (serif)</option>
+        <option value="Georgia, serif">Georgia (serif)</option>
+        <option value="Iowan Old Style, serif">Iowan Old Style (serif)</option>
+        <option value="Cochin, serif">Cochin (serif)</option>
+        <option value="Optima, sans-serif">Optima</option>
+        <option value="Avenir, sans-serif">Avenir</option>
+        <option value="Helvetica Neue, sans-serif">Helvetica Neue</option>
+        <option value="SF Pro Display, system-ui, sans-serif">SF Pro Display</option>
+        <option value="system-ui, sans-serif">system-ui</option>
+        <option value="Futura, sans-serif">Futura</option>
+        <option value="Times New Roman, serif">Times New Roman</option>
+        <option value="Menlo, monospace">Menlo (mono)</option>
+        <option value="SF Mono, monospace">SF Mono</option>
+        <option value="ui-serif, serif">ui-serif</option>
+        <option value="ui-sans-serif, sans-serif">ui-sans-serif</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Custom font (optional)</label>
+      <input type="text" id="customFont" placeholder="e.g. Inter, Pacifico" />
+    </div>
+    <div class="row">
+      <label>Weight</label>
+      <select id="letterWeight">
+        <option value="300">300 — Light</option>
+        <option value="400">400 — Regular</option>
+        <option value="500">500 — Medium</option>
+        <option value="600" selected>600 — Semibold</option>
+        <option value="700">700 — Bold</option>
+        <option value="800">800 — Extrabold</option>
+        <option value="900">900 — Black</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Style</label>
+      <select id="letterStyle">
+        <option value="normal" selected>Normal</option>
+        <option value="italic">Italic</option>
+      </select>
+    </div>
+    <div class="row">
+      <label>Size <span class="value"><span id="vLetterSize">62</span>%</span></label>
+      <input type="range" id="letterSize" min="30" max="90" value="62" />
+    </div>
+    <div class="row">
+      <label>Color</label>
+      <input type="color" id="letterColor" value="#1a1a1a" />
+    </div>
+    <div class="row">
+      <label>Vertical offset <span class="value"><span id="vLetterOffsetY">0</span>%</span></label>
+      <input type="range" id="letterOffsetY" min="-20" max="20" value="0" />
+    </div>
+
+    <h2>Background</h2>
+    <div class="row">
+      <label>Color</label>
+      <input type="color" id="bgColor" value="#ffffff" />
+    </div>
+    <div class="row">
+      <label>Corner radius <span class="value"><span id="vCornerRadius">22</span>%</span></label>
+      <input type="range" id="cornerRadius" min="0" max="50" value="22" />
+    </div>
+
+    <h2>Border</h2>
+    <div class="row">
+      <label>Color</label>
+      <input type="color" id="borderColor" value="#f97316" />
+    </div>
+    <div class="row">
+      <label>Width <span class="value"><span id="vBorderWidth">28</span>px @ 1024</span></label>
+      <input type="range" id="borderWidth" min="0" max="120" value="28" />
+    </div>
+
+    <div class="actions">
+      <button id="reset">Reset</button>
+      <button id="exportOne" class="primary">Download 1024 PNG</button>
+    </div>
+    <div class="actions">
+      <button id="exportAll">Download all sizes</button>
+    </div>
+    <p style="color: var(--muted); font-size: 0.72rem; margin: 0.6rem 0 0;">
+      The 1024 PNG is the source for <code>pnpm tauri icon</code> — once you
+      like a design, save it and we'll regenerate every Tauri icon size from it.
+    </p>
+  </aside>
+
+  <!-- ============== Preview ============== -->
+  <section class="panel preview">
+    <h2>Hero — light backdrop / dark backdrop</h2>
+    <div class="hero">
+      <canvas id="heroLight" width="1024" height="1024"></canvas>
+      <div class="dark-backdrop">
+        <canvas id="heroDark" width="1024" height="1024"></canvas>
+      </div>
+    </div>
+
+    <h2>Sizes (rendered at native pixel size — legibility test)</h2>
+    <div class="sizes">
+      <div class="size-cell">
+        <canvas data-size="256" width="256" height="256"></canvas>
+        <span class="label">256</span>
+      </div>
+      <div class="size-cell">
+        <canvas data-size="128" width="128" height="128"></canvas>
+        <span class="label">128</span>
+      </div>
+      <div class="size-cell">
+        <canvas data-size="64" width="64" height="64"></canvas>
+        <span class="label">64</span>
+      </div>
+      <div class="size-cell">
+        <canvas data-size="32" width="32" height="32"></canvas>
+        <span class="label">32</span>
+      </div>
+      <div class="size-cell">
+        <canvas data-size="16" width="16" height="16"></canvas>
+        <span class="label">16</span>
+      </div>
+    </div>
+
+    <h2>Dock preview (frosted backdrop, ~64px)</h2>
+    <div class="dock-preview" style="background: linear-gradient(135deg, #93c5fd, #c4b5fd); border-color: rgba(255,255,255,0.5);">
+      <div class="placeholder"></div>
+      <div class="placeholder"></div>
+      <canvas id="dockCanvas" width="64" height="64"></canvas>
+      <div class="placeholder"></div>
+      <div class="placeholder"></div>
+    </div>
+  </section>
+
+</div>
+
+<script type="module">
+  const STORAGE_KEY = 'nicermd-logo-studio:v1'
+
+  // ----- Inputs -----
+  const inputs = {
+    letter: document.getElementById('letter'),
+    font: document.getElementById('font'),
+    customFont: document.getElementById('customFont'),
+    letterWeight: document.getElementById('letterWeight'),
+    letterStyle: document.getElementById('letterStyle'),
+    letterSize: document.getElementById('letterSize'),
+    letterColor: document.getElementById('letterColor'),
+    letterOffsetY: document.getElementById('letterOffsetY'),
+    bgColor: document.getElementById('bgColor'),
+    cornerRadius: document.getElementById('cornerRadius'),
+    borderColor: document.getElementById('borderColor'),
+    borderWidth: document.getElementById('borderWidth'),
+  }
+
+  const valueDisplays = {
+    letter: document.getElementById('vLetter'),
+    letterSize: document.getElementById('vLetterSize'),
+    letterOffsetY: document.getElementById('vLetterOffsetY'),
+    cornerRadius: document.getElementById('vCornerRadius'),
+    borderWidth: document.getElementById('vBorderWidth'),
+  }
+
+  function readState() {
+    return {
+      letter: inputs.letter.value || 'N',
+      font: inputs.customFont.value.trim() || inputs.font.value,
+      weight: inputs.letterWeight.value,
+      style: inputs.letterStyle.value,
+      size: parseInt(inputs.letterSize.value, 10),
+      letterColor: inputs.letterColor.value,
+      letterOffsetY: parseInt(inputs.letterOffsetY.value, 10),
+      bgColor: inputs.bgColor.value,
+      cornerRadius: parseInt(inputs.cornerRadius.value, 10),
+      borderColor: inputs.borderColor.value,
+      borderWidth: parseInt(inputs.borderWidth.value, 10),
+    }
+  }
+
+  function applyState(state) {
+    inputs.letter.value = state.letter
+    if (state.font && Array.from(inputs.font.options).some(o => o.value === state.font)) {
+      inputs.font.value = state.font
+      inputs.customFont.value = ''
+    } else {
+      inputs.customFont.value = state.font || ''
+    }
+    inputs.letterWeight.value = state.weight
+    inputs.letterStyle.value = state.style
+    inputs.letterSize.value = state.size
+    inputs.letterColor.value = state.letterColor
+    inputs.letterOffsetY.value = state.letterOffsetY
+    inputs.bgColor.value = state.bgColor
+    inputs.cornerRadius.value = state.cornerRadius
+    inputs.borderColor.value = state.borderColor
+    inputs.borderWidth.value = state.borderWidth
+  }
+
+  function refreshValueDisplays(state) {
+    valueDisplays.letter.textContent = `"${state.letter}"`
+    valueDisplays.letterSize.textContent = state.size
+    valueDisplays.letterOffsetY.textContent = state.letterOffsetY
+    valueDisplays.cornerRadius.textContent = state.cornerRadius
+    valueDisplays.borderWidth.textContent = state.borderWidth
+  }
+
+  function persist(state) {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state))
+    } catch {}
+  }
+
+  function restore() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY)
+      if (!raw) return null
+      return JSON.parse(raw)
+    } catch {
+      return null
+    }
+  }
+
+  // ----- Renderer -----
+  function renderToCanvas(canvas, state) {
+    const size = canvas.width
+    const ctx = canvas.getContext('2d')
+    ctx.clearRect(0, 0, size, size)
+    const radius = (state.cornerRadius / 100) * size
+
+    // Background fill
+    ctx.fillStyle = state.bgColor
+    pathRoundedRect(ctx, 0, 0, size, size, radius)
+    ctx.fill()
+
+    // Border (drawn inside the rounded rect — stroke is centered on the path
+    // so we inset by half the line width to keep the outer edge crisp)
+    const borderPx = (state.borderWidth / 1024) * size
+    if (borderPx > 0) {
+      ctx.strokeStyle = state.borderColor
+      ctx.lineWidth = borderPx
+      const inset = borderPx / 2
+      const innerRadius = Math.max(0, radius - inset)
+      pathRoundedRect(ctx, inset, inset, size - 2 * inset, size - 2 * inset, innerRadius)
+      ctx.stroke()
+    }
+
+    // Letter
+    if (state.letter) {
+      ctx.fillStyle = state.letterColor
+      const fontPx = (state.size / 100) * size
+      ctx.font = `${state.style} ${state.weight} ${fontPx}px ${state.font}`
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      // Most fonts visually center about 4-6% below the geometric centre.
+      // Tunable with the offsetY slider.
+      const visualNudge = fontPx * 0.04
+      const offset = (state.letterOffsetY / 100) * size
+      ctx.fillText(state.letter, size / 2, size / 2 + visualNudge + offset)
+    }
+  }
+
+  // Cross-browser rounded rect path (Path2D's roundRect arrived in Safari
+  // 16, but spelling it out is ~10 lines and removes any doubt).
+  function pathRoundedRect(ctx, x, y, w, h, r) {
+    const rr = Math.min(r, w / 2, h / 2)
+    ctx.beginPath()
+    ctx.moveTo(x + rr, y)
+    ctx.lineTo(x + w - rr, y)
+    ctx.arcTo(x + w, y, x + w, y + rr, rr)
+    ctx.lineTo(x + w, y + h - rr)
+    ctx.arcTo(x + w, y + h, x + w - rr, y + h, rr)
+    ctx.lineTo(x + rr, y + h)
+    ctx.arcTo(x, y + h, x, y + h - rr, rr)
+    ctx.lineTo(x, y + rr)
+    ctx.arcTo(x, y, x + rr, y, rr)
+    ctx.closePath()
+  }
+
+  // ----- Render targets -----
+  const allCanvases = [
+    document.getElementById('heroLight'),
+    document.getElementById('heroDark'),
+    document.getElementById('dockCanvas'),
+    ...document.querySelectorAll('.size-cell canvas'),
+  ]
+
+  function renderAll() {
+    const state = readState()
+    refreshValueDisplays(state)
+    persist(state)
+    for (const canvas of allCanvases) {
+      renderToCanvas(canvas, state)
+    }
+  }
+
+  // ----- Wire up -----
+  for (const input of Object.values(inputs)) {
+    input.addEventListener('input', renderAll)
+    input.addEventListener('change', renderAll)
+  }
+
+  document.getElementById('reset').addEventListener('click', () => {
+    applyState(DEFAULTS)
+    renderAll()
+  })
+
+  document.getElementById('exportOne').addEventListener('click', () => {
+    const c = document.getElementById('heroLight')
+    c.toBlob((blob) => {
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = `nicermd-icon-1024.png`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    }, 'image/png')
+  })
+
+  // "All sizes" download — one PNG per size, sequentially. Browsers throttle
+  // multiple downloads but the 200ms gap is enough for most.
+  document.getElementById('exportAll').addEventListener('click', async () => {
+    const state = readState()
+    const sizes = [16, 32, 64, 128, 256, 512, 1024]
+    for (const size of sizes) {
+      const c = document.createElement('canvas')
+      c.width = size
+      c.height = size
+      renderToCanvas(c, state)
+      await new Promise((resolve) => {
+        c.toBlob((blob) => {
+          const url = URL.createObjectURL(blob)
+          const a = document.createElement('a')
+          a.href = url
+          a.download = `nicermd-icon-${size}.png`
+          document.body.appendChild(a)
+          a.click()
+          a.remove()
+          URL.revokeObjectURL(url)
+          resolve()
+        }, 'image/png')
+      })
+      await new Promise((r) => setTimeout(r, 200))
+    }
+  })
+
+  // ----- Defaults & boot -----
+  const DEFAULTS = {
+    letter: 'N',
+    font: 'Charter, Georgia, serif',
+    weight: '600',
+    style: 'normal',
+    size: 62,
+    letterColor: '#1a1a1a',
+    letterOffsetY: 0,
+    bgColor: '#ffffff',
+    cornerRadius: 22,
+    borderColor: '#f97316',
+    borderWidth: 28,
+  }
+
+  const restored = restore()
+  applyState(restored ?? DEFAULTS)
+  renderAll()
+</script>
+</body>
+</html>
