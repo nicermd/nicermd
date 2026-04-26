@@ -28,6 +28,7 @@ import showcase from './samples/showcase.md?raw'
 import { setupTauriBridge } from './tauri-bridge'
 import { setupFileDrop } from './file-drop'
 import { openFile, saveFile, newFile, setDocState, isDirty, markDirty } from './doc-source'
+import { setupAutosave, checkRecovery } from './autosave'
 import { setupTitle } from './title'
 import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from './zoom'
 import { initTheme } from './themes'
@@ -294,6 +295,10 @@ export class Harness {
     this.localChangeListeners.add(cb)
   }
 
+  offLocalChange(cb: OnChange): void {
+    this.localChangeListeners.delete(cb)
+  }
+
   onModeChange(cb: (key: number, label: string) => void): void {
     this.modeChangeListeners.add(cb)
   }
@@ -410,6 +415,8 @@ async function boot(): Promise<void> {
   // edits. Set iteration follows insertion order.
   harness.onLocalChange(() => markDirty())
   setupTitle(harness, root)
+  setupAutosave(harness)
+  checkRecovery(harness, bootMarkdown)
   setupCloseGuard(harness)
 
   finish(harness)
