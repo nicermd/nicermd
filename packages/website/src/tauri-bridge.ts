@@ -13,7 +13,7 @@
 //   menu:file-save-as ()       — always opens save dialog
 
 import type { Harness } from './main'
-import { openFile, saveFile } from './doc-source'
+import { openFile, saveFile, newFile } from './doc-source'
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
@@ -48,6 +48,6 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
     void saveFile(harness, { saveAs: true })
   })
   await listen('menu:file-new', () => {
-    console.log('[tauri] menu:file-new (not yet wired)')
+    void newFile(harness)
   })
 }
