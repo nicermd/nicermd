@@ -13,7 +13,11 @@ export interface WysiwygHandle {
   getMarkdown(): string
 }
 
-export function createWysiwyg(parent: HTMLElement, markdown: string): WysiwygHandle {
+export function createWysiwyg(
+  parent: HTMLElement,
+  markdown: string,
+  onChange?: (markdown: string) => void,
+): WysiwygHandle {
   const editor = new Editor({
     element: parent,
     extensions: [
@@ -27,6 +31,11 @@ export function createWysiwyg(parent: HTMLElement, markdown: string): WysiwygHan
       }),
     ],
     content: markdown,
+    onUpdate: ({ editor: ed }) => {
+      if (!onChange) return
+      const storage = (ed.storage as unknown as { markdown: MarkdownStorage }).markdown
+      onChange(storage.getMarkdown())
+    },
   })
 
   // tiptap-markdown attaches `markdown` to editor.storage at runtime; the
