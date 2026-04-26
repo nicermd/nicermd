@@ -53,6 +53,17 @@ body,
   flex-direction: column;
 }
 
+/* Tauri shell — traffic-light area on macOS overlays the top-left of the
+   web view. Reserve ~28px so content (and the dev label pill) sits below
+   it. The system handles window-drag for the same region by default when
+   titleBarStyle is "Overlay". */
+[data-tauri="1"] .mode-host {
+  padding-top: 28px;
+}
+[data-tauri="1"] .mode-label {
+  top: calc(0.75rem + 28px);
+}
+
 /* Mode 1 — themed read */
 .mode-read {
   max-width: var(--reading-width);
