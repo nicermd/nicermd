@@ -21,6 +21,11 @@ A quick reference for everything wired in nicermd.
 | Shortcut              | Action                                              |
 |-----------------------|-----------------------------------------------------|
 | `Cmd` + `Shift` + `F` | Toggle fullscreen (native macOS fullscreen in Tauri, HTML5 Fullscreen API in browser) |
+| `Cmd` + `=` / `+`     | Zoom in (Tauri only — browsers handle natively)     |
+| `Cmd` + `-`           | Zoom out (Tauri only — browsers handle natively)    |
+| `Cmd` + `0`           | Reset zoom to 100% (Tauri only — browsers handle natively) |
+
+Zoom range is 50%–300% in 10% steps; the level persists in `localStorage` and is restored on next launch.
 
 ## File
 
