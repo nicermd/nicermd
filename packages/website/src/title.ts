@@ -1,15 +1,10 @@
 // Filename + dirty indicator. Two surfaces:
 //
-//   - In-window strip: a `<div class="window-title">` rendered into the
-//     top or bottom of the window. CSS [data-tauri="1"] gates display
-//     and `data-strip-pos` chooses top vs bottom; both are toggled at
-//     runtime by ./variants.ts (Cmd+Shift+→ / ←).
+//   - In-window strip: a `<div class="window-title">` rendered into
+//     the top 28px of the window in both web and Tauri shells. CSS
+//     [data-tauri="1"] (set unconditionally in main.ts) gates display.
 //   - `document.title` always updates so the browser tab reflects the
 //     active doc and dirty state regardless of strip visibility.
-//
-// Element is always created — visibility is purely a CSS concern. That
-// way variant cycling can flip the strip on/off at runtime without
-// needing to teardown / recreate the DOM.
 
 import type { Harness } from './main'
 import { isDirty, getCurrentName } from './doc-source'

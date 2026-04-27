@@ -247,10 +247,10 @@ body,
   flex-direction: column;
 }
 
-/* Tauri shell — traffic-light area on macOS overlays the top-left of the
-   web view. Reserve ~28px so content (and the dev label pill) sits below
-   it. The system handles window-drag for the same region by default when
-   titleBarStyle is "Overlay". */
+/* Title strip — 28px reserved at the top for the filename + mode
+   icons in both web and Tauri shells. In Tauri this same strip
+   overlaps the macOS traffic-light area (titleBarStyle: "Overlay"),
+   so the system handles window-drag for the same region by default. */
 [data-tauri="1"] .mode-host {
   padding-top: 28px;
 }
@@ -258,9 +258,9 @@ body,
   top: calc(0.75rem + 28px);
 }
 
-/* Filename rendered in the title strip — Tauri only. Centered, muted,
-   tucked into the 28px reserved space so no extra layout shift. Right
-   padding is wider to avoid colliding with the .mode-icons row. */
+/* Filename rendered in the title strip — centred, muted, tucked into
+   the 28px reserved space so no extra layout shift. Right padding is
+   wider to avoid colliding with the .mode-icons row. */
 .window-title {
   display: none;
   position: fixed;
@@ -285,8 +285,8 @@ body,
   display: flex;
 }
 
-/* Mode icons in the Tauri title strip — top-right, 4 buttons, active
-   one accent-coloured, others muted. */
+/* Mode icons in the title strip — top-right, 4 buttons, active one
+   accent-coloured, others muted. */
 .mode-icons {
   display: none;
   position: fixed;
@@ -329,33 +329,21 @@ body,
 
 /* In macOS native fullscreen via Tauri the title strip area collapses;
    hide our title element and remove the 28px reserve so content fills
-   the screen. */
-[data-tauri="1"][data-fullscreen="1"] .window-title {
+   the screen. Scoped to the Tauri shell because browsers don't set
+   data-fullscreen. */
+[data-shell="tauri"][data-fullscreen="1"] .window-title {
   display: none;
 }
-[data-tauri="1"][data-fullscreen="1"] .mode-host {
+[data-shell="tauri"][data-fullscreen="1"] .mode-host {
   padding-top: 0;
 }
-[data-tauri="1"][data-fullscreen="1"] .mode-label {
+[data-shell="tauri"][data-fullscreen="1"] .mode-label {
   top: 0.75rem;
 }
 
-/* Strip variant: only the mode icons move between top and bottom.
-   Filename stays pinned to the top in every variant — the bottom slot
-   is reserved for mode-specific chrome (e.g. format toolbar in mode 2).
-   When icons are at bottom, reserve 28px at the foot of the window;
-   the top reserve is already handled by the rules above. */
-[data-strip-pos="bottom"] .mode-icons {
-  top: auto;
-  bottom: 0;
-}
-[data-strip-pos="bottom"] .mode-host {
-  padding-bottom: 28px;
-}
-
 /* Hide-on-scroll-down: scroll-strip.ts sets data-strip-hidden="1" on
-   <html> when the user scrolls past the top. Filename always slides
-   up; icons slide up if pinned top, down if pinned bottom. */
+   <html> when the user scrolls past the top. Both filename and icons
+   slide up out of view together. */
 .window-title,
 .mode-icons {
   transition: transform 200ms ease;
@@ -364,9 +352,6 @@ body,
 [data-strip-hidden="1"] .window-title,
 [data-strip-hidden="1"] .mode-icons {
   transform: translateY(-100%);
-}
-[data-strip-hidden="1"][data-strip-pos="bottom"] .mode-icons {
-  transform: translateY(100%);
 }
 
 /* --- Mode 1 — themed read --- */
