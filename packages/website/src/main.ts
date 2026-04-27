@@ -386,10 +386,29 @@ async function boot(): Promise<void> {
   // Tauri runtime from the web shell — used by future shell-specific
   // CSS (e.g. extra reserve for macOS traffic lights).
   document.documentElement.dataset.tauri = '1'
-  document.documentElement.dataset.shell =
+  const inTauri =
     typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
-      ? 'tauri'
-      : 'web'
+  document.documentElement.dataset.shell = inTauri ? 'tauri' : 'web'
+
+  // Keep `data-fullscreen` in sync with Tauri's actual window state.
+  // Without this it gets stuck if the user enters / exits fullscreen
+  // via macOS native controls (green button, swipe up to Mission
+  // Control) instead of our Cmd+Shift+F toggle, which only updates the
+  // attribute when itself fires. A stuck `'1'` hides .window-title
+  // forever via [data-shell="tauri"][data-fullscreen="1"]. The resize
+  // event fires on fullscreen transitions in Tauri / WebKit.
+  if (inTauri) {
+    void (async () => {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window')
+      const win = getCurrentWindow()
+      const sync = async (): Promise<void> => {
+        const fs = await win.isFullscreen()
+        document.documentElement.dataset.fullscreen = fs ? '1' : '0'
+      }
+      await sync()
+      await win.onResized(() => void sync())
+    })()
+  }
 
   // Hide title strip + mode icons on scroll-down, restore on scroll-up.
   // Inert in mode 3 (split scrolls inside panes, not the document).

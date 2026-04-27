@@ -6,6 +6,7 @@
 //   menu:view-mode  (number)   — switch to mode 1..4
 //   menu:view-cycle ()         — cycle modes
 //   menu:view-focus-toggle ()  — focus mode toggle (TODO)
+//   menu:view-reload ()        — reload the WebView (Cmd+R)
 //   menu:file-new ()           — TODO
 //   menu:file-open ()          — opens system file dialog
 //   menu:file-save ()          — writes back to current source, falls
@@ -49,5 +50,8 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
   })
   await listen('menu:file-new', () => {
     void newFile(harness)
+  })
+  await listen('menu:view-reload', () => {
+    window.location.reload()
   })
 }

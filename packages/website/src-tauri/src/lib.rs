@@ -113,6 +113,12 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
                 .build(app)?,
         )
         .item(&PredefinedMenuItem::fullscreen(app, None)?)
+        .separator()
+        .item(
+            &MenuItemBuilder::with_id("view-reload", "Reload")
+                .accelerator("CmdOrCtrl+R")
+                .build(app)?,
+        )
         .build()?;
 
     let window_submenu = SubmenuBuilder::new(app, "Window")
@@ -148,6 +154,7 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
         "view-mode-4" => emit(app, "menu:view-mode", 4),
         "view-cycle-mode" => emit(app, "menu:view-cycle", ()),
         "view-focus" => emit(app, "menu:view-focus-toggle", ()),
+        "view-reload" => emit(app, "menu:view-reload", ()),
         _ => {}
     }
 }

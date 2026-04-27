@@ -219,6 +219,17 @@ body,
   line-height: 1.65;
 }
 
+/* Reserve the scrollbar gutter at the document level so viewport
+   geometry stays constant across modes. Without this, modes 1/2/4
+   show a document scrollbar (content overflows), mode 3 doesn't
+   (panes scroll internally), and fixed-position elements pinned to
+   `right: 0` shift horizontally when switching modes. With overlay
+   scrollbars (macOS "show on scrolling") this rule is a no-op; with
+   classic scrollbars it stabilises layout. */
+html {
+  scrollbar-gutter: stable;
+}
+
 #app {
   display: flex;
   flex-direction: column;
@@ -275,7 +286,12 @@ body,
   font-size: 12px;
   color: var(--muted);
   font-family: var(--font-body);
-  pointer-events: none;
+  /* Receives mousedown so Tauri's data-tauri-drag-region engages and
+     the strip's dblclick handler fires (toggleMaximize). The mode-icons
+     row sits above at z-index 6, so its buttons still get clicks; the
+     macOS traffic-lights overlay the WebView and the OS handles them
+     before the page sees anything, so they keep working too. */
+  pointer-events: auto;
   user-select: none;
   white-space: nowrap;
   overflow: hidden;

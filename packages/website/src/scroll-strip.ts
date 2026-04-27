@@ -1,8 +1,12 @@
 // Hide-on-scroll behaviour for the window title strip + mode icons.
-// Scrolling down translates the strip out of view; scrolling up brings
-// it back. Near the top of the document (< 50px) the strip is always
-// visible. CSS handles the actual transform so the bottom-icons
-// variant slides down instead of up.
+// Scrolling down past a threshold translates the strip out of view;
+// scrolling up by any amount brings it back. Near the top of the
+// document (< 50px) the strip is always visible.
+//
+// Asymmetric thresholds: hide needs sustained downward velocity (> 5px
+// per frame) so momentum jitter doesn't toggle it, but show fires on
+// any upward delta — otherwise reading-pace scroll-up (1–2px per
+// frame) can't bring it back, and the strip stays stuck off-screen.
 //
 // Listens to `window` scroll, so naturally inert in mode 3 (split):
 // that mode scrolls inside its panes, not the document.
@@ -17,15 +21,11 @@ export function setupScrollStrip(): void {
   const update = (): void => {
     const y = window.scrollY
     const html = document.documentElement
-    if (y < ALWAYS_SHOW_BELOW) {
+    const delta = y - lastY
+    if (y < ALWAYS_SHOW_BELOW || delta < 0) {
       delete html.dataset.stripHidden
-    } else {
-      const delta = y - lastY
-      if (delta > HIDE_AT_DELTA) {
-        html.dataset.stripHidden = '1'
-      } else if (delta < -HIDE_AT_DELTA) {
-        delete html.dataset.stripHidden
-      }
+    } else if (delta > HIDE_AT_DELTA) {
+      html.dataset.stripHidden = '1'
     }
     lastY = y
     ticking = false
