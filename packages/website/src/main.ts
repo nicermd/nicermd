@@ -29,6 +29,7 @@ import { setupTauriBridge } from './tauri-bridge'
 import { setupFileDrop } from './file-drop'
 import { openFile, saveFile, newFile, setDocState, isDirty, markDirty } from './doc-source'
 import { setupAutosave, checkRecovery } from './autosave'
+import { setupModeIcons } from './mode-icons'
 import { setupTitle } from './title'
 import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from './zoom'
 import { initTheme } from './themes'
@@ -415,6 +416,7 @@ async function boot(): Promise<void> {
   // edits. Set iteration follows insertion order.
   harness.onLocalChange(() => markDirty())
   setupTitle(harness, root)
+  setupModeIcons(harness, root)
   setupAutosave(harness)
   checkRecovery(harness, bootMarkdown)
   setupCloseGuard(harness)
