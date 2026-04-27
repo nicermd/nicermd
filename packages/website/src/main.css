@@ -259,7 +259,8 @@ body,
 }
 
 /* Filename rendered in the title strip — Tauri only. Centered, muted,
-   tucked into the 28px reserved space so no extra layout shift. */
+   tucked into the 28px reserved space so no extra layout shift. Right
+   padding is wider to avoid colliding with the .mode-icons row. */
 .window-title {
   display: none;
   position: fixed;
@@ -270,7 +271,7 @@ body,
   z-index: 5;
   align-items: center;
   justify-content: center;
-  padding: 0 6rem;
+  padding: 0 7rem 0 6rem;
   font-size: 12px;
   color: var(--muted);
   font-family: var(--font-body);
@@ -282,6 +283,48 @@ body,
 }
 [data-tauri="1"] .window-title {
   display: flex;
+}
+
+/* Mode icons in the Tauri title strip — top-right, 4 buttons, active
+   one accent-coloured, others muted. */
+.mode-icons {
+  display: none;
+  position: fixed;
+  top: 0;
+  right: 12px;
+  height: 28px;
+  z-index: 6;
+  align-items: center;
+  gap: 2px;
+}
+[data-tauri="1"] .mode-icons {
+  display: flex;
+}
+.mode-icon {
+  width: 26px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--muted);
+  opacity: 0.5;
+  cursor: pointer;
+  padding: 0;
+  transition: color 120ms ease, opacity 120ms ease, background 120ms ease;
+}
+.mode-icon:hover {
+  opacity: 0.85;
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
+.mode-icon--active {
+  color: var(--accent);
+  opacity: 1;
+}
+.mode-icon--active:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
 /* In macOS native fullscreen via Tauri the title strip area collapses;
