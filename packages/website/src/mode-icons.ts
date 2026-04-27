@@ -1,14 +1,11 @@
-// Mode-switcher icons for the in-window title strip. Top-right or
-// bottom-right of the window; 4 buttons, one per mode. Active mode in
-// accent colour at full opacity; inactive muted at 50%. Click
-// dispatches to harness.
+// Mode-switcher icons for the title strip. Top-right of the window;
+// 4 buttons, one per mode. Active mode in accent colour at full
+// opacity; inactive muted at 50%. Click dispatches to harness.
 //
 // Icons are Lucide originals (MIT) inlined as SVG paths — book-open /
-// pen-line / columns-2 / code. Inlining avoids pulling the whole lucide
-// package for 4 icons (~1KB total here vs ~tens of KB for the package).
-//
-// Element is always created — visibility is gated by CSS via
-// [data-tauri="1"], which ./variants.ts toggles at runtime.
+// pen-line / columns-2 / code. Inlining avoids pulling the whole
+// lucide package for 4 icons (~1KB total here vs ~tens of KB for the
+// package).
 
 import type { Harness } from './main'
 

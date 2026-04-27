@@ -34,7 +34,6 @@ import { setupTitle } from './title'
 import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from './zoom'
 import { initTheme } from './themes'
 import { openThemePicker } from './theme-picker'
-import { setupVariantCycle } from './variants'
 import { setupScrollStrip } from './scroll-strip'
 import './main.css'
 
@@ -381,11 +380,16 @@ async function boot(): Promise<void> {
   if (!root) throw new Error('#app root missing')
   root.innerHTML = ''
 
-  // Mode-icon position variant — owns `data-tauri`, `data-shell`,
-  // `data-stripPos` on <html>. Filename is always top; only icons
-  // cycle. Cmd+Shift+. / Cmd+Shift+, rotates between candidate states
-  // in dev builds (none/top/bottom in browser; top/bottom in Tauri).
-  setupVariantCycle()
+  // Title strip + mode icons are baseline UI in both shells; pinned to
+  // the top, icons top-right. CSS gates display on `data-tauri="1"`,
+  // so set it unconditionally. `data-shell` distinguishes the real
+  // Tauri runtime from the web shell — used by future shell-specific
+  // CSS (e.g. extra reserve for macOS traffic lights).
+  document.documentElement.dataset.tauri = '1'
+  document.documentElement.dataset.shell =
+    typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+      ? 'tauri'
+      : 'web'
 
   // Hide title strip + mode icons on scroll-down, restore on scroll-up.
   // Inert in mode 3 (split scrolls inside panes, not the document).
