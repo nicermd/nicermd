@@ -12,9 +12,28 @@ import { TableHeader } from '@tiptap/extension-table-header'
 import { Markdown } from 'tiptap-markdown'
 import type { MarkdownStorage } from 'tiptap-markdown'
 
+// Format actions exposed to the format bar / future palette. Names map
+// 1:1 to Tiptap commands, with `h1`/`h2` flattening the level argument
+// for ergonomics at call sites. `link` is the one outlier — it needs
+// a URL prompt when setting, no prompt when clearing.
+export type FormatAction =
+  | 'bold'
+  | 'italic'
+  | 'strike'
+  | 'h1'
+  | 'h2'
+  | 'bulletList'
+  | 'orderedList'
+  | 'blockquote'
+  | 'code'
+  | 'link'
+
 export interface WysiwygHandle {
   destroy(): void
   getMarkdown(): string
+  toggleFormat(action: FormatAction): void
+  isFormatActive(action: FormatAction): boolean
+  onFormatUpdate(cb: () => void): () => void
 }
 
 export function createWysiwyg(
@@ -57,8 +76,52 @@ export function createWysiwyg(
   // gets us to the typed shape.
   const markdownStorage = (editor.storage as unknown as { markdown: MarkdownStorage }).markdown
 
+  // Each action takes the editor itself so link can branch on the
+  // current state (clear vs. prompt + set) without pretending to fit
+  // the chain shape of the other commands.
+  const ACTIONS: Record<FormatAction, () => void> = {
+    bold: () => void editor.chain().focus().toggleBold().run(),
+    italic: () => void editor.chain().focus().toggleItalic().run(),
+    strike: () => void editor.chain().focus().toggleStrike().run(),
+    h1: () => void editor.chain().focus().toggleHeading({ level: 1 }).run(),
+    h2: () => void editor.chain().focus().toggleHeading({ level: 2 }).run(),
+    bulletList: () => void editor.chain().focus().toggleBulletList().run(),
+    orderedList: () => void editor.chain().focus().toggleOrderedList().run(),
+    blockquote: () => void editor.chain().focus().toggleBlockquote().run(),
+    code: () => void editor.chain().focus().toggleCode().run(),
+    link: () => {
+      if (editor.isActive('link')) {
+        editor.chain().focus().unsetLink().run()
+        return
+      }
+      const url = window.prompt('Link URL:')
+      if (!url) return
+      editor.chain().focus().setLink({ href: url }).run()
+    },
+  }
+
+  // For active-state queries, most actions map to a single Tiptap mark /
+  // node name. Headings need the level attribute to disambiguate.
+  const queryActive = (action: FormatAction): boolean => {
+    switch (action) {
+      case 'h1': return editor.isActive('heading', { level: 1 })
+      case 'h2': return editor.isActive('heading', { level: 2 })
+      default: return editor.isActive(action)
+    }
+  }
+
   return {
     destroy: () => editor.destroy(),
     getMarkdown: () => markdownStorage.getMarkdown(),
+    toggleFormat: (action) => ACTIONS[action](),
+    isFormatActive: (action) => queryActive(action),
+    onFormatUpdate: (cb) => {
+      editor.on('selectionUpdate', cb)
+      editor.on('update', cb)
+      return () => {
+        editor.off('selectionUpdate', cb)
+        editor.off('update', cb)
+      }
+    },
   }
 }

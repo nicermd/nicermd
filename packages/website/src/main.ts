@@ -35,6 +35,8 @@ import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from '.
 import { initTheme } from './themes'
 import { openThemePicker } from './theme-picker'
 import { setupScrollStrip } from './scroll-strip'
+import { setupFormatBar } from './format-bar'
+import type { FormatAction } from './wysiwyg-engine'
 import './main.css'
 
 const THEME_STORAGE_KEY = 'nicermd:theme'
@@ -46,6 +48,11 @@ interface ModeHandle {
   // editing state implement this. Used by dev-features for cross-tab
   // updates; production code paths don't currently call it.
   setMarkdown?: (markdown: string) => void
+  // Optional — modes that support format commands (currently mode 2 /
+  // WYSIWYG) implement these. The format bar is the only consumer.
+  toggleFormat?: (action: FormatAction) => void
+  isFormatActive?: (action: FormatAction) => boolean
+  onFormatUpdate?: (cb: () => void) => () => void
 }
 
 type OnChange = (markdown: string) => void
@@ -171,6 +178,11 @@ function mountWysiwyg(
   let destroyed = false
   let handle: import('./wysiwyg-engine').WysiwygHandle | null = null
   let latestMarkdown = initialMarkdown
+  // Format-bar subscribers attach before the engine is loaded — buffer
+  // them here and re-attach once `handle` is set. Same for one-shot
+  // notification so the bar can refresh active states immediately.
+  const pendingUpdateCallbacks = new Set<() => void>()
+  const pendingDetachers = new Set<() => void>()
 
   if (!wysiwygModule) wysiwygModule = import('./wysiwyg-engine')
 
@@ -179,6 +191,12 @@ function mountWysiwyg(
       if (destroyed) return
       status.remove()
       handle = mod.createWysiwyg(surface, latestMarkdown, onChange)
+      for (const cb of pendingUpdateCallbacks) {
+        const detach = handle.onFormatUpdate(cb)
+        pendingDetachers.add(detach)
+        cb()
+      }
+      pendingUpdateCallbacks.clear()
     })
     .catch((err: unknown) => {
       if (destroyed) return
@@ -188,10 +206,29 @@ function mountWysiwyg(
   return {
     destroy: () => {
       destroyed = true
+      for (const detach of pendingDetachers) detach()
+      pendingDetachers.clear()
+      pendingUpdateCallbacks.clear()
       if (handle) handle.destroy()
       wrap.remove()
     },
     getMarkdown: () => (handle ? handle.getMarkdown() : latestMarkdown),
+    toggleFormat: (action) => handle?.toggleFormat(action),
+    isFormatActive: (action) => handle?.isFormatActive(action) ?? false,
+    onFormatUpdate: (cb) => {
+      if (handle) {
+        const detach = handle.onFormatUpdate(cb)
+        pendingDetachers.add(detach)
+        return () => {
+          detach()
+          pendingDetachers.delete(detach)
+        }
+      }
+      pendingUpdateCallbacks.add(cb)
+      return () => {
+        pendingUpdateCallbacks.delete(cb)
+      }
+    },
   }
 }
 
@@ -362,6 +399,20 @@ export class Harness {
     const next = (this.currentMode % MODES.length) + 1
     this.switchTo(next)
   }
+
+  // Format command surface — delegates to the active mode handle if it
+  // implements the optional methods (currently mode 2 / WYSIWYG).
+  // Returns no-ops elsewhere so the format bar can call without
+  // checking the active mode itself.
+  toggleFormat(action: FormatAction): void {
+    this.currentHandle?.toggleFormat?.(action)
+  }
+  isFormatActive(action: FormatAction): boolean {
+    return this.currentHandle?.isFormatActive?.(action) ?? false
+  }
+  onFormatUpdate(cb: () => void): () => void {
+    return this.currentHandle?.onFormatUpdate?.(cb) ?? (() => {})
+  }
 }
 
 async function boot(): Promise<void> {
@@ -446,6 +497,7 @@ async function boot(): Promise<void> {
   harness.onLocalChange(() => markDirty())
   setupTitle(harness, root)
   setupModeIcons(harness, root)
+  setupFormatBar(harness, root)
   setupAutosave(harness)
   checkRecovery(harness, bootMarkdown)
   setupCloseGuard(harness)
