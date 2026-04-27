@@ -340,6 +340,35 @@ body,
   top: 0.75rem;
 }
 
+/* Strip variant: only the mode icons move between top and bottom.
+   Filename stays pinned to the top in every variant — the bottom slot
+   is reserved for mode-specific chrome (e.g. format toolbar in mode 2).
+   When icons are at bottom, reserve 28px at the foot of the window;
+   the top reserve is already handled by the rules above. */
+[data-strip-pos="bottom"] .mode-icons {
+  top: auto;
+  bottom: 0;
+}
+[data-strip-pos="bottom"] .mode-host {
+  padding-bottom: 28px;
+}
+
+/* Hide-on-scroll-down: scroll-strip.ts sets data-strip-hidden="1" on
+   <html> when the user scrolls past the top. Filename always slides
+   up; icons slide up if pinned top, down if pinned bottom. */
+.window-title,
+.mode-icons {
+  transition: transform 200ms ease;
+  will-change: transform;
+}
+[data-strip-hidden="1"] .window-title,
+[data-strip-hidden="1"] .mode-icons {
+  transform: translateY(-100%);
+}
+[data-strip-hidden="1"][data-strip-pos="bottom"] .mode-icons {
+  transform: translateY(100%);
+}
+
 /* --- Mode 1 — themed read --- */
 .mode-read {
   max-width: var(--reading-width);

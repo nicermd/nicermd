@@ -1,13 +1,15 @@
 // Filename + dirty indicator. Two surfaces:
 //
-//   - Tauri:   a custom `<div class="window-title">` rendered into the
-//              28px traffic-light strip. CSS hides it in fullscreen.
-//   - Browser: `document.title` updates (so the browser tab reflects
-//              the active doc and dirty state).
+//   - In-window strip: a `<div class="window-title">` rendered into the
+//     top or bottom of the window. CSS [data-tauri="1"] gates display
+//     and `data-strip-pos` chooses top vs bottom; both are toggled at
+//     runtime by ./variants.ts (Cmd+Shift+→ / ←).
+//   - `document.title` always updates so the browser tab reflects the
+//     active doc and dirty state regardless of strip visibility.
 //
-// Refreshes whenever the harness fires a local-change event (user
-// typing) or doc-source emits its custom `nicermd:source-changed` event
-// (open / save / drag-drop / new).
+// Element is always created — visibility is purely a CSS concern. That
+// way variant cycling can flip the strip on/off at runtime without
+// needing to teardown / recreate the DOM.
 
 import type { Harness } from './main'
 import { isDirty, getCurrentName } from './doc-source'
@@ -17,18 +19,12 @@ const APP_NAME = 'Nicer.md'
 let titleBarEl: HTMLElement | null = null
 let harnessRef: Harness | null = null
 
-function isTauri(): boolean {
-  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
-}
-
 export function setupTitle(harness: Harness, root: HTMLElement): void {
   harnessRef = harness
 
-  if (isTauri()) {
-    titleBarEl = document.createElement('div')
-    titleBarEl.className = 'window-title'
-    root.appendChild(titleBarEl)
-  }
+  titleBarEl = document.createElement('div')
+  titleBarEl.className = 'window-title'
+  root.appendChild(titleBarEl)
 
   harness.onLocalChange(() => refreshTitle())
   document.addEventListener('nicermd:source-changed', () => refreshTitle())

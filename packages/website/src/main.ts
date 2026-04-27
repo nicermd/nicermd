@@ -34,6 +34,8 @@ import { setupTitle } from './title'
 import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from './zoom'
 import { initTheme } from './themes'
 import { openThemePicker } from './theme-picker'
+import { setupVariantCycle } from './variants'
+import { setupScrollStrip } from './scroll-strip'
 import './main.css'
 
 const THEME_STORAGE_KEY = 'nicermd:theme'
@@ -379,11 +381,15 @@ async function boot(): Promise<void> {
   if (!root) throw new Error('#app root missing')
   root.innerHTML = ''
 
-  // Mark the document so CSS can leave clearance for the Tauri title-bar
-  // overlay (traffic-light area on macOS, ~22px tall top-left).
-  if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
-    document.documentElement.dataset.tauri = '1'
-  }
+  // Mode-icon position variant — owns `data-tauri`, `data-shell`,
+  // `data-stripPos` on <html>. Filename is always top; only icons
+  // cycle. Cmd+Shift+. / Cmd+Shift+, rotates between candidate states
+  // in dev builds (none/top/bottom in browser; top/bottom in Tauri).
+  setupVariantCycle()
+
+  // Hide title strip + mode icons on scroll-down, restore on scroll-up.
+  // Inert in mode 3 (split scrolls inside panes, not the document).
+  setupScrollStrip()
 
   const host = document.createElement('div')
   host.className = 'mode-host'
