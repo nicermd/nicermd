@@ -418,20 +418,17 @@ body,
   border-radius: 4px;
 }
 
-/* --- Mode 2 — Tiptap WYSIWYG --- */
+/* --- Mode 2 — Tiptap WYSIWYG. No internal scroll: content grows
+   naturally and the document scrolls at body / html level, matching
+   mode 1 and the macOS overlay-style scrollbar. --- */
 .mode-wysiwyg {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  display: flex;
-  flex-direction: column;
+  width: 100%;
 }
 .mode-wysiwyg__surface {
   max-width: var(--reading-width);
   margin: 0 auto;
   padding: 3rem 1rem 6rem;
   width: 100%;
-  flex: 1;
 }
 .mode-wysiwyg__status {
   position: fixed;
@@ -601,13 +598,12 @@ body,
   border-radius: 4px;
 }
 
-/* --- Mode 4 — raw code --- */
+/* --- Mode 4 — raw code. Body scrolls (matches mode 1); CodeMirror's
+   editor grows to its content height instead of scrolling internally. --- */
 .mode-raw {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
+  width: 100%;
 }
-.mode-raw .cm-editor { height: 100%; }
+.mode-raw .cm-editor { height: auto; }
 .mode-raw .cm-content { padding: 1rem 1rem 4rem; }
 
 /* --- CM globals --- */
