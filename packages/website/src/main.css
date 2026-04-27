@@ -286,12 +286,10 @@ html {
   font-size: 12px;
   color: var(--muted);
   font-family: var(--font-body);
-  /* Receives mousedown so Tauri's data-tauri-drag-region engages and
-     the strip's dblclick handler fires (toggleMaximize). The mode-icons
-     row sits above at z-index 6, so its buttons still get clicks; the
-     macOS traffic-lights overlay the WebView and the OS handles them
-     before the page sees anything, so they keep working too. */
-  pointer-events: auto;
+  /* Purely visual now — drag and dblclick live on .title-drag-zone
+     beneath, which stays put when scroll-hide translates this element
+     off-screen. */
+  pointer-events: none;
   user-select: none;
   white-space: nowrap;
   overflow: hidden;
@@ -299,6 +297,24 @@ html {
 }
 [data-tauri="1"] .window-title {
   display: flex;
+}
+
+/* Always-on transparent layer that owns drag-to-move and
+   double-click-to-maximise for the title strip area. Stays at top:0
+   regardless of scroll-hide state, so those interactions still work
+   when .window-title and .mode-icons have translated off-screen.
+   Sits below them in z-order (4 vs 5/6) so visible UI gets clicks
+   first when present. Tauri-only — created in title.ts. */
+.title-drag-zone {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
+  z-index: 4;
+}
+[data-shell="tauri"][data-fullscreen="1"] .title-drag-zone {
+  display: none;
 }
 
 /* Mode icons in the title strip — top-right, 4 buttons, active one

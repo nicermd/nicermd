@@ -6,12 +6,12 @@
 //   - `document.title` always updates so the browser tab reflects the
 //     active doc and dirty state regardless of strip visibility.
 //
-// In Tauri, the strip also acts as a native title bar: drag-to-move
-// (mouse-down + threshold-crossed → `startDragging`) and double-click
-// to toggle maximise — macOS' green-button equivalent. Both are wired
-// explicitly here rather than via `data-tauri-drag-region`; the
-// attribute also fires native double-click-to-zoom on macOS, which
-// stacked with our handler caused a maximise-then-restore round-trip.
+// In Tauri, the same 28px area also acts as a native title bar:
+// drag-to-move (mousedown + threshold-crossed → `startDragging`) and
+// double-click to toggle maximise. Those interactions live on a
+// separate, always-present `.title-drag-zone` element rather than on
+// the visual `.window-title` itself — so when scroll-hide translates
+// the visual strip off-screen, the drag/dblclick surface stays put.
 
 import type { Harness } from './main'
 import { isDirty, getCurrentName } from './doc-source'
@@ -33,45 +33,52 @@ export function setupTitle(harness: Harness, root: HTMLElement): void {
   root.appendChild(titleBarEl)
 
   if (isTauri()) {
-    // Drag arms on mousedown but only fires `startDragging` once the
-    // mouse has moved past a small threshold. Calling it on every
-    // mousedown caused the OS to grab input on the first click of a
-    // double-click, suppressing the dblclick event.
-    const DRAG_THRESHOLD_PX = 5
-    let dragStart: { x: number; y: number } | null = null
-
-    titleBarEl.addEventListener('mousedown', (e) => {
-      if (e.button !== 0) return
-      dragStart = { x: e.clientX, y: e.clientY }
-    })
-
-    titleBarEl.addEventListener('mousemove', (e) => {
-      if (!dragStart) return
-      const dx = e.clientX - dragStart.x
-      const dy = e.clientY - dragStart.y
-      if (dx * dx + dy * dy < DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX) return
-      dragStart = null
-      void (async () => {
-        const { getCurrentWindow } = await import('@tauri-apps/api/window')
-        await getCurrentWindow().startDragging()
-      })()
-    })
-
-    window.addEventListener('mouseup', () => {
-      dragStart = null
-    })
-
-    titleBarEl.addEventListener('dblclick', () => {
-      void (async () => {
-        const { getCurrentWindow } = await import('@tauri-apps/api/window')
-        await getCurrentWindow().toggleMaximize()
-      })()
-    })
+    const dragZone = document.createElement('div')
+    dragZone.className = 'title-drag-zone'
+    root.appendChild(dragZone)
+    wireTitleBarInteractions(dragZone)
   }
 
   harness.onLocalChange(() => refreshTitle())
   document.addEventListener('nicermd:source-changed', () => refreshTitle())
   refreshTitle()
+}
+
+function wireTitleBarInteractions(el: HTMLElement): void {
+  // Drag arms on mousedown but only fires `startDragging` once the
+  // mouse has moved past a small threshold. Calling it on every
+  // mousedown caused the OS to grab input on the first click of a
+  // double-click, suppressing the dblclick event.
+  const DRAG_THRESHOLD_PX = 5
+  let dragStart: { x: number; y: number } | null = null
+
+  el.addEventListener('mousedown', (e) => {
+    if (e.button !== 0) return
+    dragStart = { x: e.clientX, y: e.clientY }
+  })
+
+  el.addEventListener('mousemove', (e) => {
+    if (!dragStart) return
+    const dx = e.clientX - dragStart.x
+    const dy = e.clientY - dragStart.y
+    if (dx * dx + dy * dy < DRAG_THRESHOLD_PX * DRAG_THRESHOLD_PX) return
+    dragStart = null
+    void (async () => {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window')
+      await getCurrentWindow().startDragging()
+    })()
+  })
+
+  window.addEventListener('mouseup', () => {
+    dragStart = null
+  })
+
+  el.addEventListener('dblclick', () => {
+    void (async () => {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window')
+      await getCurrentWindow().toggleMaximize()
+    })()
+  })
 }
 
 export function refreshTitle(): void {
