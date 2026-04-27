@@ -386,6 +386,77 @@ html {
   transform: translateY(-100%);
 }
 
+/* Format bar — bottom-middle pill in mode 2. Collapsed at rest to a
+   "•••" handle; expands to the full toolbar when the mouse moves into
+   the bottom proximity zone (handled in format-bar.ts). Mode-gated by
+   data-active-mode on <html>. */
+.format-bar {
+  display: none;
+  position: fixed;
+  bottom: 14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 5;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  height: 32px;
+  align-items: center;
+  padding: 0 4px;
+  gap: 2px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  transition: opacity 160ms ease, padding 160ms ease;
+  opacity: 0.55;
+}
+[data-active-mode="2"] .format-bar {
+  display: flex;
+}
+.format-bar:hover,
+.format-bar--open {
+  opacity: 1;
+}
+.format-bar__dots {
+  color: var(--muted);
+  font-size: 14px;
+  letter-spacing: 2px;
+  padding: 0 12px;
+  pointer-events: none;
+  user-select: none;
+}
+.format-bar--open .format-bar__dots {
+  display: none;
+}
+.format-bar__buttons {
+  display: none;
+  align-items: center;
+  gap: 2px;
+}
+.format-bar--open .format-bar__buttons {
+  display: flex;
+}
+.format-bar__button {
+  width: 26px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--muted);
+  cursor: pointer;
+  padding: 0;
+  transition: color 120ms ease, background 120ms ease;
+}
+.format-bar__button:hover {
+  color: var(--fg);
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
+.format-bar__button--active {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+
 /* --- Mode 1 — themed read --- */
 .mode-read {
   max-width: var(--reading-width);
