@@ -34,7 +34,7 @@ import { setupTitle } from './title'
 import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from './zoom'
 import { initTheme } from './themes'
 import { openThemePicker } from './theme-picker'
-import { setupScrollStrip } from './scroll-strip'
+import { setupScrollStrip, showStrip } from './scroll-strip'
 import { setupFormatBar } from './format-bar'
 import type { FormatAction } from './wysiwyg-engine'
 import './main.css'
@@ -498,6 +498,10 @@ async function boot(): Promise<void> {
   setupTitle(harness, root)
   setupModeIcons(harness, root)
   setupFormatBar(harness, root)
+
+  // Resurface the strip on mode change — user benefits from re-seeing
+  // filename + active mode whenever the editing context shifts.
+  harness.onModeChange(() => showStrip())
   setupAutosave(harness)
   checkRecovery(harness, bootMarkdown)
   setupCloseGuard(harness)

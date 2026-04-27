@@ -14,6 +14,14 @@
 const HIDE_AT_DELTA = 5
 const ALWAYS_SHOW_BELOW = 50
 
+// Manual override — clear `data-strip-hidden` so the strip slides
+// back into view. Useful on mode change / other context shifts where
+// the user benefits from re-seeing the filename and active mode.
+// Subsequent scrolls re-engage the auto-hide as normal.
+export function showStrip(): void {
+  delete document.documentElement.dataset.stripHidden
+}
+
 export function setupScrollStrip(): void {
   let lastY = 0
   let ticking = false
