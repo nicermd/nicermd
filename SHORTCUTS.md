@@ -34,9 +34,12 @@ Zoom range is 50%–300% in 10% steps; the level persists in `localStorage` and 
 |--------------------------------|-----------------------------------------------------------------------------------------------------|
 | `Cmd` + `N`                    | New empty document (prompts to discard unsaved changes if dirty)                                    |
 | `Cmd` + `O`                    | Open file via system dialog                                                                         |
+| `Cmd` + `Alt` + `O`            | Open URL — paste a GitHub markdown URL (`github.com/<user>/<repo>/blob/<branch>/<path>.md`)          |
 | `Cmd` + `S`                    | Save — writes back to where the file came from (Tauri path or File System Access handle)            |
 | `Cmd` + `Shift` + `S`          | Save As — always opens the save dialog                                                              |
 | Drag a `.md` / `.markdown` / `.mdx` onto the window | Loads the file into the active mode; subsequent `Cmd+S` falls through to Save-As (no path / handle). |
+
+**Open URL** is GitHub-only for now: pasting a `github.com/.../blob/...` link (or a `raw.githubusercontent.com` link) is fetched directly into the active mode. Source is recorded as anonymous so a subsequent `Cmd+S` falls through to Save-As — we can't write back to GitHub. Non-GitHub hosts are rejected; gists, private repos, and `?url=` boot params are deliberately out of scope. The fetcher caps responses at 5 MiB and refuses cross-host redirects.
 
 The active filename appears in the Tauri title strip (centered, between the traffic lights and the right edge) and in the browser tab title (`document.title`). A leading `•` indicates unsaved changes. The title strip hides automatically in macOS-native fullscreen.
 
