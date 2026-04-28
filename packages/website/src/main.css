@@ -200,6 +200,293 @@
   --cm-quote: #6272a4;
 }
 
+/* --- Community-palette tributes ---
+   Each block below recreates a well-known editor theme from its
+   canonical hex values. Palettes are MIT/BSD-licensed; we ship them
+   under the original names with "Inspired by [author]" attribution
+   in the picker, per feedback_safe_naming.md. Font families inherit
+   from :root unless prose calls for a serif/mono override. */
+
+[data-theme='solarized-light'] {
+  --bg: #fdf6e3;
+  --fg: #586e75;
+  --muted: #93a1a1;
+  --border: #eee8d5;
+  --surface: #eee8d5;
+
+  --link: #268bd2;
+  --accent: #268bd2;
+
+  --code-bg: #eee8d5;
+  --code-fg: #586e75;
+
+  --cm-bg: #fdf6e3;
+  --cm-fg: #586e75;
+  --cm-caret: #268bd2;
+  --cm-selection: rgba(38, 139, 210, 0.18);
+  --cm-gutter-bg: #fdf6e3;
+  --cm-gutter-fg: #93a1a1;
+
+  --cm-marker: #dc322f;
+  --cm-heading: #cb4b16;
+  --cm-link: #268bd2;
+  --cm-url: #2aa198;
+  --cm-monospace: #d33682;
+  --cm-quote: #859900;
+}
+
+[data-theme='solarized-dark'] {
+  --bg: #002b36;
+  --fg: #93a1a1;
+  --muted: #586e75;
+  --border: #073642;
+  --surface: #073642;
+
+  --link: #268bd2;
+  --accent: #268bd2;
+
+  --code-bg: #073642;
+  --code-fg: #93a1a1;
+
+  --cm-bg: #002b36;
+  --cm-fg: #93a1a1;
+  --cm-caret: #268bd2;
+  --cm-selection: rgba(38, 139, 210, 0.25);
+  --cm-gutter-bg: #002b36;
+  --cm-gutter-fg: #586e75;
+
+  --cm-marker: #dc322f;
+  --cm-heading: #cb4b16;
+  --cm-link: #268bd2;
+  --cm-url: #2aa198;
+  --cm-monospace: #d33682;
+  --cm-quote: #859900;
+}
+
+[data-theme='nord'] {
+  --bg: #2e3440;
+  --fg: #d8dee9;
+  --muted: #6e7a90;
+  --border: #3b4252;
+  --surface: #3b4252;
+
+  --link: #88c0d0;
+  --accent: #88c0d0;
+
+  --code-bg: #3b4252;
+  --code-fg: #d8dee9;
+
+  --cm-bg: #2e3440;
+  --cm-fg: #d8dee9;
+  --cm-caret: #88c0d0;
+  --cm-selection: rgba(136, 192, 208, 0.25);
+  --cm-gutter-bg: #2e3440;
+  --cm-gutter-fg: #4c566a;
+
+  --cm-marker: #bf616a;
+  --cm-heading: #81a1c1;
+  --cm-link: #88c0d0;
+  --cm-url: #a3be8c;
+  --cm-monospace: #ebcb8b;
+  --cm-quote: #b48ead;
+}
+
+[data-theme='gruvbox-dark'] {
+  --bg: #282828;
+  --fg: #ebdbb2;
+  --muted: #928374;
+  --border: #3c3836;
+  --surface: #3c3836;
+
+  --link: #83a598;
+  --accent: #fabd2f;
+
+  --code-bg: #3c3836;
+  --code-fg: #ebdbb2;
+
+  --cm-bg: #282828;
+  --cm-fg: #ebdbb2;
+  --cm-caret: #fabd2f;
+  --cm-selection: rgba(250, 189, 47, 0.2);
+  --cm-gutter-bg: #282828;
+  --cm-gutter-fg: #665c54;
+
+  --cm-marker: #fb4934;
+  --cm-heading: #fabd2f;
+  --cm-link: #83a598;
+  --cm-url: #b8bb26;
+  --cm-monospace: #d3869b;
+  --cm-quote: #8ec07c;
+}
+
+[data-theme='tokyo-night'] {
+  --bg: #1a1b26;
+  --fg: #c0caf5;
+  --muted: #565f89;
+  --border: #292e42;
+  --surface: #1f2335;
+
+  --link: #7aa2f7;
+  --accent: #bb9af7;
+
+  --code-bg: #1f2335;
+  --code-fg: #c0caf5;
+
+  --cm-bg: #1a1b26;
+  --cm-fg: #c0caf5;
+  --cm-caret: #c0caf5;
+  --cm-selection: rgba(122, 162, 247, 0.25);
+  --cm-gutter-bg: #1a1b26;
+  --cm-gutter-fg: #3b4261;
+
+  --cm-marker: #f7768e;
+  --cm-heading: #bb9af7;
+  --cm-link: #7aa2f7;
+  --cm-url: #9ece6a;
+  --cm-monospace: #e0af68;
+  --cm-quote: #7dcfff;
+}
+
+[data-theme='dracula'] {
+  --bg: #282a36;
+  --fg: #f8f8f2;
+  --muted: #6272a4;
+  --border: #44475a;
+  --surface: #44475a;
+
+  --link: #8be9fd;
+  --accent: #bd93f9;
+
+  --code-bg: #44475a;
+  --code-fg: #f8f8f2;
+
+  --cm-bg: #282a36;
+  --cm-fg: #f8f8f2;
+  --cm-caret: #f8f8f2;
+  --cm-selection: rgba(255, 121, 198, 0.22);
+  --cm-gutter-bg: #282a36;
+  --cm-gutter-fg: #6272a4;
+
+  --cm-marker: #ff79c6;
+  --cm-heading: #bd93f9;
+  --cm-link: #8be9fd;
+  --cm-url: #50fa7b;
+  --cm-monospace: #f1fa8c;
+  --cm-quote: #ffb86c;
+}
+
+[data-theme='everforest'] {
+  --bg: #2d353b;
+  --fg: #d3c6aa;
+  --muted: #859289;
+  --border: #343f44;
+  --surface: #343f44;
+
+  --link: #7fbbb3;
+  --accent: #a7c080;
+
+  --code-bg: #343f44;
+  --code-fg: #d3c6aa;
+
+  --cm-bg: #2d353b;
+  --cm-fg: #d3c6aa;
+  --cm-caret: #a7c080;
+  --cm-selection: rgba(167, 192, 128, 0.22);
+  --cm-gutter-bg: #2d353b;
+  --cm-gutter-fg: #4f5b58;
+
+  --cm-marker: #e67e80;
+  --cm-heading: #dbbc7f;
+  --cm-link: #7fbbb3;
+  --cm-url: #a7c080;
+  --cm-monospace: #d699b6;
+  --cm-quote: #83c092;
+}
+
+[data-theme='catppuccin-latte'] {
+  --bg: #eff1f5;
+  --fg: #4c4f69;
+  --muted: #6c6f85;
+  --border: #ccd0da;
+  --surface: #e6e9ef;
+
+  --link: #1e66f5;
+  --accent: #8839ef;
+
+  --code-bg: #e6e9ef;
+  --code-fg: #4c4f69;
+
+  --cm-bg: #eff1f5;
+  --cm-fg: #4c4f69;
+  --cm-caret: #1e66f5;
+  --cm-selection: rgba(136, 57, 239, 0.2);
+  --cm-gutter-bg: #eff1f5;
+  --cm-gutter-fg: #9ca0b0;
+
+  --cm-marker: #d20f39;
+  --cm-heading: #8839ef;
+  --cm-link: #1e66f5;
+  --cm-url: #40a02b;
+  --cm-monospace: #fe640b;
+  --cm-quote: #179299;
+}
+
+[data-theme='ayu-light'] {
+  --bg: #fafafa;
+  --fg: #5c6773;
+  --muted: #828c99;
+  --border: #dadcdf;
+  --surface: #f3f4f5;
+
+  --link: #36a3d9;
+  --accent: #ff6a00;
+
+  --code-bg: #f3f4f5;
+  --code-fg: #5c6773;
+
+  --cm-bg: #fafafa;
+  --cm-fg: #5c6773;
+  --cm-caret: #ff6a00;
+  --cm-selection: rgba(255, 106, 0, 0.18);
+  --cm-gutter-bg: #fafafa;
+  --cm-gutter-fg: #abb0b6;
+
+  --cm-marker: #f07178;
+  --cm-heading: #ff6a00;
+  --cm-link: #36a3d9;
+  --cm-url: #86b300;
+  --cm-monospace: #a37acc;
+  --cm-quote: #f29718;
+}
+
+[data-theme='rose-pine-dawn'] {
+  --bg: #faf4ed;
+  --fg: #575279;
+  --muted: #797593;
+  --border: #f2e9e1;
+  --surface: #fffaf3;
+
+  --link: #286983;
+  --accent: #907aa9;
+
+  --code-bg: #fffaf3;
+  --code-fg: #575279;
+
+  --cm-bg: #faf4ed;
+  --cm-fg: #575279;
+  --cm-caret: #907aa9;
+  --cm-selection: rgba(144, 122, 169, 0.2);
+  --cm-gutter-bg: #faf4ed;
+  --cm-gutter-fg: #9893a5;
+
+  --cm-marker: #b4637a;
+  --cm-heading: #286983;
+  --cm-link: #56949f;
+  --cm-url: #d7827e;
+  --cm-monospace: #ea9d34;
+  --cm-quote: #907aa9;
+}
+
 /* --- Layout & shared --- */
 
 * {
@@ -845,9 +1132,12 @@ html {
   z-index: 1000;
   background: rgba(0, 0, 0, 0.4);
   display: flex;
-  align-items: center;
+  /* Top-anchor so narrow viewports can scroll up to row 1; centring
+     vertically pushes the first row above the scroll origin and
+     hides it. */
+  align-items: flex-start;
   justify-content: center;
-  padding: 1.5rem 1rem;
+  padding: 4vh 1rem;
   overflow-y: auto;
 }
 
@@ -908,6 +1198,11 @@ html {
   font-family: var(--font-body);
   transition: transform 100ms ease;
   outline: none;
+  /* Allow grid track (1fr) to shrink the card below its content's
+     natural width — without this, monospace previews (Terminal /
+     Code-flavoured themes) push the card past its grid track. */
+  min-width: 0;
+  overflow: hidden;
 }
 .theme-card:hover {
   transform: translateY(-1px);
@@ -920,6 +1215,7 @@ html {
 .theme-card__preview {
   flex: 1;
   min-height: 56px;
+  min-width: 0;
   display: flex;
   flex-direction: column;
   gap: 0.15rem;
@@ -929,15 +1225,22 @@ html {
   border-radius: 4px;
   font-size: 10.5px;
   line-height: 1.3;
+  overflow: hidden;
 }
 .theme-card__sample-heading {
   font-weight: 700;
   font-size: 12px;
   color: var(--cm-heading);
   font-family: var(--font-body);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .theme-card__sample-body {
   color: var(--fg);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 .theme-card__sample-link {
   color: var(--link);
@@ -954,9 +1257,12 @@ html {
 
 .theme-card__footer {
   display: flex;
-  align-items: center;
+  flex-direction: column;
+  align-items: flex-start;
   border-top: 1px dashed var(--border);
   padding-top: 0.3rem;
+  gap: 1px;
+  min-width: 0;
 }
 .theme-card__name {
   font-size: 0.78rem;
@@ -965,6 +1271,15 @@ html {
   overflow: hidden;
   text-overflow: ellipsis;
   width: 100%;
+}
+.theme-card__inspired {
+  font-size: 0.65rem;
+  color: var(--muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  width: 100%;
+  font-style: italic;
 }
 
 .theme-card--placeholder {
