@@ -862,6 +862,33 @@ html {
   color: var(--fg);
   margin-bottom: 4px;
 }
+.url-open__recent {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0 0 12px;
+}
+.url-open__chip {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+  color: var(--fg);
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-family: var(--font-code);
+  cursor: pointer;
+  /* Truncate long names; the original URL is always available via
+     the title tooltip on hover. */
+  max-width: 220px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.url-open__chip:hover {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+}
 .url-open__hint {
   font-size: 12px;
   color: var(--muted);

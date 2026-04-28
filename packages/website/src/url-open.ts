@@ -223,6 +223,51 @@ class HttpError extends Error {
   }
 }
 
+// --- Recent URLs ---------------------------------------------------------
+// A tiny LRU of the last few URLs the user successfully opened. Stored in
+// localStorage so it survives reloads. We keep the user's original input
+// (so chips show recognisable shapes like `github.com/user/repo` rather
+// than the resolved raw URL) plus the displayName the loader computed.
+
+interface RecentEntry {
+  input: string
+  name: string
+}
+
+const RECENT_KEY = 'nicermd:url-recents'
+const RECENT_MAX = 5
+
+function readRecent(): RecentEntry[] {
+  try {
+    const raw = localStorage.getItem(RECENT_KEY)
+    if (!raw) return []
+    const parsed: unknown = JSON.parse(raw)
+    if (!Array.isArray(parsed)) return []
+    return parsed
+      .filter((e): e is RecentEntry =>
+        e != null &&
+        typeof (e as RecentEntry).input === 'string' &&
+        typeof (e as RecentEntry).name === 'string',
+      )
+      .slice(0, RECENT_MAX)
+  } catch {
+    return []
+  }
+}
+
+function pushRecent(input: string, name: string): void {
+  try {
+    const existing = readRecent()
+    // Dedupe by input — re-opening a URL bumps it to the top rather
+    // than producing a duplicate row.
+    const filtered = existing.filter((e) => e.input !== input)
+    const next = [{ input, name }, ...filtered].slice(0, RECENT_MAX)
+    localStorage.setItem(RECENT_KEY, JSON.stringify(next))
+  } catch {
+    // localStorage unavailable; recents stay empty for this session.
+  }
+}
+
 // Pull a sensible filename for the title strip. For raw.githubusercontent
 // paths the basename of the path is what the user expects. For gists the
 // /raw endpoint we fetch ends in "raw" — useless as a title — so we
@@ -274,8 +319,14 @@ export async function loadFromUrl(harness: Harness, input: string): Promise<void
       // getCurrentSourceUrl(). The display name comes from the URL
       // path so the title strip shows something useful even before
       // hover.
-      setDocState(text, displayNameFor(result.parsed, url), { kind: 'url', url })
+      const name = displayNameFor(result.parsed, url)
+      setDocState(text, name, { kind: 'url', url })
       harness.replaceDoc(text)
+      // Record the user's original input (not the resolved URL) — chips
+      // show what they typed, and re-clicking re-runs the parser so
+      // bare-repo URLs etc. still get current main→master resolution
+      // rather than a stale candidate.
+      pushRecent(input.trim(), name)
       return
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(String(err))
@@ -313,6 +364,17 @@ export function openUrlPrompt(harness: Harness): void {
   title.className = 'url-open__title'
   title.textContent = 'Open URL'
   panel.appendChild(title)
+
+  // Recent-URLs row, only added when there's something to show. Each chip
+  // is a button with the displayName as its label and the original input
+  // as the hover tooltip; click immediately reloads. Wired below once the
+  // submit closure exists.
+  const recents = readRecent()
+  const recentRow = recents.length > 0 ? document.createElement('div') : null
+  if (recentRow) {
+    recentRow.className = 'url-open__recent'
+    panel.appendChild(recentRow)
+  }
 
   const input = document.createElement('input')
   input.className = 'url-open__input'
@@ -405,6 +467,26 @@ export function openUrlPrompt(harness: Harness): void {
       openBtn.textContent = 'Open'
       error.textContent = err instanceof Error ? err.message : String(err)
     }
+  }
+
+  // Populate recent-URL chips. Click → set the input to that entry and
+  // submit, so the load goes through the normal parser/fetch path
+  // (re-resolving main→master fallbacks etc.) and any error surfaces in
+  // the same place as a typed URL.
+  if (recentRow) {
+    recents.forEach((entry) => {
+      const chip = document.createElement('button')
+      chip.type = 'button'
+      chip.className = 'url-open__chip'
+      chip.textContent = entry.name
+      chip.setAttribute('title', entry.input)
+      chip.addEventListener('click', () => {
+        input.value = entry.input
+        updateStatus()
+        void submit()
+      })
+      recentRow.appendChild(chip)
+    })
   }
 
   const onKeydown = (e: KeyboardEvent): void => {
