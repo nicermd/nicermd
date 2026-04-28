@@ -35,7 +35,7 @@ import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from '.
 import { initTheme, toggleRecentTheme, showThemeToast } from './themes'
 import { initFonts } from './fonts'
 import { openFontPicker } from './font-picker'
-import { openUrlPrompt } from './url-open'
+import { openUrlPrompt, processBootUrlParam } from './url-open'
 import { openThemePicker } from './theme-picker'
 import { setupScrollStrip, showStrip } from './scroll-strip'
 import { setupFormatBar } from './format-bar'
@@ -509,6 +509,12 @@ async function boot(): Promise<void> {
   // filename + active mode whenever the editing context shifts.
   harness.onModeChange(() => showStrip())
   setupAutosave(harness)
+  // Boot-time ?url=… handler. Sits between autosave wiring and recovery
+  // banner so a link-driven open prompt sits on top of (and supersedes)
+  // any recovery banner — if the user clicked a share link, that's
+  // probably what they want to read, not their old draft. Cancelling
+  // the gate falls through to the recovery banner naturally.
+  processBootUrlParam(harness)
   checkRecovery(harness, bootMarkdown)
   setupCloseGuard(harness)
 

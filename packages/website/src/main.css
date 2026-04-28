@@ -945,6 +945,21 @@ html {
 .url-open__input:focus {
   border-color: var(--accent);
 }
+.url-open__body {
+  font-size: 13px;
+  color: var(--fg);
+  margin-bottom: 8px;
+}
+.url-open__warning {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid color-mix(in srgb, #d97706 50%, var(--border));
+  background: color-mix(in srgb, #d97706 8%, transparent);
+  color: var(--fg);
+  font-size: 12px;
+  line-height: 1.4;
+}
 .url-open__error {
   min-height: 1.2em;
   margin-top: 8px;

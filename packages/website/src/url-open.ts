@@ -364,6 +364,155 @@ export async function loadFromUrl(harness: Harness, input: string): Promise<void
   throw lastError ?? new Error('Unknown fetch error')
 }
 
+// --- Boot-time ?url= handler --------------------------------------------
+// Invoked from main.ts during boot. If the inbound URL carries a ?url=
+// param that parses as a GitHub URL, show a confirmation modal before
+// fetching — defends against social-engineered links that point at
+// attacker-controlled markdown (e.g. brand-impersonation content). The
+// param is stripped from the address bar immediately so a refresh
+// doesn't re-trigger the gate or leak the source URL into history /
+// share menus.
+//
+// Default action is Cancel, focused on open. The user has to click Open
+// or tab+Enter to actually load — single-key dismissal stays safe.
+export function processBootUrlParam(harness: Harness): void {
+  const params = new URLSearchParams(window.location.search)
+  const urlParam = params.get('url')
+  if (!urlParam) return
+
+  // Strip the param from the URL bar before showing the modal, so the
+  // user's address bar shows the canonical app URL even if they
+  // glance up before deciding. Also makes refresh a clean re-boot
+  // (without re-prompting) rather than a re-prompt loop.
+  params.delete('url')
+  const remaining = params.toString()
+  const newUrl = window.location.pathname + (remaining ? `?${remaining}` : '') + window.location.hash
+  window.history.replaceState({}, '', newUrl)
+
+  const result = parseGithubUrl(urlParam)
+  // Silently ignore malformed / non-GitHub URLs in the param. We don't
+  // want to surface specific parser reasons here — reduces phishing
+  // signal value (an attacker could probe what shapes are accepted).
+  if (!result.ok) return
+
+  showBootConfirmation(harness, urlParam, result.parsed)
+}
+
+let bootConfirmOpen = false
+
+function showBootConfirmation(harness: Harness, originalInput: string, parsed: Parsed): void {
+  if (bootConfirmOpen) return
+  bootConfirmOpen = true
+
+  const backdrop = document.createElement('div')
+  backdrop.className = 'url-open__backdrop'
+
+  const panel = document.createElement('div')
+  panel.className = 'url-open__panel'
+  panel.setAttribute('role', 'dialog')
+  panel.setAttribute('aria-modal', 'true')
+  panel.setAttribute('aria-label', 'Open URL from link')
+
+  const title = document.createElement('div')
+  title.className = 'url-open__title'
+  title.textContent = 'Open URL from link?'
+  panel.appendChild(title)
+
+  const body = document.createElement('div')
+  body.className = 'url-open__body'
+  body.textContent = 'A link is asking Nicer.md to load this markdown file:'
+  panel.appendChild(body)
+
+  const target = document.createElement('div')
+  target.className = 'url-open__hint url-open__hint--preview'
+  target.textContent = `→ ${previewUrl(parsed)}`
+  panel.appendChild(target)
+
+  const warning = document.createElement('div')
+  warning.className = 'url-open__warning'
+  warning.textContent = 'Only open links from sources you trust. Markdown content can mimic login pages or include misleading instructions.'
+  panel.appendChild(warning)
+
+  const error = document.createElement('div')
+  error.className = 'url-open__error'
+  panel.appendChild(error)
+
+  const actions = document.createElement('div')
+  actions.className = 'url-open__actions'
+  // Cancel is the default button (left + primary styling) — a stray
+  // Enter / focus loss / click should never load. Open is the
+  // explicit affirmative action and must be clicked or Tab-Entered.
+  const cancelBtn = document.createElement('button')
+  cancelBtn.type = 'button'
+  cancelBtn.className = 'url-open__btn url-open__btn--primary'
+  cancelBtn.textContent = 'Cancel'
+  const openBtn = document.createElement('button')
+  openBtn.type = 'button'
+  openBtn.className = 'url-open__btn'
+  openBtn.textContent = 'Open'
+  actions.append(cancelBtn, openBtn)
+  panel.appendChild(actions)
+
+  backdrop.appendChild(panel)
+  document.body.appendChild(backdrop)
+
+  const close = (): void => {
+    if (!bootConfirmOpen) return
+    bootConfirmOpen = false
+    window.removeEventListener('keydown', onKeydown, true)
+    backdrop.remove()
+  }
+
+  const accept = async (): Promise<void> => {
+    error.textContent = ''
+    openBtn.disabled = true
+    cancelBtn.disabled = true
+    openBtn.textContent = 'Loading…'
+    try {
+      await loadFromUrl(harness, originalInput)
+      close()
+    } catch (err) {
+      openBtn.disabled = false
+      cancelBtn.disabled = false
+      openBtn.textContent = 'Open'
+      error.textContent = err instanceof Error ? err.message : String(err)
+    }
+  }
+
+  const onKeydown = (e: KeyboardEvent): void => {
+    if (!bootConfirmOpen) return
+    if (e.key === 'Escape') {
+      e.preventDefault()
+      e.stopPropagation()
+      close()
+      return
+    }
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      // Enter follows the focused button. Default focus is Cancel,
+      // so a reflexive Enter dismisses safely. Loading requires
+      // either click on Open or Tab → Enter.
+      if (document.activeElement === openBtn) {
+        void accept()
+      } else {
+        close()
+      }
+      return
+    }
+  }
+  window.addEventListener('keydown', onKeydown, true)
+
+  cancelBtn.addEventListener('click', close)
+  openBtn.addEventListener('click', () => void accept())
+  backdrop.addEventListener('mousedown', (e) => {
+    if (e.target === backdrop) close()
+  })
+
+  // Default focus on Cancel so reflexive Space / Enter dismisses the
+  // dialog rather than confirming a load.
+  setTimeout(() => cancelBtn.focus(), 0)
+}
+
 let isOpen = false
 
 export function openUrlPrompt(harness: Harness): void {
