@@ -33,6 +33,8 @@ import { setupModeIcons } from './mode-icons'
 import { setupTitle } from './title'
 import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from './zoom'
 import { initTheme, toggleRecentTheme, showThemeToast } from './themes'
+import { initFonts } from './fonts'
+import { openFontPicker } from './font-picker'
 import { openThemePicker } from './theme-picker'
 import { setupScrollStrip, showStrip } from './scroll-strip'
 import { setupFormatBar } from './format-bar'
@@ -418,6 +420,7 @@ export class Harness {
 
 async function boot(): Promise<void> {
   initTheme()
+  initFonts()
 
   // Auto-open the theme picker on first-ever visit so users see the
   // catalog up front. Detected by absence of the localStorage key.
@@ -538,6 +541,14 @@ function finish(harness: Harness): void {
     if (event.altKey && event.code === 'KeyT') {
       event.preventDefault()
       openThemePicker()
+      return
+    }
+    // Cmd/Ctrl + Alt/Option + F — open the font picker. Same rationale
+    // as the theme key: Alt-modified to dodge browser-claimed
+    // Cmd+Shift / Cmd-only combos. Cmd+F is browser find-in-page.
+    if (event.altKey && event.code === 'KeyF') {
+      event.preventDefault()
+      openFontPicker()
       return
     }
     if (event.altKey) return

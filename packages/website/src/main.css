@@ -1358,6 +1358,164 @@ html {
   }
 }
 
+/* --- Font picker --- */
+.font-picker-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  background: rgba(0, 0, 0, 0.4);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 4vh 1rem;
+  overflow-y: auto;
+}
+.font-picker {
+  width: 100%;
+  max-width: 880px;
+  background: var(--bg);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 1rem 1.1rem 1rem;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.18);
+  /* Fixed system font for the picker's own chrome (header, hint,
+     section labels, card names). Live-preview swaps --font-body
+     inline on <html> on every hover, which would otherwise re-render
+     the picker UI in whatever font the user is browsing — disorienting.
+     Card samples set their own font-family explicitly so they still
+     show the actual face. */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+.font-picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+}
+.font-picker__title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+.font-picker__close {
+  background: transparent;
+  border: none;
+  color: var(--muted);
+  font-size: 1.4rem;
+  cursor: pointer;
+  line-height: 1;
+}
+.font-picker__hint {
+  margin-left: 0.75rem;
+  font-size: 0.72rem;
+  color: var(--muted);
+}
+.font-picker__section {
+  margin-top: 0.6rem;
+}
+.font-picker__section-label-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-bottom: 0.4rem;
+}
+.font-picker__section-label {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+.font-picker__section-current {
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--fg);
+}
+.font-picker__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.5rem;
+}
+.font-card {
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--fg);
+  padding: 0.6rem 0.7rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  outline: none;
+  min-width: 0;
+  overflow: hidden;
+  transition: transform 100ms ease, border-color 120ms ease;
+  position: relative;
+}
+.font-card:hover {
+  transform: translateY(-1px);
+}
+/* Per-section selection — the card that would commit if Enter pressed.
+   Persistent: stays marked even when keyboard focus moves to the
+   other section. Subtle accent-coloured border so the eye reads
+   "this is locked in for this row." */
+.font-card--selected {
+  border-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 6%, var(--bg));
+}
+/* Keyboard-focus indicator — at most one across the modal, regardless
+   of section. Stronger ring so it stands out from the selection
+   border. Pairs with --selected on the same card when keyboard
+   happens to be on the section's selection. */
+.font-card--focused {
+  outline: 2px solid #2563eb;
+  outline-offset: 2px;
+}
+.font-card__sample {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  min-width: 0;
+}
+.font-card__sample > * {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.font-card__sample-heading {
+  font-size: 1.05rem;
+  font-weight: 700;
+  line-height: 1.15;
+}
+.font-card__sample-body {
+  font-size: 0.78rem;
+  color: var(--muted);
+  line-height: 1.25;
+}
+.font-card__name {
+  font-size: 0.72rem;
+  color: var(--muted);
+  /* Always system-rendered (NOT var(--font-body)) so the name stays
+     readable regardless of which font is being live-previewed. */
+  font-family: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  border-top: 1px dashed var(--border);
+  padding-top: 0.3rem;
+}
+@media (max-width: 800px) {
+  .font-picker__grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+@media (max-width: 560px) {
+  .font-picker__grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
 /* --- Recovery banner --- */
 .recovery-banner {
   position: fixed;

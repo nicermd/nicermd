@@ -5,6 +5,8 @@
 // defined with var(--cm-*) values, so CM picks up the same swap with no
 // Compartment dispatch.
 
+import { applyThemeFontDefaults } from './fonts'
+
 export type ThemeMode = 'light' | 'dark'
 
 export interface Theme {
@@ -14,27 +16,36 @@ export interface Theme {
   // Optional attribution for community-palette themes. Rendered as a
   // subtitle in the picker card; never used to claim authorship.
   inspiredBy?: string
+  // Optional font catalogue IDs. When the user has NOT explicitly
+  // picked a font in the font picker, applyTheme falls back to these
+  // — so theme switching can surface a curated typography pairing
+  // without overriding explicit user choice. Both reference IDs from
+  // PROSE_FONTS / CODE_FONTS in fonts.ts.
+  defaultProseFont?: string
+  defaultCodeFont?: string
 }
 
 export const THEMES: readonly Theme[] = [
-  // Originals
+  // Originals — kept on system fonts so they stay zero-network.
   { slug: 'default', name: 'Default', mode: 'light' },
   { slug: 'nicer', name: 'Nicer', mode: 'light' },
   { slug: 'nicer-dark', name: 'Nicer Dark', mode: 'dark' },
-  { slug: 'paper', name: 'Paper', mode: 'light' },
-  { slug: 'terminal-light', name: 'Terminal Light', mode: 'light' },
-  { slug: 'terminal-dark', name: 'Terminal Dark', mode: 'dark' },
-  // Community-palette tributes (palettes MIT/BSD; original credits below)
-  { slug: 'solarized-light', name: 'Solarized Light', mode: 'light', inspiredBy: 'Ethan Schoonover' },
-  { slug: 'solarized-dark', name: 'Solarized Dark', mode: 'dark', inspiredBy: 'Ethan Schoonover' },
-  { slug: 'nord', name: 'Nord', mode: 'dark', inspiredBy: 'Arctic Ice Studio' },
-  { slug: 'gruvbox-dark', name: 'Gruvbox Dark', mode: 'dark', inspiredBy: 'Pavel Pertsev' },
-  { slug: 'tokyo-night', name: 'Tokyo Night', mode: 'dark', inspiredBy: 'enkia' },
-  { slug: 'dracula', name: 'Dracula', mode: 'dark', inspiredBy: 'Zeno Rocha' },
-  { slug: 'everforest', name: 'Everforest', mode: 'dark', inspiredBy: 'sainnhe' },
-  { slug: 'catppuccin-latte', name: 'Catppuccin Latte', mode: 'light', inspiredBy: 'Catppuccin' },
-  { slug: 'ayu-light', name: 'Ayu Light', mode: 'light', inspiredBy: 'Ivan Konstantinov' },
-  { slug: 'rose-pine-dawn', name: 'Rosé Pine Dawn', mode: 'light', inspiredBy: 'Rosé Pine' },
+  { slug: 'paper', name: 'Paper', mode: 'light', defaultProseFont: 'system-serif' },
+  { slug: 'terminal-light', name: 'Terminal Light', mode: 'light', defaultProseFont: 'system-mono', defaultCodeFont: 'system' },
+  { slug: 'terminal-dark', name: 'Terminal Dark', mode: 'dark', defaultProseFont: 'system-mono', defaultCodeFont: 'system' },
+  // Community-palette tributes (palettes MIT/BSD; original credits below).
+  // Default fonts pair each theme with a typography that matches its
+  // origin — applied only when the user hasn't explicitly chosen.
+  { slug: 'solarized-light', name: 'Solarized Light', mode: 'light', inspiredBy: 'Ethan Schoonover', defaultProseFont: 'source-serif', defaultCodeFont: 'jetbrains-mono' },
+  { slug: 'solarized-dark', name: 'Solarized Dark', mode: 'dark', inspiredBy: 'Ethan Schoonover', defaultProseFont: 'source-serif', defaultCodeFont: 'jetbrains-mono' },
+  { slug: 'nord', name: 'Nord', mode: 'dark', inspiredBy: 'Arctic Ice Studio', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
+  { slug: 'gruvbox-dark', name: 'Gruvbox Dark', mode: 'dark', inspiredBy: 'Pavel Pertsev', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
+  { slug: 'tokyo-night', name: 'Tokyo Night', mode: 'dark', inspiredBy: 'enkia', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
+  { slug: 'dracula', name: 'Dracula', mode: 'dark', inspiredBy: 'Zeno Rocha', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
+  { slug: 'everforest', name: 'Everforest', mode: 'dark', inspiredBy: 'sainnhe', defaultProseFont: 'lora', defaultCodeFont: 'jetbrains-mono' },
+  { slug: 'catppuccin-latte', name: 'Catppuccin Latte', mode: 'light', inspiredBy: 'Catppuccin', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
+  { slug: 'ayu-light', name: 'Ayu Light', mode: 'light', inspiredBy: 'Ivan Konstantinov', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
+  { slug: 'rose-pine-dawn', name: 'Rosé Pine Dawn', mode: 'light', inspiredBy: 'Rosé Pine', defaultProseFont: 'crimson-pro', defaultCodeFont: 'jetbrains-mono' },
 ]
 
 const STORAGE_KEY = 'nicermd:theme'
@@ -99,6 +110,13 @@ export function applyTheme(slug: string, persist: boolean = true): Theme {
     writeStored(theme.slug)
   }
   document.documentElement.dataset.theme = theme.slug
+  // Apply the theme's font pairing as a non-persisted preview if
+  // (and only if) the user hasn't explicitly chosen fonts. Direction:
+  // themes → fonts; fonts has no themes dependency.
+  applyThemeFontDefaults({
+    defaultProseFont: theme.defaultProseFont,
+    defaultCodeFont: theme.defaultCodeFont,
+  })
   return theme
 }
 
