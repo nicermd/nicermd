@@ -61,6 +61,7 @@ Drag-drop in Tauri is configured to use HTML5 events (`dragDropEnabled: false`);
 | Shortcut             | Action                                             |
 |----------------------|----------------------------------------------------|
 | `Cmd` + `Alt` + `T`  | Open theme picker (arrows preview live, Enter commits, Esc reverts) |
+| `Cmd` + `\`          | Swap to the previously-committed theme — bounces between the two most recent (e.g. light ↔ dark) |
 
 The picker also auto-opens on first-ever visit (when no theme has been chosen yet) and lists all built-in themes plus a "Coming soon" row of placeholder themes. A custom-theme URL field is scaffolded; fetching is deferred to a follow-up.
 

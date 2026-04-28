@@ -14,6 +14,7 @@ import type { Harness } from './main'
 import { toggleFullscreen } from './main'
 import { openFile, saveFile, newFile } from './doc-source'
 import { openThemePicker } from './theme-picker'
+import { toggleRecentTheme, showThemeToast } from './themes'
 import { isTauri as isZoomTauri, zoomIn, zoomOut, zoomReset } from './zoom'
 
 interface Command {
@@ -56,6 +57,16 @@ function buildCommands(harness: Harness): Command[] {
 
     // Theme
     { id: 'theme.picker', label: 'Theme…', shortcut: 'Cmd+Alt+T', action: () => openThemePicker() },
+    {
+      id: 'theme.toggleRecent',
+      label: 'Switch to previous theme',
+      hint: 'Cycles between the two most recent',
+      shortcut: 'Cmd+\\',
+      action: () => {
+        const swapped = toggleRecentTheme()
+        if (swapped) showThemeToast(swapped)
+      },
+    },
 
     // Format — mode 2 only
     { id: 'format.bold', label: 'Bold', shortcut: 'Cmd+B', action: () => harness.toggleFormat('bold'), available: inWysiwyg },
