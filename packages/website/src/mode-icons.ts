@@ -29,7 +29,7 @@ const ICONS: ModeIconDef[] = [
   },
   {
     key: 2,
-    name: 'WYSIWYG',
+    name: 'Write',
     shortcut: 'Cmd+2',
     paths:
       '<path d="M12 20h9"/>' +
@@ -37,7 +37,7 @@ const ICONS: ModeIconDef[] = [
   },
   {
     key: 3,
-    name: 'Code + preview',
+    name: 'Split',
     shortcut: 'Cmd+3',
     paths:
       '<rect width="18" height="18" x="3" y="3" rx="2"/>' +
@@ -45,7 +45,7 @@ const ICONS: ModeIconDef[] = [
   },
   {
     key: 4,
-    name: 'Raw code',
+    name: 'Code',
     shortcut: 'Cmd+4',
     paths:
       '<polyline points="16 18 22 12 16 6"/>' +
