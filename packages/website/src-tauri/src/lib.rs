@@ -86,17 +86,17 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
                 .build(app)?,
         )
         .item(
-            &MenuItemBuilder::with_id("view-mode-2", "WYSIWYG")
+            &MenuItemBuilder::with_id("view-mode-2", "Write")
                 .accelerator("CmdOrCtrl+2")
                 .build(app)?,
         )
         .item(
-            &MenuItemBuilder::with_id("view-mode-3", "Code + preview")
+            &MenuItemBuilder::with_id("view-mode-3", "Split")
                 .accelerator("CmdOrCtrl+3")
                 .build(app)?,
         )
         .item(
-            &MenuItemBuilder::with_id("view-mode-4", "Raw code")
+            &MenuItemBuilder::with_id("view-mode-4", "Code")
                 .accelerator("CmdOrCtrl+4")
                 .build(app)?,
         )

@@ -36,6 +36,7 @@ import { initTheme } from './themes'
 import { openThemePicker } from './theme-picker'
 import { setupScrollStrip, showStrip } from './scroll-strip'
 import { setupFormatBar } from './format-bar'
+import { setupCommandPalette } from './command-palette'
 import type { FormatAction } from './wysiwyg-engine'
 import './main.css'
 
@@ -170,7 +171,7 @@ function mountWysiwyg(
 
   const status = document.createElement('div')
   status.className = 'mode-wysiwyg__status'
-  status.textContent = 'Loading WYSIWYG engine…'
+  status.textContent = 'Loading Write mode…'
   wrap.appendChild(status)
 
   // Mutable state so destroy() can short-circuit a still-loading mount, and
@@ -200,7 +201,7 @@ function mountWysiwyg(
     })
     .catch((err: unknown) => {
       if (destroyed) return
-      status.textContent = `WYSIWYG failed to load: ${String(err)}`
+      status.textContent = `Write mode failed to load: ${String(err)}`
     })
 
   return {
@@ -307,9 +308,9 @@ function mountRawCode(
 
 const MODES: ModeDef[] = [
   { key: 1, label: 'Read', mount: mountRead },
-  { key: 2, label: 'WYSIWYG', mount: mountWysiwyg },
-  { key: 3, label: 'Code + preview', mount: mountCodePlusPreview },
-  { key: 4, label: 'Raw code', mount: mountRawCode },
+  { key: 2, label: 'Write', mount: mountWysiwyg },
+  { key: 3, label: 'Split', mount: mountCodePlusPreview },
+  { key: 4, label: 'Code', mount: mountRawCode },
 ]
 
 // Mode-switching engine. Owns no UI chrome and no cross-tab sync — those
@@ -498,6 +499,7 @@ async function boot(): Promise<void> {
   setupTitle(harness, root)
   setupModeIcons(harness, root)
   setupFormatBar(harness, root)
+  setupCommandPalette(harness)
 
   // Resurface the strip on mode change — user benefits from re-seeing
   // filename + active mode whenever the editing context shifts.
@@ -568,6 +570,15 @@ function finish(harness: Harness): void {
       void openFile(harness)
       return
     }
+    // Cmd+Return — toggle Read ↔ Write. From Read, jump into Write;
+    // from Write, jump back to Read; from Split or Code, go to Write
+    // (treats Cmd+Return as "go to primary edit mode").
+    if (event.code === 'Enter') {
+      event.preventDefault()
+      const cur = harness.getCurrentMode().key
+      harness.switchTo(cur === 2 ? 1 : 2)
+      return
+    }
     // Cmd+N is browser-reserved (new window) and preventDefault can't
     // override; in Tauri the File menu's accelerator handles it at OS
     // level. So we don't bind it here. Browser users get File→New via
@@ -603,7 +614,7 @@ function finish(harness: Harness): void {
 // API gives macOS-native fullscreen (menu bar hidden, dock hidden); in plain
 // browser contexts the HTML5 Fullscreen API does the equivalent on the page.
 // Also flips data-fullscreen on <html> so CSS can hide the title strip.
-async function toggleFullscreen(): Promise<void> {
+export async function toggleFullscreen(): Promise<void> {
   if (typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window) {
     const { getCurrentWindow } = await import('@tauri-apps/api/window')
     const win = getCurrentWindow()

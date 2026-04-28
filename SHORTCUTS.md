@@ -11,9 +11,10 @@ A quick reference for everything wired in nicermd.
 | Shortcut              | Action                              |
 |-----------------------|-------------------------------------|
 | `Cmd` + `1`           | Switch to **Mode 1 — Read**         |
-| `Cmd` + `2`           | Switch to **Mode 2 — WYSIWYG**      |
-| `Cmd` + `3`           | Switch to **Mode 3 — Code + preview** |
-| `Cmd` + `4`           | Switch to **Mode 4 — Raw code**     |
+| `Cmd` + `2`           | Switch to **Mode 2 — Write**        |
+| `Cmd` + `3`           | Switch to **Mode 3 — Split**        |
+| `Cmd` + `4`           | Switch to **Mode 4 — Code**         |
+| `Cmd` + `Return`      | Toggle Read ↔ Write (from Split / Code, jumps to Write) |
 | `Cmd` + `Shift` + `M` | Cycle modes 1 → 2 → 3 → 4 → 1       |
 
 ## Window
@@ -68,9 +69,9 @@ The picker also auto-opens on first-ever visit (when no theme has been chosen ye
 The four modes:
 
 1. **Read** — rendered HTML via `nicermd-core`, no editor.
-2. **WYSIWYG** — Tiptap, markers hidden, Notion/Bear feel. Lazy-loaded on first enter.
-3. **Code + preview** — CodeMirror source on the left, live `nicermd-core` preview on the right.
-4. **Raw code** — CodeMirror with a GitHub-source palette and line numbers. The "purist" mode where bytes are preserved exactly.
+2. **Write** — Tiptap rich-text, markers hidden, Notion/Bear feel. Lazy-loaded on first enter.
+3. **Split** — CodeMirror source on the left, live `nicermd-core` preview on the right.
+4. **Code** — CodeMirror with a GitHub-source palette and line numbers. The "purist" mode where bytes are preserved exactly.
 
 ## Standard editing (modes 2, 3, 4)
 
@@ -86,7 +87,7 @@ These come from CodeMirror / ProseMirror defaults. Mode 1 is read-only and ignor
 
 Undo history is per-mode — switching modes does not preserve undo state across engines.
 
-## Mode 2 — table editing (Tiptap)
+## Write mode — table editing (Tiptap)
 
 | Shortcut          | Action                                            |
 |-------------------|---------------------------------------------------|

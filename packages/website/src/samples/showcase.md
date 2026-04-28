@@ -4,6 +4,65 @@ A beautiful, zero-server markdown reader — and the page you're looking at is e
 
 Every heading, list, quote, and table below is plain markdown. Click anywhere and start typing: it behaves like a rich-text editor, but the underlying document stays as markdown you can save, share, or paste anywhere else.
 
+## Keyboard shortcuts
+
+`Cmd` is shown for macOS — substitute `Ctrl` on Windows / Linux. The **Overrides** column flags shortcuts that replace a browser default.
+
+### Modes
+
+| Shortcut          | Action                  | Overrides                  |
+|-------------------|-------------------------|----------------------------|
+| `Cmd` + `1`       | Read                    | Chrome's "switch to tab 1" |
+| `Cmd` + `2`       | Write                   | Chrome's "switch to tab 2" |
+| `Cmd` + `3`       | Split                   | Chrome's "switch to tab 3" |
+| `Cmd` + `4`       | Code                    | Chrome's "switch to tab 4" |
+| `Cmd` + `Return`  | Toggle Read ↔ Write (jumps to Write from Split / Code) | — |
+| `Cmd+Shift` + `M` | Cycle modes 1 → 2 → 3 → 4 → 1 | —                  |
+
+### File
+
+| Shortcut            | Action                                         | Overrides                |
+|---------------------|------------------------------------------------|--------------------------|
+| `Cmd` + `O`         | Open a `.md` file                              | Browser's "open file URL" |
+| `Cmd` + `S`         | Save back to the file's source                 | Browser's "save page as" |
+| `Cmd+Shift` + `S`   | Save As — always opens the save dialog         | —                        |
+| `Cmd` + `N`         | New empty document (Tauri menu only — browsers reserve `Cmd+N` for new window) | — |
+
+Drop a `.md` / `.markdown` / `.mdx` file onto the window to load it.
+
+### View
+
+| Shortcut            | Action                                                  | Overrides                |
+|---------------------|---------------------------------------------------------|--------------------------|
+| `Cmd+Shift` + `F`   | Fullscreen toggle (native macOS fullscreen in Tauri)    | —                        |
+| `Cmd` + `R`         | Reload the window                                       | Restores browser's reload (Tauri doesn't bind it natively) |
+| `Cmd` + `=` / `-` / `0` | Zoom in / out / reset (Tauri only — browsers handle natively) | Matches browser zoom in Tauri |
+
+### Theme
+
+| Shortcut             | Action                                              | Overrides |
+|----------------------|-----------------------------------------------------|-----------|
+| `Cmd+Alt` + `T`      | Open theme picker (arrows preview, Enter commits, Esc reverts) | — |
+
+`Cmd+Alt+T` over `Cmd+Shift+T` because Chrome reserves the latter for "reopen closed tab" and `preventDefault` cannot override it.
+
+### Editing — mode 2 (Write)
+
+The format bar at the bottom-middle expands when you move the mouse near it. These are the keyboard equivalents:
+
+| Shortcut             | Action            | Overrides |
+|----------------------|-------------------|-----------|
+| `Cmd` + `B`          | Bold              | Chrome's "show bookmarks bar" (only when editor focused) |
+| `Cmd` + `I`          | Italic            | — |
+| `Cmd` + `E`          | Inline code       | — |
+| `Cmd+Alt` + `1`      | Heading 1         | — |
+| `Cmd+Alt` + `2`      | Heading 2         | — |
+| `Cmd+Shift` + `7`    | Numbered list     | — |
+| `Cmd+Shift` + `8`    | Bullet list       | — |
+| `Cmd+Shift` + `B`    | Blockquote        | — |
+
+Standard `Cmd+Z` / `Cmd+Shift+Z` undo/redo, `Cmd+X/C/V` cut/copy/paste, and `Cmd+A` select-all all work as expected in the editing modes (2, 3, 4).
+
 ## What this is
 
 - **No server.** Everything runs in your browser. No accounts, no uploads, no telemetry.
@@ -50,7 +109,7 @@ Ordered lists renumber themselves:
 Task lists track progress:
 
 - [x] Render markdown beautifully
-- [x] Inline WYSIWYG editing
+- [x] Inline rich-text editing
 - [ ] Theme switcher
 - [ ] Save back to file
 - [ ] URL-hash sharing

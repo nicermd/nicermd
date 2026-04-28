@@ -5,7 +5,17 @@ once they've been quiet for a release or two.
 
 ## Open
 
-_(none right now — list grows as we hit things)_
+- **Command palette: Escape may need two presses in Chrome.**
+  Chrome's input autofill machinery seems to silently consume the first
+  Escape on the search input before any keydown listener sees it.
+  Window-level capture-phase listener + input-level capture-phase
+  listener + `data-form-type="other"` / `data-1p-ignore` /
+  `data-lpignore` mitigations are in place; if they're not enough,
+  next step is to swap the `<input>` for a `<div contenteditable>` —
+  different DOM contract, bypasses Chrome's text-input autofill
+  entirely. Tauri / Safari / Firefox unaffected. Living with it for
+  now since Esc-to-close is power-user behaviour and click-outside /
+  click-result still work. _packages/website/src/command-palette.ts_
 
 ## Recently fixed
 

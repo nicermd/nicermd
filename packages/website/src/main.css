@@ -457,6 +457,94 @@ html {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
+/* Command palette — Cmd+K / Cmd+/ opens a centred modal with a fuzzy
+   search input over a dimmed backdrop. Built and torn down per-open by
+   command-palette.ts; nothing in the DOM at rest. */
+.cmdp__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: color-mix(in srgb, var(--bg) 40%, rgba(0, 0, 0, 0.35));
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 12vh;
+  /* Tap-friendly close zone for future touch — clicking anywhere
+     outside the panel dismisses. */
+}
+.cmdp__panel {
+  width: min(560px, calc(100vw - 32px));
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  font-family: var(--font-body);
+}
+.cmdp__input {
+  appearance: none;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--fg);
+  font-family: inherit;
+  font-size: 16px;
+  line-height: 1.4;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border);
+}
+.cmdp__input::placeholder {
+  color: var(--muted);
+}
+.cmdp__list {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0;
+  overflow-y: auto;
+  flex: 1;
+}
+.cmdp__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 18px;
+  /* 44px+ hit area for future touch. */
+  min-height: 36px;
+  cursor: pointer;
+  color: var(--fg);
+}
+.cmdp__row--selected {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.cmdp__label {
+  flex: 1;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cmdp__hint {
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+}
+.cmdp__shortcut {
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--font-code);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.cmdp__empty {
+  padding: 16px 18px;
+  color: var(--muted);
+  font-size: 14px;
+  text-align: center;
+}
+
 /* --- Mode 1 — themed read --- */
 .mode-read {
   max-width: var(--reading-width);
