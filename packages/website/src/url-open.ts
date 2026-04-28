@@ -760,12 +760,19 @@ export function openUrlPrompt(harness: Harness): void {
   // (the most common reason to open this dialog), drop it into the
   // input pre-selected so Enter immediately submits and any keystroke
   // replaces it. Skipped silently when:
+  //   - we're inside Tauri/WKWebView on macOS — clipboard.readText
+  //     triggers a system "Allow paste?" sheet that renders BEFORE
+  //     our modal becomes visible. Browsers handle this silently in
+  //     the normal flow, but the WebKit-on-macOS prompt is jarring.
+  //     Tauri users naturally Cmd+V into the field instead.
   //   - the Clipboard API isn't available (older browsers)
   //   - the user / browser denies read permission
   //   - the clipboard text isn't a normalisable GitHub URL — we don't
   //     want to paste arbitrary clipboard contents into the input,
   //     since the user might have something private on their clipboard
   //     and would have to manually clear it.
+  const inTauri = typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+  if (inTauri) return
   void (async () => {
     try {
       const text = await navigator.clipboard?.readText()
