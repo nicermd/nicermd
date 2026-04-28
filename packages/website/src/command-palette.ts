@@ -15,6 +15,7 @@ import { toggleFullscreen } from './main'
 import { openFile, saveFile, newFile } from './doc-source'
 import { openThemePicker } from './theme-picker'
 import { toggleRecentTheme, showThemeToast } from './themes'
+import { openFontPicker } from './font-picker'
 import { isTauri as isZoomTauri, zoomIn, zoomOut, zoomReset } from './zoom'
 
 interface Command {
@@ -67,6 +68,9 @@ function buildCommands(harness: Harness): Command[] {
         if (swapped) showThemeToast(swapped)
       },
     },
+
+    // Fonts
+    { id: 'font.picker', label: 'Fonts…', shortcut: 'Cmd+Alt+F', action: () => openFontPicker() },
 
     // Format — mode 2 only
     { id: 'format.bold', label: 'Bold', shortcut: 'Cmd+B', action: () => harness.toggleFormat('bold'), available: inWysiwyg },
