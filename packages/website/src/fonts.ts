@@ -118,6 +118,21 @@ const PROSE_KEY = 'nicermd:font-prose'
 const CODE_KEY = 'nicermd:font-code'
 const LOADED_LINK_ID = 'nicermd-font-link'
 
+// Sentinel for "use whatever the active theme prefers." Treated as a
+// distinct value at the apply boundary — applyProseFont/applyCodeFont
+// special-case it to clear localStorage and resolve to the active
+// theme's defaultProseFont / defaultCodeFont.
+export const THEME_DEFAULT_ID = 'theme-default'
+
+// Mirror of the most recent theme defaults passed via
+// applyThemeFontDefaults. Cached at module scope so applyProseFont/
+// applyCodeFont can resolve the "theme-default" sentinel without
+// reaching back into themes.ts (which would create a cycle).
+let cachedThemeDefaults: {
+  defaultProseFont?: string
+  defaultCodeFont?: string
+} = {}
+
 function readStored(key: string): string | null {
   try {
     return localStorage.getItem(key)
@@ -139,12 +154,19 @@ function findFont(list: readonly Font[], id: string | null): Font {
   return list.find((f) => f.id === id) ?? list[0]!
 }
 
+// Returns the font currently being rendered — when the user is on
+// theme default (dataset marker = THEME_DEFAULT_ID), resolves to
+// whichever face the active theme prefers, not the literal sentinel.
 export function getActiveProseFont(): Font {
-  return findFont(PROSE_FONTS, document.documentElement.dataset.fontProse ?? null)
+  const id = document.documentElement.dataset.fontProse
+  if (!id || id === THEME_DEFAULT_ID) return resolveProseThemeDefault()
+  return findFont(PROSE_FONTS, id)
 }
 
 export function getActiveCodeFont(): Font {
-  return findFont(CODE_FONTS, document.documentElement.dataset.fontCode ?? null)
+  const id = document.documentElement.dataset.fontCode
+  if (!id || id === THEME_DEFAULT_ID) return resolveCodeThemeDefault()
+  return findFont(CODE_FONTS, id)
 }
 
 // Rebuild the single Google Fonts <link> with whatever non-system
@@ -205,7 +227,22 @@ export function loadCatalogue(): void {
 // style has higher specificity than any [data-theme] block, so user
 // choice always wins; clearing back to the theme default just means
 // removing the inline property.
+//
+// THEME_DEFAULT_ID is a sentinel that resolves to whatever font the
+// active theme prefers — clears the explicit user choice from
+// localStorage on persist, then applies the resolved default
+// non-persistently so future theme switches keep adjusting the font.
 export function applyProseFont(id: string, persist = true): Font {
+  if (id === THEME_DEFAULT_ID) {
+    if (persist) {
+      try { localStorage.removeItem(PROSE_KEY) } catch { /* ignore */ }
+    }
+    document.documentElement.dataset.fontProse = THEME_DEFAULT_ID
+    const resolved = findFont(PROSE_FONTS, cachedThemeDefaults.defaultProseFont ?? 'system')
+    document.documentElement.style.setProperty('--font-body', resolved.family)
+    syncFontLink()
+    return resolved
+  }
   const font = findFont(PROSE_FONTS, id)
   document.documentElement.dataset.fontProse = font.id
   document.documentElement.style.setProperty('--font-body', font.family)
@@ -215,6 +252,16 @@ export function applyProseFont(id: string, persist = true): Font {
 }
 
 export function applyCodeFont(id: string, persist = true): Font {
+  if (id === THEME_DEFAULT_ID) {
+    if (persist) {
+      try { localStorage.removeItem(CODE_KEY) } catch { /* ignore */ }
+    }
+    document.documentElement.dataset.fontCode = THEME_DEFAULT_ID
+    const resolved = findFont(CODE_FONTS, cachedThemeDefaults.defaultCodeFont ?? 'system')
+    document.documentElement.style.setProperty('--font-code', resolved.family)
+    syncFontLink()
+    return resolved
+  }
   const font = findFont(CODE_FONTS, id)
   document.documentElement.dataset.fontCode = font.id
   document.documentElement.style.setProperty('--font-code', font.family)
@@ -243,18 +290,36 @@ export function hasUserCodeFont(): boolean {
   return readStored(CODE_KEY) !== null
 }
 
-// Theme-driven defaults: applied non-persistently when the user
-// hasn't explicitly chosen, so theme switching can surface a curated
-// typography pairing without overriding explicit user choice. Pass
-// the active theme's defaultProseFont / defaultCodeFont IDs.
+// Theme-driven defaults: cached at module scope so the
+// THEME_DEFAULT_ID sentinel can resolve them, and applied
+// non-persistently when the user hasn't explicitly chosen. So theme
+// switching surfaces curated typography pairings without overriding
+// explicit user choice; users on theme-default re-resolve every time
+// the active theme changes.
 export function applyThemeFontDefaults(defaults: {
   defaultProseFont?: string
   defaultCodeFont?: string
 }): void {
+  cachedThemeDefaults = defaults
+  // Apply via the sentinel so dataset.fontProse / fontCode correctly
+  // reflects "user is on theme default" rather than the resolved
+  // font ID. This lets the picker distinguish "no opinion yet" from
+  // "explicitly picked the same font that the theme prefers."
   if (!hasUserProseFont()) {
-    applyProseFont(defaults.defaultProseFont ?? 'system', false)
+    applyProseFont(THEME_DEFAULT_ID, false)
   }
   if (!hasUserCodeFont()) {
-    applyCodeFont(defaults.defaultCodeFont ?? 'system', false)
+    applyCodeFont(THEME_DEFAULT_ID, false)
   }
+}
+
+// What the THEME_DEFAULT_ID sentinel resolves to right now (the
+// active theme's preferred font for that axis). Used by the picker
+// so the "Theme default" card can preview which face is currently
+// behind that choice.
+export function resolveProseThemeDefault(): Font {
+  return findFont(PROSE_FONTS, cachedThemeDefaults.defaultProseFont ?? 'system')
+}
+export function resolveCodeThemeDefault(): Font {
+  return findFont(CODE_FONTS, cachedThemeDefaults.defaultCodeFont ?? 'system')
 }
