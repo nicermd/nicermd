@@ -622,8 +622,8 @@ export function openUrlPrompt(harness: Harness): void {
     })
   }
 
-  const HINT_EMPTY = 'Paste a GitHub URL — file, repo, or tree path'
-  const HINT_INVALID = 'Not recognised — paste a github.com or raw.githubusercontent.com URL'
+  const HINT_EMPTY = 'Paste a GitHub URL — file, repo, tree, or gist'
+  const HINT_INVALID = 'Not recognised — paste a github.com or gist.github.com URL'
 
   const updateStatus = (): void => {
     const value = input.value.trim()
