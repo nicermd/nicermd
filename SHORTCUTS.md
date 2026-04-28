@@ -49,7 +49,9 @@ Zoom range is 50%–300% in 10% steps; the level persists in `localStorage` and 
 
 Explicit blob/raw paths must end in `.md`, `.markdown`, or `.mdx` — anything else is rejected as not-markdown so we don't accidentally render binaries or HTML. Source is recorded as anonymous so a subsequent `Cmd+S` falls through to Save-As (we can't write back to GitHub). Non-GitHub hosts are rejected; gists, private repos, and `?url=` boot params are deliberately out of scope. The fetcher caps responses at 5 MiB and refuses cross-host redirects.
 
-The picker prefills from the clipboard if the most recently copied text is a recognisable GitHub URL, and shows a live preview of the raw URL it would fetch as you type.
+The picker prefills from the clipboard if the most recently copied text is a recognisable GitHub URL, and shows a live preview of the raw URL it would fetch as you type. Successfully loaded URLs accumulate in a 5-deep `Recent` list inside the modal — name on the left, dim URL on the right; arrow-key navigable; Enter loads the highlighted row.
+
+**Share links** — append `?url=<github-url>` to a Nicer.md address (e.g. `nicermd.com/?url=https://github.com/anthropics/anthropic-cookbook`) and the recipient sees a confirmation modal: "A link is asking Nicer.md to load this markdown file: [preview]". Default action is **Cancel** — markdown content can mimic login pages or carry misleading instructions, so the gate is intentional. The `?url=` param is stripped from the address bar before the modal appears, so a refresh boots cleanly without re-prompting.
 
 The active filename appears in the Tauri title strip (centered, between the traffic lights and the right edge) and in the browser tab title (`document.title`). A leading `•` indicates unsaved changes. The title strip hides automatically in macOS-native fullscreen.
 
