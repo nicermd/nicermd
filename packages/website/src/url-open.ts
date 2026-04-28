@@ -268,14 +268,33 @@ function pushRecent(input: string, name: string): void {
   }
 }
 
-// Pull a sensible filename for the title strip. For raw.githubusercontent
-// paths the basename of the path is what the user expects. For gists the
-// /raw endpoint we fetch ends in "raw" — useless as a title — so we
-// synthesise a short label from the gist ID instead.
+// Build a label for the title strip + recents chip. Plain "README.md"
+// loses context fast — every bare-repo URL resolves to the same name —
+// so we prepend `<user>/<repo>` whenever we can recover it from the
+// parsed shape or the raw URL path.
+//
+//   - repo       →  <user>/<repo>
+//   - tree       →  <user>/<repo>[/<dir>]
+//   - direct     →  <user>/<repo>/<filename>  (when on raw host)
+//   - direct     →  <basename>                (everything else)
+//   - gist       →  gist-<first-8-of-id>.md
 function displayNameFor(p: Parsed, fetchedUrl: string): string {
   if (p.kind === 'gist') return `gist-${p.id.slice(0, 8)}.md`
+  if (p.kind === 'repo') return `${p.user}/${p.repo}`
+  if (p.kind === 'tree') {
+    const dirSuffix = p.dir ? `/${p.dir}` : ''
+    return `${p.user}/${p.repo}${dirSuffix}`
+  }
   try {
     const u = new URL(fetchedUrl)
+    if (u.hostname === RAW_HOST) {
+      // /<user>/<repo>/<branch>/<...path>
+      const parts = u.pathname.split('/').filter(Boolean)
+      const user = parts[0]
+      const repo = parts[1]
+      const filename = parts[parts.length - 1]
+      if (user && repo && filename) return `${user}/${repo}/${filename}`
+    }
     const last = u.pathname.split('/').filter(Boolean).pop()
     return last ?? 'untitled.md'
   } catch {
