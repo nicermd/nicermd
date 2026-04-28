@@ -146,22 +146,28 @@ export function cycleTheme(): Theme {
 }
 
 // --- Toast ----------------------------------------------------------------
-// Brief corner pill that announces the active theme on cycle. Inspired by
-// the v1 N-badge fade pattern. ~1.5s show, 200ms fade.
+// Brief corner pill. Originally announced the active theme on cycle
+// (inspired by the v1 N-badge fade pattern); now also used by other
+// short-lived "X happened" affordances (e.g. share-link copied) — same
+// element, ~1.5s show, 200ms fade.
 
 let toastEl: HTMLDivElement | null = null
 let toastTimer: number | null = null
 
-export function showThemeToast(theme: Theme): void {
+export function showToast(message: string): void {
   if (!toastEl) {
     toastEl = document.createElement('div')
     toastEl.className = 'theme-toast'
     document.body.appendChild(toastEl)
   }
-  toastEl.textContent = theme.name
+  toastEl.textContent = message
   toastEl.classList.add('theme-toast--visible')
   if (toastTimer) window.clearTimeout(toastTimer)
   toastTimer = window.setTimeout(() => {
     toastEl?.classList.remove('theme-toast--visible')
   }, 1500)
+}
+
+export function showThemeToast(theme: Theme): void {
+  showToast(theme.name)
 }
