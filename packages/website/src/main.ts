@@ -35,6 +35,7 @@ import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from '.
 import { initTheme, toggleRecentTheme, showThemeToast } from './themes'
 import { initFonts } from './fonts'
 import { openFontPicker } from './font-picker'
+import { openUrlPrompt } from './url-open'
 import { openThemePicker } from './theme-picker'
 import { setupScrollStrip, showStrip } from './scroll-strip'
 import { setupFormatBar } from './format-bar'
@@ -549,6 +550,15 @@ function finish(harness: Harness): void {
     if (event.altKey && event.code === 'KeyF') {
       event.preventDefault()
       openFontPicker()
+      return
+    }
+    // Cmd/Ctrl + Alt/Option + O — open URL prompt. Slots into the
+    // Cmd+Alt+letter picker family. Cmd+Shift+O is Chrome's bookmark
+    // manager and Cmd+U is View-Source on most browsers (and not always
+    // overridable), so Alt is the safe modifier here.
+    if (event.altKey && event.code === 'KeyO') {
+      event.preventDefault()
+      openUrlPrompt(harness)
       return
     }
     if (event.altKey) return

@@ -13,6 +13,7 @@
 import type { Harness } from './main'
 import { toggleFullscreen } from './main'
 import { openFile, saveFile, newFile } from './doc-source'
+import { openUrlPrompt } from './url-open'
 import { openThemePicker } from './theme-picker'
 import { toggleRecentTheme, showThemeToast } from './themes'
 import { openFontPicker } from './font-picker'
@@ -46,6 +47,7 @@ function buildCommands(harness: Harness): Command[] {
     // File
     { id: 'file.new', label: 'New file', hint: 'Discards unsaved changes', shortcut: 'Cmd+N', action: () => void newFile(harness) },
     { id: 'file.open', label: 'Open file…', shortcut: 'Cmd+O', action: () => void openFile(harness) },
+    { id: 'file.openUrl', label: 'Open URL…', hint: 'GitHub markdown files', shortcut: 'Cmd+Alt+O', action: () => openUrlPrompt(harness) },
     { id: 'file.save', label: 'Save', shortcut: 'Cmd+S', action: () => void saveFile(harness) },
     { id: 'file.saveAs', label: 'Save As…', shortcut: 'Cmd+Shift+S', action: () => void saveFile(harness, { saveAs: true }) },
 

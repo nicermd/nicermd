@@ -832,6 +832,108 @@ html {
   text-align: center;
 }
 
+/* --- Open URL modal --- */
+.url-open__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: color-mix(in srgb, var(--bg) 40%, rgba(0, 0, 0, 0.35));
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 16vh;
+}
+.url-open__panel {
+  width: min(520px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+  padding: 18px 18px 14px;
+  /* Hardcode system-ui so the modal doesn't flicker if the user has
+     a heavy web font as their prose face. Same pattern as font-picker. */
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+.url-open__title {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+  margin-bottom: 4px;
+}
+.url-open__hint {
+  font-size: 12px;
+  color: var(--muted);
+  margin-top: 8px;
+  /* Reserve a single line of space so the modal doesn't pop in height
+     when status text appears or disappears. */
+  min-height: 1.2em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.url-open__hint--preview {
+  font-family: var(--font-code);
+  /* Slightly stronger than the default muted so the preview reads as
+     "this is what will happen" rather than "FYI". */
+  color: color-mix(in srgb, var(--fg) 70%, transparent);
+}
+.url-open__input {
+  appearance: none;
+  width: 100%;
+  box-sizing: border-box;
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  font-family: var(--font-code);
+  outline: 0;
+}
+.url-open__input:focus {
+  border-color: var(--accent);
+}
+.url-open__error {
+  min-height: 1.2em;
+  margin-top: 8px;
+  font-size: 12px;
+  color: #c0392b;
+}
+.url-open__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  margin-top: 4px;
+}
+.url-open__btn {
+  appearance: none;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  color: var(--fg);
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-family: inherit;
+  cursor: pointer;
+}
+.url-open__btn:hover {
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
+.url-open__btn--primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.url-open__btn--primary:hover {
+  background: color-mix(in srgb, var(--accent) 85%, #000);
+}
+.url-open__btn:disabled {
+  opacity: 0.6;
+  cursor: progress;
+}
+
 /* --- Mode 1 — themed read --- */
 .mode-read {
   max-width: var(--reading-width);
