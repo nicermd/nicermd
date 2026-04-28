@@ -384,16 +384,7 @@ export function openUrlPrompt(harness: Harness): void {
   title.textContent = 'Open URL'
   panel.appendChild(title)
 
-  // Recent-URLs row, only added when there's something to show. Each chip
-  // is a button with the displayName as its label and the original input
-  // as the hover tooltip; click immediately reloads. Wired below once the
-  // submit closure exists.
   const recents = readRecent()
-  const recentRow = recents.length > 0 ? document.createElement('div') : null
-  if (recentRow) {
-    recentRow.className = 'url-open__recent'
-    panel.appendChild(recentRow)
-  }
 
   const input = document.createElement('input')
   input.className = 'url-open__input'
@@ -419,6 +410,68 @@ export function openUrlPrompt(harness: Harness): void {
   const error = document.createElement('div')
   error.className = 'url-open__error'
   panel.appendChild(error)
+
+  // Vertical list of recent URLs — only rendered when there are any.
+  // Sits between error and actions; each row is { name, url-hint }.
+  // Highlight follows arrow-key nav AND mouse hover; Enter on a
+  // highlighted row loads it (instead of submitting the input).
+  // selectedRecentIdx: -1 = focus is on the input, no recent active.
+  let selectedRecentIdx = -1
+  const recentRows: HTMLElement[] = []
+  if (recents.length > 0) {
+    const section = document.createElement('div')
+    section.className = 'url-open__recent'
+
+    const heading = document.createElement('div')
+    heading.className = 'url-open__recent-heading'
+    heading.textContent = 'Recent'
+    section.appendChild(heading)
+
+    const list = document.createElement('ul')
+    list.className = 'url-open__recent-list'
+    list.setAttribute('role', 'listbox')
+
+    recents.forEach((entry, idx) => {
+      const row = document.createElement('li')
+      row.className = 'url-open__recent-row'
+      row.setAttribute('role', 'option')
+
+      const name = document.createElement('span')
+      name.className = 'url-open__recent-row__name'
+      name.textContent = entry.name
+
+      const url = document.createElement('span')
+      url.className = 'url-open__recent-row__url'
+      url.textContent = entry.input
+
+      row.append(name, url)
+
+      row.addEventListener('mousemove', () => {
+        if (selectedRecentIdx === idx) return
+        selectedRecentIdx = idx
+        applySelection()
+      })
+      row.addEventListener('mousedown', (e) => {
+        // mousedown rather than click — fires before the input loses
+        // focus, so the modal close + load happen synchronously rather
+        // than after a focus blur cycle.
+        e.preventDefault()
+        loadRecent(entry)
+      })
+
+      list.appendChild(row)
+      recentRows.push(row)
+    })
+
+    section.appendChild(list)
+    panel.appendChild(section)
+  }
+
+  const applySelection = (): void => {
+    recentRows.forEach((row, idx) => {
+      row.classList.toggle('url-open__recent-row--selected', idx === selectedRecentIdx)
+    })
+  }
 
   const HINT_EMPTY = 'Paste a GitHub URL — file, repo, or tree path'
   const HINT_INVALID = 'Not recognised — paste a github.com or raw.githubusercontent.com URL'
@@ -488,24 +541,13 @@ export function openUrlPrompt(harness: Harness): void {
     }
   }
 
-  // Populate recent-URL chips. Click → set the input to that entry and
-  // submit, so the load goes through the normal parser/fetch path
-  // (re-resolving main→master fallbacks etc.) and any error surfaces in
-  // the same place as a typed URL.
-  if (recentRow) {
-    recents.forEach((entry) => {
-      const chip = document.createElement('button')
-      chip.type = 'button'
-      chip.className = 'url-open__chip'
-      chip.textContent = entry.name
-      chip.setAttribute('title', entry.input)
-      chip.addEventListener('click', () => {
-        input.value = entry.input
-        updateStatus()
-        void submit()
-      })
-      recentRow.appendChild(chip)
-    })
+  // Mirror a recent into the input + run submit, so the load goes through
+  // the normal parser/fetch path (re-resolving main→master fallbacks etc.)
+  // and any error surfaces in the same place as a typed URL.
+  const loadRecent = (entry: RecentEntry): void => {
+    input.value = entry.input
+    updateStatus()
+    void submit()
   }
 
   const onKeydown = (e: KeyboardEvent): void => {
@@ -516,9 +558,29 @@ export function openUrlPrompt(harness: Harness): void {
       close()
       return
     }
+    // Down/Up navigate the recents list. -1 means "focus on input" and
+    // first Down jumps into the list; Up from row 0 goes back to -1
+    // (input). Out of range values get clamped to the row count.
+    if (e.key === 'ArrowDown' && recents.length > 0) {
+      e.preventDefault()
+      selectedRecentIdx = Math.min(selectedRecentIdx + 1, recents.length - 1)
+      applySelection()
+      return
+    }
+    if (e.key === 'ArrowUp' && recents.length > 0) {
+      e.preventDefault()
+      selectedRecentIdx = Math.max(selectedRecentIdx - 1, -1)
+      applySelection()
+      return
+    }
     if (e.key === 'Enter') {
       e.preventDefault()
-      void submit()
+      // If a recent is highlighted, load it; otherwise submit the input.
+      if (selectedRecentIdx >= 0 && selectedRecentIdx < recents.length) {
+        loadRecent(recents[selectedRecentIdx]!)
+      } else {
+        void submit()
+      }
       return
     }
   }

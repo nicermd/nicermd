@@ -863,31 +863,54 @@ html {
   margin-bottom: 4px;
 }
 .url-open__recent {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  margin: 0 0 12px;
+  margin-top: 4px;
+  border-top: 1px solid var(--border);
+  padding-top: 8px;
 }
-.url-open__chip {
-  appearance: none;
-  border: 1px solid var(--border);
-  background: color-mix(in srgb, var(--fg) 4%, transparent);
-  color: var(--fg);
-  padding: 4px 9px;
-  border-radius: 999px;
-  font-size: 12px;
-  font-family: var(--font-code);
+.url-open__recent-heading {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--muted);
+  margin: 0 0 4px;
+}
+.url-open__recent-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.url-open__recent-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 8px;
+  border-radius: 6px;
   cursor: pointer;
-  /* Truncate long names; the original URL is always available via
-     the title tooltip on hover. */
-  max-width: 220px;
+  /* Same hit area target as the cmdp rows so future touch input is OK. */
+  min-height: 32px;
+}
+.url-open__recent-row--selected {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.url-open__recent-row__name {
+  flex: 0 0 auto;
+  font-size: 13px;
+  color: var(--fg);
+  font-family: var(--font-code);
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  max-width: 50%;
 }
-.url-open__chip:hover {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+.url-open__recent-row__url {
+  flex: 1 1 auto;
+  font-size: 11px;
+  color: var(--muted);
+  text-align: right;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 .url-open__hint {
   font-size: 12px;
