@@ -23,6 +23,7 @@ export const THEMES: readonly Theme[] = [
 ]
 
 const STORAGE_KEY = 'nicermd:theme'
+const PREVIOUS_KEY = 'nicermd:theme-previous'
 const DEFAULT_SLUG = 'default'
 
 function readStored(): string | null {
@@ -42,6 +43,22 @@ function writeStored(slug: string): void {
   }
 }
 
+function readPreviousStored(): string | null {
+  try {
+    return localStorage.getItem(PREVIOUS_KEY)
+  } catch {
+    return null
+  }
+}
+
+function writePreviousStored(slug: string): void {
+  try {
+    localStorage.setItem(PREVIOUS_KEY, slug)
+  } catch {
+    // Same fall-through as above.
+  }
+}
+
 function findBySlug(slug: string | null | undefined): Theme {
   if (!slug) return THEMES[0]!
   return THEMES.find((t) => t.slug === slug) ?? THEMES[0]!
@@ -54,9 +71,30 @@ export function getActiveTheme(): Theme {
 
 export function applyTheme(slug: string, persist: boolean = true): Theme {
   const theme = findBySlug(slug)
+  if (persist) {
+    // When committing a different theme, capture the previously
+    // committed one so toggleRecentTheme() can swap back. Reading
+    // localStorage rather than dataset.theme dodges live-preview
+    // pollution — the picker calls applyTheme(…, false) while the
+    // user arrows around, then once with persist=true on commit.
+    const currentlyPersisted = readStored()
+    if (currentlyPersisted && currentlyPersisted !== theme.slug) {
+      writePreviousStored(currentlyPersisted)
+    }
+    writeStored(theme.slug)
+  }
   document.documentElement.dataset.theme = theme.slug
-  if (persist) writeStored(theme.slug)
   return theme
+}
+
+// Swap to the previously-committed theme. Designed for "toggle
+// between my light + dark" — repeated calls bounce between the
+// two most recent themes, because applyTheme records the swap.
+// Returns null if there's no previous theme yet (fresh user).
+export function toggleRecentTheme(): Theme | null {
+  const previous = readPreviousStored()
+  if (!previous || previous === readStored()) return null
+  return applyTheme(previous)
 }
 
 // Initialise on boot. Restore from localStorage if present, else use the

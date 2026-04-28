@@ -32,7 +32,7 @@ import { setupAutosave, checkRecovery } from './autosave'
 import { setupModeIcons } from './mode-icons'
 import { setupTitle } from './title'
 import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from './zoom'
-import { initTheme } from './themes'
+import { initTheme, toggleRecentTheme, showThemeToast } from './themes'
 import { openThemePicker } from './theme-picker'
 import { setupScrollStrip, showStrip } from './scroll-strip'
 import { setupFormatBar } from './format-bar'
@@ -577,6 +577,16 @@ function finish(harness: Harness): void {
       event.preventDefault()
       const cur = harness.getCurrentMode().key
       harness.switchTo(cur === 2 ? 1 : 2)
+      return
+    }
+    // Cmd+\ — swap between the two most recently committed themes.
+    // Designed for "I have a light theme and a dark theme and want
+    // to bounce between them." No-op until the user has changed
+    // theme at least once.
+    if (event.code === 'Backslash') {
+      event.preventDefault()
+      const swapped = toggleRecentTheme()
+      if (swapped) showThemeToast(swapped)
       return
     }
     // Cmd+N is browser-reserved (new window) and preventDefault can't

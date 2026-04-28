@@ -43,6 +43,7 @@ Drop a `.md` / `.markdown` / `.mdx` file onto the window to load it.
 | Shortcut             | Action                                              | Overrides |
 |----------------------|-----------------------------------------------------|-----------|
 | `Cmd+Alt` + `T`      | Open theme picker (arrows preview, Enter commits, Esc reverts) | — |
+| `Cmd` + `\`          | Swap to previously-committed theme (bounce between the two most recent — handy for light ↔ dark) | — |
 
 `Cmd+Alt+T` over `Cmd+Shift+T` because Chrome reserves the latter for "reopen closed tab" and `preventDefault` cannot override it.
 
