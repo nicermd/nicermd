@@ -20,17 +20,14 @@ interface PlaceholderTheme {
   mode: ThemeMode
 }
 
+// Several of the original placeholders graduated into the real
+// THEMES list (Solarized Light/Dark, Forest → Everforest, etc.).
+// Keep a small "Coming soon" rail for future ideas.
 const PLACEHOLDERS: PlaceholderTheme[] = [
-  { slug: 'solarized-light', name: 'Solarized Light', mode: 'light' },
-  { slug: 'solarized-dark', name: 'Solarized Dark', mode: 'dark' },
-  { slug: 'slate', name: 'Slate', mode: 'dark' },
+  { slug: 'sepia', name: 'Sepia', mode: 'light' },
   { slug: 'high-contrast', name: 'High Contrast', mode: 'light' },
   { slug: 'high-contrast-dark', name: 'High Contrast Dark', mode: 'dark' },
-  { slug: 'sepia', name: 'Sepia', mode: 'light' },
   { slug: 'newsprint', name: 'Newsprint', mode: 'light' },
-  { slug: 'mono', name: 'Mono', mode: 'light' },
-  { slug: 'forest', name: 'Forest', mode: 'dark' },
-  { slug: 'ocean', name: 'Ocean', mode: 'dark' },
 ]
 
 const GRID_COLS = 4
@@ -208,6 +205,13 @@ function createThemeCard(theme: Theme, selected: boolean): HTMLElement {
   name.className = 'theme-card__name'
   name.textContent = theme.name
   footer.append(name)
+  if (theme.inspiredBy) {
+    const sub = document.createElement('span')
+    sub.className = 'theme-card__inspired'
+    sub.textContent = `Inspired by ${theme.inspiredBy}`
+    sub.title = sub.textContent
+    footer.append(sub)
+  }
 
   card.append(preview, footer)
   return card

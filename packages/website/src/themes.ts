@@ -11,15 +11,30 @@ export interface Theme {
   slug: string
   name: string
   mode: ThemeMode
+  // Optional attribution for community-palette themes. Rendered as a
+  // subtitle in the picker card; never used to claim authorship.
+  inspiredBy?: string
 }
 
 export const THEMES: readonly Theme[] = [
+  // Originals
   { slug: 'default', name: 'Default', mode: 'light' },
   { slug: 'nicer', name: 'Nicer', mode: 'light' },
   { slug: 'nicer-dark', name: 'Nicer Dark', mode: 'dark' },
   { slug: 'paper', name: 'Paper', mode: 'light' },
   { slug: 'terminal-light', name: 'Terminal Light', mode: 'light' },
   { slug: 'terminal-dark', name: 'Terminal Dark', mode: 'dark' },
+  // Community-palette tributes (palettes MIT/BSD; original credits below)
+  { slug: 'solarized-light', name: 'Solarized Light', mode: 'light', inspiredBy: 'Ethan Schoonover' },
+  { slug: 'solarized-dark', name: 'Solarized Dark', mode: 'dark', inspiredBy: 'Ethan Schoonover' },
+  { slug: 'nord', name: 'Nord', mode: 'dark', inspiredBy: 'Arctic Ice Studio' },
+  { slug: 'gruvbox-dark', name: 'Gruvbox Dark', mode: 'dark', inspiredBy: 'Pavel Pertsev' },
+  { slug: 'tokyo-night', name: 'Tokyo Night', mode: 'dark', inspiredBy: 'enkia' },
+  { slug: 'dracula', name: 'Dracula', mode: 'dark', inspiredBy: 'Zeno Rocha' },
+  { slug: 'everforest', name: 'Everforest', mode: 'dark', inspiredBy: 'sainnhe' },
+  { slug: 'catppuccin-latte', name: 'Catppuccin Latte', mode: 'light', inspiredBy: 'Catppuccin' },
+  { slug: 'ayu-light', name: 'Ayu Light', mode: 'light', inspiredBy: 'Ivan Konstantinov' },
+  { slug: 'rose-pine-dawn', name: 'Rosé Pine Dawn', mode: 'light', inspiredBy: 'Rosé Pine' },
 ]
 
 const STORAGE_KEY = 'nicermd:theme'
