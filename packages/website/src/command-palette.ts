@@ -12,10 +12,10 @@
 
 import type { Harness } from './main'
 import { toggleFullscreen } from './main'
-import { openFile, saveFile, newFile } from './doc-source'
+import { openFile, saveFile, newFile, getCurrentSourceUrl } from './doc-source'
 import { openUrlPrompt } from './url-open'
 import { openThemePicker } from './theme-picker'
-import { toggleRecentTheme, showThemeToast } from './themes'
+import { toggleRecentTheme, showThemeToast, showToast } from './themes'
 import { openFontPicker } from './font-picker'
 import { isTauri as isZoomTauri, zoomIn, zoomOut, zoomReset } from './zoom'
 
@@ -48,6 +48,32 @@ function buildCommands(harness: Harness): Command[] {
     { id: 'file.new', label: 'New file', hint: 'Discards unsaved changes', shortcut: 'Cmd+N', action: () => void newFile(harness) },
     { id: 'file.open', label: 'Open file…', shortcut: 'Cmd+O', action: () => void openFile(harness) },
     { id: 'file.openUrl', label: 'Open URL…', hint: 'GitHub markdown files', shortcut: 'Cmd+Alt+O', action: () => openUrlPrompt(harness) },
+    {
+      id: 'file.shareLink',
+      label: 'Copy share link',
+      hint: 'Reopens this doc on this site',
+      // Only available when the current doc was loaded from a URL —
+      // there's nothing meaningful to share for files-on-disk or
+      // untitled drafts. Predicate runs at palette open time, so the
+      // command appears / disappears as the active doc changes.
+      available: () => getCurrentSourceUrl() !== null,
+      action: async () => {
+        const sourceUrl = getCurrentSourceUrl()
+        if (!sourceUrl) return
+        // Use the current origin so dev-server users get a localhost
+        // link they can actually visit; in production this becomes
+        // nicermd.com/?url=… (the recipient still sees the phishing
+        // gate before any fetch happens — share links are not auto-
+        // -trust, they just bootstrap the prompt).
+        const shareUrl = `${window.location.origin}/?url=${encodeURIComponent(sourceUrl)}`
+        try {
+          await navigator.clipboard.writeText(shareUrl)
+          showToast('Share link copied')
+        } catch {
+          showToast('Couldn’t copy link')
+        }
+      },
+    },
     { id: 'file.save', label: 'Save', shortcut: 'Cmd+S', action: () => void saveFile(harness) },
     { id: 'file.saveAs', label: 'Save As…', shortcut: 'Cmd+Shift+S', action: () => void saveFile(harness, { saveAs: true }) },
 
