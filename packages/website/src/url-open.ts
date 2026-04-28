@@ -1,23 +1,34 @@
 // Open a markdown file by URL. Spike scope: GitHub-hosted files only.
-// Anything outside the GitHub raw host is rejected up front, so the
-// prod CSP `connect-src` allowlist stays narrow.
+// Anything outside the GitHub family of hosts is rejected up front, so
+// the prod CSP `connect-src` allowlist stays narrow.
 //
 // Accepted URL shapes (with what we fetch):
 //
-//   - github.com/<u>/<r>/blob/<branch>/<path…>.md       → raw equivalent
-//   - github.com/<u>/<r>/raw/<branch>/<path…>.md        → raw equivalent
-//   - raw.githubusercontent.com/<u>/<r>/<branch>/<…>.md → passthrough
-//   - github.com/<u>/<r>/tree/<branch>[/<dir>]          → README.md there
-//   - github.com/<u>/<r>                                → README.md on
-//                                                          main, falling
-//                                                          back to master
+//   - github.com/<u>/<r>/blob/<branch>/<path…>.md          → raw equivalent
+//   - github.com/<u>/<r>/raw/<branch>/<path…>.md           → raw equivalent
+//   - raw.githubusercontent.com/<u>/<r>/<branch>/<…>.md    → passthrough
+//   - github.com/<u>/<r>/tree/<branch>[/<dir>]             → README.md there
+//   - github.com/<u>/<r>                                   → README.md on
+//                                                             main, falling
+//                                                             back to master
+//   - gist.github.com/<u>/<id>                             → first file via
+//                                                             /raw redirect
+//   - gist.githubusercontent.com/<u>/<id>/raw/<sha>/<file> → passthrough
 //
 // Safety posture:
 //
-//   - Host allowlist (raw.githubusercontent.com only) at fetch time.
-//   - Path-extension filter: explicit blob/raw URLs must end in
-//     .md, .markdown, or .mdx (case-insensitive). bare-repo / tree
-//     URLs synthesise README.md, so the filter doesn't apply there.
+//   - Host allowlist at fetch time (raw.githubusercontent.com,
+//     gist.github.com, gist.githubusercontent.com).
+//   - Path-extension filter: explicit blob/raw URLs must end in .md,
+//     .markdown, or .mdx (case-insensitive). bare-repo / tree URLs
+//     synthesise README.md, so the filter doesn't apply there. Gist
+//     /raw endpoints return whatever GitHub serves (gists are typed
+//     by content, not extension); we accept the response as long as
+//     it's text and within the size cap.
+//   - Redirects: blocked by default (`redirect: 'error'`). The gist
+//     /raw endpoint 302s to the resolved revision, so for that single
+//     candidate type we allow follow + post-fetch host check that the
+//     final URL still lives on gist.githubusercontent.com.
 //   - 5 MiB ceiling on response bodies — markdown is small, anything
 //     larger is almost certainly the wrong file.
 //   - Core renderer runs markdown-it with html:false + DOMPurify
@@ -25,12 +36,15 @@
 //     allowlist still permits <a href> and <img src> — links go to
 //     wherever the file points, and images load from the document's
 //     img-src CSP (https:), not connect-src.
-//   - Loaded URL is recorded as a null DocSource — Save falls through
+//   - Loaded URL is recorded as a 'url' DocSource — Save falls through
 //     to Save-As, since we can't write back to GitHub.
 //
 // Deliberately not in scope:
 //
-//   - Gists (different host + multi-file pages need their own UX).
+//   - Multi-file gist picker — gist /raw returns the first file (by
+//     filename). Users who want a specific file from a multi-file gist
+//     can paste the direct gist.githubusercontent.com /raw/<sha>/<file>
+//     URL.
 //   - Private repos / auth tokens.
 //   - URL share param on boot (`?url=…`) — would unlock sharing but
 //     wants more thought on phishing risk first.
@@ -42,6 +56,8 @@ import type { Harness } from './main'
 import { setDocState } from './doc-source'
 
 const RAW_HOST = 'raw.githubusercontent.com'
+const GIST_PAGE_HOST = 'gist.github.com'
+const GIST_RAW_HOST = 'gist.githubusercontent.com'
 const MAX_BYTES = 5 * 1024 * 1024 // 5 MiB; markdown is never this big.
 const MD_EXT_RE = /\.(md|markdown|mdx)$/i
 
@@ -52,13 +68,17 @@ function isMarkdownPath(path: string): boolean {
   return MD_EXT_RE.test(clean)
 }
 
-// Three shapes the parser produces. `direct` covers blob/raw/already-raw
-// URLs that map 1:1 onto a single raw URL. `tree` and `repo` synthesise
-// README.md and may need a branch fallback (repo only).
+// Four shapes the parser produces. `direct` covers blob/raw/already-raw
+// URLs (and direct gist raw URLs) that map 1:1 onto a single fetchable
+// URL. `tree` and `repo` synthesise README.md and may need a branch
+// fallback (repo only). `gist` resolves via gist.github.com/<id>/raw,
+// which 302s to the latest revision — handled with redirect:'follow'
+// gated to gist.githubusercontent.com only.
 type Parsed =
   | { kind: 'direct'; rawUrl: string }
   | { kind: 'tree'; user: string; repo: string; branch: string; dir: string }
   | { kind: 'repo'; user: string; repo: string }
+  | { kind: 'gist'; user: string; id: string }
 
 type ParseResult = { ok: true; parsed: Parsed } | { ok: false; reason: string }
 
@@ -72,7 +92,12 @@ function parseGithubUrl(input: string): ParseResult {
   // auto-prepend https:// for hosts we already accept downstream, so
   // this can't widen the host allowlist.
   if (!/^[a-z]+:\/\//i.test(trimmed)) {
-    if (/^(?:www\.)?github\.com\//.test(trimmed) || trimmed.startsWith('raw.githubusercontent.com/')) {
+    if (
+      /^(?:www\.)?github\.com\//.test(trimmed) ||
+      trimmed.startsWith('raw.githubusercontent.com/') ||
+      trimmed.startsWith('gist.github.com/') ||
+      trimmed.startsWith('gist.githubusercontent.com/')
+    ) {
       trimmed = `https://${trimmed}`
     }
   }
@@ -87,6 +112,22 @@ function parseGithubUrl(input: string): ParseResult {
   if (url.hostname === RAW_HOST) {
     if (!isMarkdownPath(url.pathname)) return { ok: false, reason: REASON_NOT_MARKDOWN }
     return { ok: true, parsed: { kind: 'direct', rawUrl: url.toString() } }
+  }
+
+  // gist.githubusercontent.com paths are revision-specific raw content;
+  // pass through as direct (no redirect needed). Path-extension filter
+  // doesn't apply — gists aren't typed by extension.
+  if (url.hostname === GIST_RAW_HOST) {
+    return { ok: true, parsed: { kind: 'direct', rawUrl: url.toString() } }
+  }
+
+  // gist.github.com/<u>/<id> — gist page; we'll fetch via /<id>/raw
+  // which 302s to the latest revision's first file.
+  if (url.hostname === GIST_PAGE_HOST) {
+    const gistMatch = url.pathname.match(/^\/([^/]+)\/([0-9a-f]+)(?:\/.*)?$/i)
+    if (!gistMatch) return { ok: false, reason: REASON_NOT_GITHUB }
+    const [, gistUser, gistId] = gistMatch
+    return { ok: true, parsed: { kind: 'gist', user: gistUser!, id: gistId! } }
   }
 
   if (url.hostname !== 'github.com' && url.hostname !== 'www.github.com') {
@@ -125,7 +166,9 @@ function parseGithubUrl(input: string): ParseResult {
 
 // What we'd fetch if the user pressed Enter right now. For repo URLs
 // we show `main/README.md` — the master fallback is silent and only
-// kicks in if main 404s.
+// kicks in if main 404s. For gists, the /raw endpoint 302s to a
+// revision-specific URL we don't know yet, so we show the redirect
+// origin as the preview.
 function previewUrl(p: Parsed): string {
   switch (p.kind) {
     case 'direct':
@@ -136,25 +179,45 @@ function previewUrl(p: Parsed): string {
     }
     case 'repo':
       return `https://${RAW_HOST}/${p.user}/${p.repo}/main/README.md`
+    case 'gist':
+      return `https://${GIST_PAGE_HOST}/${p.user}/${p.id}/raw`
   }
 }
 
-// Candidate URLs to try in priority order. Only `repo` produces more
-// than one — main first (modern default), master as fallback for
-// pre-2020 / legacy repos. Two shots covers virtually every public
-// repo without an api.github.com call.
-function resolveCandidates(p: Parsed): string[] {
+// A fetch candidate. Gist /raw URLs need redirect-follow because the
+// canonical /raw endpoint 302s to a revision-specific URL on
+// gist.githubusercontent.com; everything else fetches with strict
+// `redirect: 'error'`. allowedFinalHosts gates the post-redirect host
+// so a hypothetical chain still can't end up off the GitHub family.
+interface Candidate {
+  url: string
+  allowRedirect: boolean
+  allowedFinalHosts?: readonly string[]
+}
+
+// Candidates to try in priority order. `repo` produces two — main first
+// (modern default), master as fallback for pre-2020 / legacy repos —
+// without an api.github.com call.
+function resolveCandidates(p: Parsed): Candidate[] {
   switch (p.kind) {
     case 'direct':
-      return [p.rawUrl]
+      return [{ url: p.rawUrl, allowRedirect: false }]
     case 'tree': {
       const dir = p.dir ? `${p.dir}/` : ''
-      return [`https://${RAW_HOST}/${p.user}/${p.repo}/${p.branch}/${dir}README.md`]
+      return [{ url: `https://${RAW_HOST}/${p.user}/${p.repo}/${p.branch}/${dir}README.md`, allowRedirect: false }]
     }
     case 'repo':
       return [
-        `https://${RAW_HOST}/${p.user}/${p.repo}/main/README.md`,
-        `https://${RAW_HOST}/${p.user}/${p.repo}/master/README.md`,
+        { url: `https://${RAW_HOST}/${p.user}/${p.repo}/main/README.md`, allowRedirect: false },
+        { url: `https://${RAW_HOST}/${p.user}/${p.repo}/master/README.md`, allowRedirect: false },
+      ]
+    case 'gist':
+      return [
+        {
+          url: `https://${GIST_PAGE_HOST}/${p.user}/${p.id}/raw`,
+          allowRedirect: true,
+          allowedFinalHosts: [GIST_RAW_HOST],
+        },
       ]
   }
 }
@@ -181,9 +244,18 @@ function filenameFromUrl(rawUrl: string): string {
   }
 }
 
-async function fetchMarkdown(rawUrl: string): Promise<string> {
-  const resp = await fetch(rawUrl, { redirect: 'error' })
+async function fetchMarkdown(c: Candidate): Promise<{ text: string; finalUrl: string }> {
+  const resp = await fetch(c.url, { redirect: c.allowRedirect ? 'follow' : 'error' })
   if (!resp.ok) throw new HttpError(resp.status, resp.statusText)
+  // Post-redirect host check — gist /raw 302s within the GitHub family
+  // but we still validate that the response landed on an explicitly
+  // allowed host, in case GitHub ever changes the redirect chain.
+  if (c.allowRedirect && c.allowedFinalHosts && c.allowedFinalHosts.length > 0) {
+    const finalHost = new URL(resp.url).hostname
+    if (!c.allowedFinalHosts.includes(finalHost)) {
+      throw new Error(`Refused: redirect ended on disallowed host (${finalHost})`)
+    }
+  }
   // Cheap pre-check before reading the body; the byte cap below is the
   // real defence (servers can lie or omit content-length).
   const declared = Number(resp.headers.get('content-length') ?? '')
@@ -194,7 +266,7 @@ async function fetchMarkdown(rawUrl: string): Promise<string> {
   if (buf.byteLength > MAX_BYTES) {
     throw new Error('File is too large (>5 MiB)')
   }
-  return new TextDecoder('utf-8').decode(buf)
+  return { text: new TextDecoder('utf-8').decode(buf), finalUrl: resp.url }
 }
 
 export async function loadFromUrl(harness: Harness, input: string): Promise<void> {
@@ -208,16 +280,18 @@ export async function loadFromUrl(harness: Harness, input: string): Promise<void
   // by switching branches.
   let lastError: Error | null = null
   for (let i = 0; i < candidates.length; i++) {
-    const url = candidates[i]!
+    const candidate = candidates[i]!
     try {
-      const text = await fetchMarkdown(url)
+      const { text, finalUrl } = await fetchMarkdown(candidate)
       // Source is { kind: 'url', url } — informational only. saveFile
       // treats this as no-save-back (falls through to Save-As), and
       // the title strip exposes it as a hover tooltip via
-      // getCurrentSourceUrl(). The display name comes from the URL
+      // getCurrentSourceUrl(). For gists, finalUrl is the resolved
+      // revision URL after the /raw redirect (more useful than the
+      // original /raw endpoint). The display name comes from the URL
       // path so the title strip shows something useful even before
       // hover.
-      setDocState(text, filenameFromUrl(url), { kind: 'url', url })
+      setDocState(text, filenameFromUrl(finalUrl), { kind: 'url', url: finalUrl })
       harness.replaceDoc(text)
       return
     } catch (err) {
