@@ -21,15 +21,62 @@ import {
   getActiveProseFont,
   getActiveCodeFont,
   loadCatalogue,
+  resolveProseThemeDefault,
+  resolveCodeThemeDefault,
+  THEME_DEFAULT_ID,
   type Font,
 } from './fonts'
 
 let isOpen = false
 
+interface CardEntry {
+  id: string // 'theme-default' or a font id
+  name: string
+  family: string
+  isThemeDefault: boolean
+}
+
 interface Section {
   label: string
-  fonts: readonly Font[]
+  entries: CardEntry[]
   apply: (id: string, persist?: boolean) => Font
+}
+
+// Build cards in catalogue order so positions are stable across
+// themes — the only thing that moves between themes is which card
+// carries the "(theme default)" tag. Selecting a tagged card opts
+// the user into theme-default mode (clears localStorage so future
+// theme switches re-engage their font pairings); selecting any
+// other card sets it as an explicit pick and theme switches no
+// longer touch the font.
+function buildEntries(
+  fonts: readonly Font[],
+  resolvedDefault: Font,
+): CardEntry[] {
+  return fonts.map((f) => {
+    const isThemeDefault = f.id === resolvedDefault.id
+    return {
+      id: f.id,
+      name: isThemeDefault ? `${f.name} (theme default)` : f.name,
+      family: f.family,
+      isThemeDefault,
+    }
+  })
+}
+
+// Where the picker should land when opened. If the user is on
+// theme-default mode (no localStorage entry), focus the card that
+// carries the (theme default) tag — the same card whose font is
+// currently rendering. Otherwise focus their explicit choice.
+function initialSelectedIndex(
+  entries: CardEntry[],
+  storedId: string | null,
+): number {
+  if (storedId === null) {
+    return Math.max(0, entries.findIndex((e) => e.isThemeDefault))
+  }
+  const idx = entries.findIndex((e) => e.id === storedId)
+  return idx < 0 ? 0 : idx
 }
 
 export function openFontPicker(): void {
@@ -41,18 +88,29 @@ export function openFontPicker(): void {
   const originalProse = getActiveProseFont().id
   const originalCode = getActiveCodeFont().id
 
+  // Capture the explicit user-saved IDs at open time so cancel can
+  // restore them (rather than the resolved defaults which look the
+  // same to the user but differ in localStorage state).
+  const originalProseStored = localStorage.getItem('nicermd:font-prose')
+  const originalCodeStored = localStorage.getItem('nicermd:font-code')
+
+  const proseEntries = buildEntries(PROSE_FONTS, resolveProseThemeDefault())
+  const codeEntries = buildEntries(CODE_FONTS, resolveCodeThemeDefault())
+
   const sections: Section[] = [
-    { label: 'Prose font', fonts: PROSE_FONTS, apply: applyProseFont },
-    { label: 'Code font', fonts: CODE_FONTS, apply: applyCodeFont },
+    { label: 'Prose font', entries: proseEntries, apply: applyProseFont },
+    { label: 'Code font', entries: codeEntries, apply: applyCodeFont },
   ]
 
   // Each section tracks its OWN selected index (the persistent
   // "what would commit" state). focusedSection / focusedIndex
   // tracks the keyboard-roving cursor — at most one card across the
   // whole modal. Both states are visualised independently in CSS.
+  const proseInitial = initialSelectedIndex(proseEntries, originalProseStored)
+  const codeInitial = initialSelectedIndex(codeEntries, originalCodeStored)
   const sectionState: { selectedIdx: number }[] = [
-    { selectedIdx: Math.max(0, PROSE_FONTS.findIndex((f) => f.id === originalProse)) },
-    { selectedIdx: Math.max(0, CODE_FONTS.findIndex((f) => f.id === originalCode)) },
+    { selectedIdx: proseInitial },
+    { selectedIdx: codeInitial },
   ]
   let focusedSection = 0
   let focusedIndex = sectionState[0].selectedIdx
@@ -95,22 +153,23 @@ export function openFontPicker(): void {
     label.textContent = section.label
     const currentName = document.createElement('div')
     currentName.className = 'font-picker__section-current'
-    currentName.textContent = section.fonts[sectionState[sIdx].selectedIdx]!.name
+    currentName.textContent = section.entries[sectionState[sIdx].selectedIdx]!.name
     labelRow.append(label, currentName)
     wrap.appendChild(labelRow)
 
     const grid = document.createElement('div')
     grid.className = 'font-picker__grid'
-    const cards = section.fonts.map((font, idx) => {
+    const cards = section.entries.map((entry, idx) => {
       const card = document.createElement('div')
       card.className = 'font-card'
+      if (entry.isThemeDefault) card.classList.add('font-card--theme-default')
       card.tabIndex = 0
       card.setAttribute('role', 'button')
-      card.setAttribute('aria-label', `${section.label}: ${font.name}`)
+      card.setAttribute('aria-label', `${section.label}: ${entry.name}`)
 
       const sample = document.createElement('div')
       sample.className = 'font-card__sample'
-      sample.style.fontFamily = font.family
+      sample.style.fontFamily = entry.family
       if (section.label === 'Prose font') {
         const heading = document.createElement('div')
         heading.className = 'font-card__sample-heading'
@@ -130,7 +189,7 @@ export function openFontPicker(): void {
 
       const name = document.createElement('div')
       name.className = 'font-card__name'
-      name.textContent = font.name
+      name.textContent = entry.name
       card.appendChild(name)
 
       // Hover / arrow only previews — does not change the section's
@@ -153,7 +212,7 @@ export function openFontPicker(): void {
   function applyVisuals(): void {
     sectionEls.forEach((sec, sI) => {
       const sel = sectionState[sI].selectedIdx
-      sec.nameEl.textContent = sections[sI].fonts[sel]!.name
+      sec.nameEl.textContent = sections[sI].entries[sel]!.name
       sec.cards.forEach((card, cI) => {
         card.classList.toggle('font-card--selected', cI === sel)
         card.classList.toggle(
@@ -164,6 +223,15 @@ export function openFontPicker(): void {
     })
   }
 
+  // Resolve a card to the id we should pass to applyProseFont /
+  // applyCodeFont. For the theme-default-flagged card, that's the
+  // THEME_DEFAULT_ID sentinel — picking it opts into theme-default
+  // mode so subsequent theme switches keep adjusting the font. For
+  // any other card, it's the entry's literal font id (explicit pick).
+  function applyIdFor(entry: CardEntry): string {
+    return entry.isThemeDefault ? THEME_DEFAULT_ID : entry.id
+  }
+
   // Re-apply fonts to the document. The focused section previews the
   // hovered/arrow-targeted card; the non-focused section shows its
   // committed selection. So moving focus across sections doesn't flap
@@ -171,7 +239,8 @@ export function openFontPicker(): void {
   function applyFonts(): void {
     sections.forEach((section, sI) => {
       const idx = sI === focusedSection ? focusedIndex : sectionState[sI].selectedIdx
-      section.apply(section.fonts[idx]!.id, false)
+      const entry = section.entries[idx]!
+      section.apply(applyIdFor(entry), false)
     })
   }
 
@@ -203,15 +272,27 @@ export function openFontPicker(): void {
     // pattern from menus and pickers.
     sectionState[focusedSection].selectedIdx = focusedIndex
     sections.forEach((section, sI) => {
-      const sel = sectionState[sI].selectedIdx
-      section.apply(section.fonts[sel]!.id, true)
+      const entry = section.entries[sectionState[sI].selectedIdx]!
+      section.apply(applyIdFor(entry), true)
     })
     close()
   }
 
   function cancel(): void {
-    applyProseFont(originalProse, false)
-    applyCodeFont(originalCode, false)
+    // Restore each axis to whatever was *stored* (not just resolved)
+    // when the picker opened — so cancelling out of "I tried theme
+    // default" puts the explicit pick back in localStorage, and
+    // cancelling out of "I tried Inter" with no prior pick clears it.
+    if (originalProseStored === null) {
+      applyProseFont(THEME_DEFAULT_ID, true)
+    } else {
+      applyProseFont(originalProse, true)
+    }
+    if (originalCodeStored === null) {
+      applyCodeFont(THEME_DEFAULT_ID, true)
+    } else {
+      applyCodeFont(originalCode, true)
+    }
     close()
   }
 
@@ -239,17 +320,17 @@ export function openFontPicker(): void {
     const section = sections[focusedSection]
     if (e.key === 'ArrowRight') {
       e.preventDefault()
-      focus(focusedSection, (focusedIndex + 1) % section.fonts.length)
+      focus(focusedSection, (focusedIndex + 1) % section.entries.length)
     } else if (e.key === 'ArrowLeft') {
       e.preventDefault()
       focus(
         focusedSection,
-        (focusedIndex - 1 + section.fonts.length) % section.fonts.length,
+        (focusedIndex - 1 + section.entries.length) % section.entries.length,
       )
     } else if (e.key === 'ArrowDown') {
       e.preventDefault()
       const next = focusedIndex + COLS
-      if (next < section.fonts.length) {
+      if (next < section.entries.length) {
         focus(focusedSection, next)
       } else if (focusedSection + 1 < sections.length) {
         focus(focusedSection + 1, 0)
@@ -261,7 +342,7 @@ export function openFontPicker(): void {
         focus(focusedSection, prev)
       } else if (focusedSection > 0) {
         const upSection = sections[focusedSection - 1]
-        focus(focusedSection - 1, upSection.fonts.length - 1)
+        focus(focusedSection - 1, upSection.entries.length - 1)
       }
     }
   }

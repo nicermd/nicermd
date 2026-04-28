@@ -1463,6 +1463,15 @@ html {
   border-color: var(--accent);
   background: color-mix(in srgb, var(--accent) 6%, var(--bg));
 }
+/* The card whose font matches the active theme's preferred default
+   wears a dashed border + "(theme default)" suffix in its name. It
+   moves between cards as the user switches themes — the catalogue
+   list itself stays in stable positions. Clicking it opts into
+   theme-default mode (clears localStorage); clicking any other card
+   sets that font as an explicit pick. */
+.font-card--theme-default {
+  border-style: dashed;
+}
 /* Keyboard-focus indicator — at most one across the modal, regardless
    of section. Stronger ring so it stands out from the selection
    border. Pairs with --selected on the same card when keyboard
