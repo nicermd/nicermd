@@ -14,7 +14,7 @@
 // the visual strip off-screen, the drag/dblclick surface stays put.
 
 import type { Harness } from './main'
-import { isDirty, getCurrentName } from './doc-source'
+import { isDirty, getCurrentName, getCurrentSourceUrl } from './doc-source'
 
 const APP_NAME = 'Nicer.md'
 
@@ -86,5 +86,17 @@ export function refreshTitle(): void {
   const name = getCurrentName() ?? 'Untitled'
   const display = (isDirty() ? '• ' : '') + name
   document.title = `${display} — ${APP_NAME}`
-  if (titleBarEl) titleBarEl.textContent = display
+  if (titleBarEl) {
+    titleBarEl.textContent = display
+    // Native browser tooltip shows the source URL on hover for files
+    // loaded via Open-URL. Removed cleanly when the next doc is loaded
+    // from disk / drag-drop / new — getCurrentSourceUrl() returns null
+    // and the attribute clears.
+    const sourceUrl = getCurrentSourceUrl()
+    if (sourceUrl) {
+      titleBarEl.setAttribute('title', sourceUrl)
+    } else {
+      titleBarEl.removeAttribute('title')
+    }
+  }
 }

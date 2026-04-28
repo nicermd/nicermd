@@ -18,6 +18,10 @@ import type { Harness } from './main'
 type DocSource =
   | { kind: 'tauri-path'; path: string }
   | { kind: 'fsa'; handle: FileSystemFileHandle }
+  // Loaded by URL — informational only. saveFile treats this the same
+  // as a null source (falls through to Save-As); the URL is exposed
+  // via getCurrentSourceUrl() so the title strip can show it on hover.
+  | { kind: 'url'; url: string }
 
 // State tracked here:
 //   - currentSource: where to write back on Cmd+S (null = anonymous)
@@ -67,6 +71,13 @@ export function isDirty(): boolean {
 
 export function getCurrentName(): string | null {
   return currentName
+}
+
+// URL the current doc was fetched from, if any. Returns null for files
+// loaded from disk / drag-drop / untitled — only the URL-open path
+// produces a populated value.
+export function getCurrentSourceUrl(): string | null {
+  return currentSource?.kind === 'url' ? currentSource.url : null
 }
 
 const ACCEPT_FILTERS = {
@@ -162,7 +173,9 @@ async function openViaInputFallback(harness: Harness): Promise<void> {
 
 export async function saveFile(harness: Harness, options?: { saveAs?: boolean }): Promise<void> {
   const text = harness.getMarkdown()
-  if (options?.saveAs || !currentSource) {
+  // 'url' sources have no save-back path (we can't write to GitHub from
+  // the browser), so they fall through to Save-As just like null does.
+  if (options?.saveAs || !currentSource || currentSource.kind === 'url') {
     await saveAsFile(harness, text)
     return
   }

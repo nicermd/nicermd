@@ -211,10 +211,13 @@ export async function loadFromUrl(harness: Harness, input: string): Promise<void
     const url = candidates[i]!
     try {
       const text = await fetchMarkdown(url)
-      // Source is null — we can't write back to GitHub from the browser, so
-      // a subsequent Cmd+S falls through to Save-As. The display name comes
-      // from the URL path so the title strip shows something useful.
-      setDocState(text, filenameFromUrl(url), null)
+      // Source is { kind: 'url', url } — informational only. saveFile
+      // treats this as no-save-back (falls through to Save-As), and
+      // the title strip exposes it as a hover tooltip via
+      // getCurrentSourceUrl(). The display name comes from the URL
+      // path so the title strip shows something useful even before
+      // hover.
+      setDocState(text, filenameFromUrl(url), { kind: 'url', url })
       harness.replaceDoc(text)
       return
     } catch (err) {
