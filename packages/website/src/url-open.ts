@@ -66,9 +66,19 @@ const REASON_NOT_GITHUB = 'Not a GitHub URL'
 const REASON_NOT_MARKDOWN = 'URL must point to a .md, .markdown, or .mdx file'
 
 function parseGithubUrl(input: string): ParseResult {
+  let trimmed = input.trim()
+  // Tolerate protocol-less inputs like "github.com/user/repo" — common
+  // when copy-pasting from chat / docs that omitted the scheme. Only
+  // auto-prepend https:// for hosts we already accept downstream, so
+  // this can't widen the host allowlist.
+  if (!/^[a-z]+:\/\//i.test(trimmed)) {
+    if (/^(?:www\.)?github\.com\//.test(trimmed) || trimmed.startsWith('raw.githubusercontent.com/')) {
+      trimmed = `https://${trimmed}`
+    }
+  }
   let url: URL
   try {
-    url = new URL(input.trim())
+    url = new URL(trimmed)
   } catch {
     return { ok: false, reason: REASON_NOT_GITHUB }
   }
