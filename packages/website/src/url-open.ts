@@ -491,12 +491,22 @@ function showBootConfirmation(harness: Harness, originalInput: string, parsed: P
       e.preventDefault()
       // Enter follows the focused button. Default focus is Cancel,
       // so a reflexive Enter dismisses safely. Loading requires
-      // either click on Open or Tab → Enter.
+      // either click on Open or arrow/Tab → Enter.
       if (document.activeElement === openBtn) {
         void accept()
       } else {
         close()
       }
+      return
+    }
+    if (e.key === 'ArrowLeft') {
+      e.preventDefault()
+      cancelBtn.focus()
+      return
+    }
+    if (e.key === 'ArrowRight') {
+      e.preventDefault()
+      openBtn.focus()
       return
     }
   }
