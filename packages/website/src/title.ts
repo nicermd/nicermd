@@ -15,8 +15,7 @@
 
 import type { Harness } from './main'
 import { isDirty, getCurrentName, getCurrentSourceUrl } from './doc-source'
-
-const APP_NAME = 'Nicer.md'
+import { APP_NAME } from './version'
 
 let titleBarEl: HTMLElement | null = null
 let harnessRef: Harness | null = null
