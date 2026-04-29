@@ -672,13 +672,21 @@ html {
 [data-strip-hidden="1"] .mode-icons {
   transform: translateY(-100%);
 }
+/* Format / command pill is bottom-anchored, so it slides down out of
+   view (translateX is preserved for centring; transform stacks via
+   composition). Inherits the same scroll-driven flag — the title strip
+   and the pill appear / disappear together. */
+[data-strip-hidden="1"] .format-bar {
+  transform: translateX(-50%) translateY(calc(100% + 14px));
+}
 
-/* Format bar — bottom-middle pill in mode 2. Collapsed at rest to a
-   "•••" handle; expands to the full toolbar when the mouse moves into
-   the bottom proximity zone (handled in format-bar.ts). Mode-gated by
-   data-active-mode on <html>. */
+/* Format / command pill. Always visible at low opacity. In modes
+   1/3/4 the resting "⌘K" label opens the command palette on click; in
+   mode 2 it expands to a format toolbar via proximity reveal (handled
+   in format-bar.ts), with a trailing ⌘K button that opens the palette
+   from there. Hide-on-scroll handled by [data-strip-hidden] above. */
 .format-bar {
-  display: none;
+  display: flex;
   position: fixed;
   bottom: 14px;
   left: 50%;
@@ -692,23 +700,58 @@ html {
   padding: 0 4px;
   gap: 2px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
-  transition: opacity 160ms ease, padding 160ms ease;
+  transition: opacity 160ms ease, padding 160ms ease,
+    transform 240ms ease, border-color 240ms ease,
+    box-shadow 240ms ease;
   opacity: 0.55;
-}
-[data-active-mode="2"] .format-bar {
-  display: flex;
+  cursor: pointer;
 }
 .format-bar:hover,
 .format-bar--open {
   opacity: 1;
 }
+/* In mode 2 clicking the bar background does nothing (proximity
+   reveals format buttons; the trailing ⌘K button opens cmdp), so drop
+   the pointer cursor to match. */
+[data-active-mode="2"] .format-bar {
+  cursor: default;
+}
+/* First-load attention. Held for BOOT_VISIBLE_MS in format-bar.ts;
+   uses the accent colour to draw the eye, then fades to resting. */
+.format-bar--boot {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06),
+    0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
+}
 .format-bar__dots {
   color: var(--muted);
-  font-size: 14px;
-  letter-spacing: 2px;
-  padding: 0 12px;
-  pointer-events: none;
+  font-size: 12px;
+  font-weight: 500;
+  padding: 0 10px;
   user-select: none;
+  letter-spacing: 0.5px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+/* Mode-2 hybrid hint: styled B + I telegraph the format toolbar that
+   proximity reveals; the trailing cmdp glyph telegraphs the palette
+   button at the end of the expanded toolbar. */
+.format-bar__hint-b {
+  font-weight: 700;
+  font-style: normal;
+}
+.format-bar__hint-i {
+  font-weight: 500;
+  font-style: italic;
+}
+.format-bar__hint-sep {
+  opacity: 0.6;
+}
+.format-bar__hint-cmdp {
+  font-weight: 500;
+  font-style: normal;
 }
 .format-bar--open .format-bar__dots {
   display: none;
@@ -742,6 +785,33 @@ html {
 .format-bar__button--active {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+/* Trailing palette button — only meaningful next to the format
+   buttons (mode 2 expanded), so hidden until --open is set. */
+.format-bar__more {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  height: 24px;
+  padding: 0 8px;
+  margin-left: 4px;
+  background: transparent;
+  border: none;
+  border-radius: 4px;
+  color: var(--muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  transition: color 120ms ease, background 120ms ease;
+}
+.format-bar--open .format-bar__more {
+  display: flex;
+}
+.format-bar__more:hover {
+  color: var(--fg);
+  background: color-mix(in srgb, var(--fg) 6%, transparent);
 }
 
 /* Command palette — Cmd+K / Cmd+/ opens a centred modal with a fuzzy

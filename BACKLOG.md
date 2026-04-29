@@ -20,16 +20,6 @@ forgotten.
   is the right trade for a spike.
   _packages/website/src/url-open.ts resolveCandidates 'repo' case_
 
-## Discoverability
-
-- **Mouse affordance for command palette.** Tried a title-strip search
-  icon (sibling of `.mode-icons`); reverted because it crowded the
-  centred filename and added visual noise. Alternative directions to
-  consider when the need surfaces again: a bottom-right FAB, a
-  proximity-revealed `•••` pill matching the format-bar pattern, or a
-  small footer hint. None feel right yet — park until users actually
-  ask for it.
-
 ## Fonts
 
 - **"More fonts" affordance.** Custom URL field or full Google Fonts

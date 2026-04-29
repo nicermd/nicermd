@@ -138,8 +138,21 @@ function fuzzyScore(query: string, target: string): number {
 }
 
 let isOpen = false
+let registeredHarness: Harness | null = null
+
+// Programmatic open — used by mouse-affordance experiments (e.g. the
+// option-B format-bar trailing button) to open the palette without
+// having to dispatch a synthetic Cmd+K. Returns false silently if the
+// palette has not been wired yet (setupCommandPalette not called) or
+// is already open.
+export function openPalette(): boolean {
+  if (isOpen || !registeredHarness) return false
+  openPaletteImpl(registeredHarness)
+  return true
+}
 
 export function setupCommandPalette(harness: Harness): void {
+  registeredHarness = harness
   window.addEventListener('keydown', (e) => {
     if (!(e.metaKey || e.ctrlKey)) return
     if (e.shiftKey || e.altKey) return
@@ -148,11 +161,11 @@ export function setupCommandPalette(harness: Harness): void {
     // modern apps (Linear, Notion, GitHub, Vercel).
     if (e.code !== 'KeyK' && e.code !== 'Slash') return
     e.preventDefault()
-    if (!isOpen) openPalette(harness)
+    if (!isOpen) openPaletteImpl(harness)
   })
 }
 
-function openPalette(harness: Harness): void {
+function openPaletteImpl(harness: Harness): void {
   if (isOpen) return
   isOpen = true
 
@@ -218,7 +231,9 @@ function openPalette(harness: Harness): void {
     filtered.forEach((cmd, idx) => {
       const row = document.createElement('li')
       row.className = 'cmdp__row'
-      if (idx === selectedIdx) row.classList.add('cmdp__row--selected')
+      if (idx === selectedIdx) {
+        row.classList.add('cmdp__row--selected')
+      }
       row.setAttribute('role', 'option')
       row.setAttribute('aria-selected', idx === selectedIdx ? 'true' : 'false')
 
@@ -253,6 +268,13 @@ function openPalette(harness: Harness): void {
 
       list.appendChild(row)
     })
+    // Keep the selected row visible during arrow-key nav. `nearest` is
+    // a no-op when the row is already on-screen (so mouse hover doesn't
+    // cause spurious scrolling) and only scrolls the minimum needed
+    // when the selection moves out of the viewport.
+    list
+      .querySelector<HTMLLIElement>('.cmdp__row--selected')
+      ?.scrollIntoView({ block: 'nearest' })
   }
 
   const filter = (): void => {

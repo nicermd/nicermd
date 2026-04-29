@@ -1,12 +1,17 @@
-// Format bar for mode 2 (WYSIWYG). Sits at the bottom-middle of the
-// window as a tiny "•••" pill at rest; expands to a full toolbar when
-// the mouse moves into the bottom proximity zone. Mode-gated via
-// `data-active-mode` on <html> so it only shows when the editor is
-// actually mounted.
+// Format / command pill at the bottom-middle of the window. Always
+// visible at low opacity. In modes 1/3/4 the resting "⌘K" label is the
+// click target — opens the command palette. In mode 2 (WYSIWYG) it
+// expands to a format toolbar on mouse proximity to the bottom edge,
+// with a trailing "⌘K" button at the end so the palette stays one
+// click away even when formatting controls are showing.
 //
-// Click on a button → harness.toggleFormat(action). Active state on
-// each button is driven by harness.onFormatUpdate, which the WYSIWYG
-// engine fires on selection / content updates.
+// Hide-on-scroll piggybacks on the same `data-strip-hidden` flag the
+// title strip uses (see scroll-strip.ts) — scrolling down slides the
+// pill out, scrolling up brings it back, mode change resurfaces it.
+//
+// On first load the pill flashes at full opacity (BOOT_VISIBLE_MS) so
+// users notice the affordance before it settles to its quiet resting
+// state.
 //
 // Icons are Lucide originals (MIT) inlined as SVG paths. Same approach
 // as mode-icons.ts — avoids pulling the whole lucide package for a
@@ -14,6 +19,7 @@
 
 import type { Harness } from './main'
 import type { FormatAction } from './wysiwyg-engine'
+import { openPalette } from './command-palette'
 
 interface FormatButtonDef {
   action: FormatAction
@@ -116,20 +122,53 @@ const BUTTONS: FormatButtonDef[] = [
 ]
 
 const PROXIMITY_PX = 120
+const BOOT_VISIBLE_MS = 2000
+
+// macOS uses the ⌘ glyph; Windows / Linux read more naturally as
+// "Ctrl+K". userAgentData.platform is the modern surface but isn't
+// universally populated (notably absent in older webviews and Tauri's
+// macOS WKWebView in some cases), so fall back to navigator.platform
+// — deprecated but still reliable for OS detection.
+const isMac =
+  typeof navigator !== 'undefined' &&
+  /(Mac|iPad|iPhone)/i.test(
+    (navigator as unknown as { userAgentData?: { platform?: string } })
+      .userAgentData?.platform ??
+      navigator.platform ??
+      '',
+  )
+const CMD_K_LABEL = isMac ? '⌘K' : 'Ctrl+K'
+const CMD_K_TITLE = isMac ? 'Command palette — ⌘K' : 'Command palette — Ctrl+K'
 
 export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   const bar = document.createElement('div')
-  bar.className = 'format-bar'
+  bar.className = 'format-bar format-bar--boot'
   bar.setAttribute('role', 'toolbar')
-  bar.setAttribute('aria-label', 'Formatting')
+  bar.setAttribute('aria-label', 'Commands and formatting')
   root.appendChild(bar)
 
-  // Three-dots placeholder shown at rest. Hidden when the toolbar is
-  // expanded (CSS via .format-bar--open).
+  // Resting label. In modes 1/3/4 it's just the cmdp glyph — clicking
+  // opens the palette. In mode 2 it's a hybrid: a styled "B I" hints
+  // at the format toolbar that proximity reveals, then a separator and
+  // the cmdp glyph hint at the trailing palette button. Content is set
+  // by setRestingLabel below, called whenever the active mode changes.
   const dots = document.createElement('span')
   dots.className = 'format-bar__dots'
-  dots.textContent = '•••'
   bar.appendChild(dots)
+
+  const setRestingLabel = (key: number): void => {
+    if (key === 2) {
+      dots.innerHTML =
+        '<b class="format-bar__hint-b">B</b>' +
+        '<i class="format-bar__hint-i">I</i>' +
+        '<span class="format-bar__hint-sep">·</span>' +
+        '<span class="format-bar__hint-cmdp"></span>'
+      const cmdp = dots.querySelector('.format-bar__hint-cmdp')
+      if (cmdp) cmdp.textContent = CMD_K_LABEL
+    } else {
+      dots.textContent = CMD_K_LABEL
+    }
+  }
 
   const buttonsWrap = document.createElement('div')
   buttonsWrap.className = 'format-bar__buttons'
@@ -159,6 +198,32 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
     buttonsByAction.set(def.action, btn)
   }
 
+  // Trailing palette button — visible only when the format toolbar is
+  // expanded (mode 2 + proximity). Gives mouse users a "⌘K" target
+  // without having to leave the bottom strip first.
+  const more = document.createElement('button')
+  more.type = 'button'
+  more.className = 'format-bar__more'
+  more.setAttribute('aria-label', 'Command palette')
+  more.title = CMD_K_TITLE
+  more.textContent = CMD_K_LABEL
+  more.addEventListener('mousedown', (e) => e.preventDefault())
+  more.addEventListener('click', () => {
+    openPalette()
+  })
+  buttonsWrap.appendChild(more)
+
+  // Pill click in modes 1/3/4 opens the palette. In mode 2 the bar is
+  // expanded into format buttons via proximity, so clicks fall through
+  // to per-button handlers (and the trailing ⌘K button handles cmdp).
+  bar.addEventListener('click', (e) => {
+    if (harness.getCurrentMode().key === 2) return
+    // Only the bar background or its resting label opens cmdp — don't
+    // double-trigger when the user clicked a child control.
+    if (e.target !== bar && e.target !== dots) return
+    openPalette()
+  })
+
   const refreshActiveStates = (): void => {
     for (const [action, btn] of buttonsByAction) {
       btn.classList.toggle(
@@ -180,6 +245,7 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
 
   const applyMode = (key: number): void => {
     document.documentElement.dataset.activeMode = String(key)
+    setRestingLabel(key)
     if (key === 2) {
       subscribe()
     } else {
@@ -192,13 +258,26 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   harness.onModeChange((key) => applyMode(key))
 
   // Proximity reveal: mouse within PROXIMITY_PX of the bottom edge
-  // expands the toolbar. Outside the zone collapses it back to dots.
-  // Mode-gated by CSS, so this listener fires harmlessly in modes 1/3/4.
+  // expands the toolbar in mode 2. In other modes the format buttons
+  // are meaningless, so the listener bails out and ensures the bar
+  // stays in its resting (collapsed, ⌘K) state.
   let isOpen = false
   window.addEventListener('mousemove', (e) => {
+    if (harness.getCurrentMode().key !== 2) {
+      if (isOpen) {
+        isOpen = false
+        bar.classList.remove('format-bar--open')
+      }
+      return
+    }
     const open = window.innerHeight - e.clientY <= PROXIMITY_PX
     if (open === isOpen) return
     isOpen = open
     bar.classList.toggle('format-bar--open', open)
   })
+
+  // Boot-time attention. Drop the highlight class after a short window
+  // so the pill fades to its resting opacity. Long enough to register
+  // peripherally, short enough not to nag.
+  setTimeout(() => bar.classList.remove('format-bar--boot'), BOOT_VISIBLE_MS)
 }
