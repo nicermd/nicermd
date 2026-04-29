@@ -41,4 +41,5 @@ All rendering passes through DOMPurify with a strict allow-list. Raw HTML in mar
 
 ## License
 
-[MIT](./LICENSE).
+[MIT](./LICENSE.md). For bundled third-party libraries, see
+[THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md).
