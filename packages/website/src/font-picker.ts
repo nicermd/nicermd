@@ -113,7 +113,7 @@ export function openFontPicker(): void {
     { selectedIdx: codeInitial },
   ]
   let focusedSection = 0
-  let focusedIndex = sectionState[0].selectedIdx
+  let focusedIndex = sectionState[0]!.selectedIdx
 
   const backdrop = document.createElement('div')
   backdrop.className = 'font-picker-backdrop'
@@ -153,7 +153,7 @@ export function openFontPicker(): void {
     label.textContent = section.label
     const currentName = document.createElement('div')
     currentName.className = 'font-picker__section-current'
-    currentName.textContent = section.entries[sectionState[sIdx].selectedIdx]!.name
+    currentName.textContent = section.entries[sectionState[sIdx]!.selectedIdx]!.name
     labelRow.append(label, currentName)
     wrap.appendChild(labelRow)
 
@@ -211,8 +211,8 @@ export function openFontPicker(): void {
 
   function applyVisuals(): void {
     sectionEls.forEach((sec, sI) => {
-      const sel = sectionState[sI].selectedIdx
-      sec.nameEl.textContent = sections[sI].entries[sel]!.name
+      const sel = sectionState[sI]!.selectedIdx
+      sec.nameEl.textContent = sections[sI]!.entries[sel]!.name
       sec.cards.forEach((card, cI) => {
         card.classList.toggle('font-card--selected', cI === sel)
         card.classList.toggle(
@@ -238,7 +238,7 @@ export function openFontPicker(): void {
   // the un-focused section's preview.
   function applyFonts(): void {
     sections.forEach((section, sI) => {
-      const idx = sI === focusedSection ? focusedIndex : sectionState[sI].selectedIdx
+      const idx = sI === focusedSection ? focusedIndex : sectionState[sI]!.selectedIdx
       const entry = section.entries[idx]!
       section.apply(applyIdFor(entry), false)
     })
@@ -257,7 +257,7 @@ export function openFontPicker(): void {
   function select(sIdx: number, fIdx: number): void {
     focusedSection = sIdx
     focusedIndex = fIdx
-    sectionState[sIdx].selectedIdx = fIdx
+    sectionState[sIdx]!.selectedIdx = fIdx
     applyFonts()
     applyVisuals()
   }
@@ -270,9 +270,9 @@ export function openFontPicker(): void {
     // before committing — so Enter on a hovered/arrow-targeted card
     // commits THAT card, matching the standard "highlight + Enter"
     // pattern from menus and pickers.
-    sectionState[focusedSection].selectedIdx = focusedIndex
+    sectionState[focusedSection]!.selectedIdx = focusedIndex
     sections.forEach((section, sI) => {
-      const entry = section.entries[sectionState[sI].selectedIdx]!
+      const entry = section.entries[sectionState[sI]!.selectedIdx]!
       section.apply(applyIdFor(entry), true)
     })
     close()
@@ -317,7 +317,7 @@ export function openFontPicker(): void {
       commit()
       return
     }
-    const section = sections[focusedSection]
+    const section = sections[focusedSection]!
     if (e.key === 'ArrowRight') {
       e.preventDefault()
       focus(focusedSection, (focusedIndex + 1) % section.entries.length)
@@ -341,7 +341,7 @@ export function openFontPicker(): void {
       if (prev >= 0) {
         focus(focusedSection, prev)
       } else if (focusedSection > 0) {
-        const upSection = sections[focusedSection - 1]
+        const upSection = sections[focusedSection - 1]!
         focus(focusedSection - 1, upSection.entries.length - 1)
       }
     }
