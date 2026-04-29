@@ -2,131 +2,213 @@
 
 Nicer.md renders untrusted markdown in the user's browser. Markdown renderers have a long history of XSS bugs via sanitization gaps — this document names the threats we defend against, the ones we don't, and the specific defaults that enforce the policy.
 
+This file is kept honest about **what ships today vs what's planned**: the
+defences below are split between [Defences in force](#defences-in-force) (what
+the current code actually enforces) and [Pending defences](#pending-defences)
+(what's in the threat model but not yet shipped). When a feature lands, it
+moves from the second section into the first.
+
 ## Threat model
 
 ### What we defend against
 
 1. **XSS via rendered HTML.** Attacker crafts markdown designed to produce dangerous HTML when rendered (inline scripts, `javascript:` URLs, event handlers on tags, SVG with `<script>`, etc.).
-2. **URL-shared payloads.** Attacker crafts `nicermd.com/#<compressed-payload>`, sends it to a victim, victim's browser loads it and renders the payload. This is our primary novel attack surface — shared URLs are an attacker-controlled code path, not user-typed content.
+2. **URL-shared payloads.** Attacker shares a `nicermd.com/?url=<github-url>` link, victim's browser loads the linked file and renders it. This is our primary novel attack surface — shared URLs are an attacker-controlled code path, not user-typed content.
 3. **HTML injection via markdown-it's HTML-in-markdown feature.** Raw HTML blocks inside markdown (`<script>alert(1)</script>` typed directly) would pass through markdown-it by default.
 4. **Dangerous link/image URLs.** `javascript:`, `data:` with scriptable MIME types, `file:`, `vbscript:`.
-5. **Malicious frontmatter.** Frontmatter fields rendered into the page as metadata without escaping.
+5. **Visual confusion in document names.** Bidi-override / zero-width characters in URL-derived display names that could mislead about the source of a loaded document.
 6. **Supply chain.** A dependency update introduces a malicious package version.
-7. **Service worker cache poisoning.** Attacker tricks the service worker into caching malicious content that's then served as "our" site.
-8. **DoS via huge inputs.** Massive markdown strings, pathologically nested structures, or maximally compressed URL hashes designed to exhaust resources.
+7. **DoS via huge inputs.** Massive markdown strings, pathologically nested structures, or content servers that stream past the documented size cap.
+8. **IPC abuse in the desktop shell.** Compromised webview content escaping into native OS capabilities (filesystem read/write, shell, process).
 
 ### What we don't defend against (explicit)
 
 - **User pastes their own malicious content and views it.** They are both attacker and victim; not our problem.
-- **Targeted social engineering** ("click this nicermd.com URL to see something interesting" when the content is actually phishing or NSFW). No different from any web link. We show a subtle indicator on URL-shared content so users know it came from a shared URL, not a local paste.
+- **Targeted social engineering** ("click this nicermd.com URL to see something interesting" when the content is actually phishing or NSFW). No different from any web link. We show the source URL on hover for content loaded via `?url=` so users have provenance awareness.
 - **Compromise of the user's machine, browser, or extensions.** Out of scope.
 - **TLS/MitM between the user and Cloudflare.** Cloudflare's infrastructure concern.
-- **Chrome extension: content injection from arbitrary pages.** The content script runs on pages containing `.md` content; if that page is already compromised, we can't un-compromise it. We defend the extension's own surface but don't warrant the page it's injected into.
 
-## Defaults that enforce the policy
+## Defences in force
 
 ### markdown-it configuration
 
 ```js
-markdownIt({
-  html: false,        // disable raw HTML in markdown source — critical
-  linkify: true,      // auto-link URLs, but we validate via our rule override
-  breaks: false,      // no soft-break → <br> (prevents confusing layout attacks)
-  typographer: true,  // harmless typographic substitutions
+new MarkdownIt({
+  html: true,        // see HTML handling below
+  linkify: true,
+  breaks: false,
+  typographer: true,
 })
 ```
 
-`html: false` is the single most important default. It means `<script>alert(1)</script>` typed inside markdown source is rendered as literal text, not as HTML. Do not turn this on.
+`html: true` is intentional — it lets the markdown-it lexer recognise HTML
+constructs so we can intercept them at the renderer level rather than letting
+them slip through as escaped text. The actual defence is a three-layer
+override:
+
+1. **Block-level HTML is elided** to a single `⋯` placeholder
+   (`<div class="nicermd-html-elided">`). README files often nest
+   `<div align="center">` scaffolding around logos and badges that don't
+   translate outside GitHub's renderer; the placeholder shows a section
+   was elided without rendering its content.
+2. **Inline HTML is filtered through a static allowlist regex** that permits
+   only `br|kbd|sub|sup|mark`. Anything else is dropped silently.
+3. **DOMPurify runs as a final-pass sanitizer** on the entire output (see
+   below) — defence-in-depth in case a future plugin or rule override
+   reintroduces an HTML path.
+
+This deviates from the historical "set `html: false`" advice for markdown-it,
+in favour of giving the reader a visible "block elided" affordance. Either
+approach satisfies the underlying invariant: untrusted HTML must not reach
+the DOM unsanitized.
 
 ### DOMPurify pass on rendered output
 
-Even with `html: false`, we run DOMPurify on the markdown-it output as a defense-in-depth layer. This catches:
-- Anything that slipped through markdown-it's own escaping
-- Anything produced by plugins (Shiki, KaTeX) that might have edge cases
-- Future markdown-it bugs we haven't seen yet
+Configuration in `packages/core/src/index.ts`:
 
-Configuration:
-- Allowed tags: standard markdown elements only (headings, paragraphs, lists, code, pre, a, img, table-related, blockquote, hr, strong, em, del, sub, sup, br, span/div with no attributes except class, math elements needed by KaTeX)
-- Allowed attributes per tag: minimal — `href` on `a`, `src`/`alt`/`title` on `img`, `class` everywhere (themes use classes)
-- Forbidden: `<script>`, `<iframe>`, `<object>`, `<embed>`, `<form>`, `<input>`, `<button>`, `<style>`, any event handler (`on*`), any `javascript:` / `vbscript:` / `data:` URL except `data:image/*` on `<img>`
-- URL schemes allowed on `<a href>`: `http`, `https`, `mailto`, `#` (fragment)
-- URL schemes allowed on `<img src>`: `http`, `https`, `data:image/*` (with strict MIME check)
+- **Allowed tags**: standard markdown elements only — headings, paragraphs,
+  lists, code/pre, links, images, table elements, blockquote, hr, span/div
+  (no inline styles), `kbd/sub/sup/mark`.
+- **Allowed attributes**: `href`, `src`, `alt`, `title`, `class`, `id`,
+  `aria-hidden`. No event handlers, no `style`.
+- **Allowed URI schemes**: `https:`, `http:`, `mailto:`, fragment-only
+  (`#anchor`), and query-only (`?url=…` for in-app deep links). **No
+  `data:` URIs anywhere** — even `data:image/*` has been removed because
+  the URI regex applies to every URL-bearing attribute, and a clicked
+  `<a href="data:image/svg+xml,…<svg onload=…>">` executes the embedded
+  script. If inline image embedding lands later, it'll be re-introduced
+  via a tag-scoped DOMPurify hook (`<img src>` only).
 
-### KaTeX
+### URL loader
 
-- Run with `trust: false` (default). This disables `\href`, `\includegraphics`, and other commands that take URLs or paths.
-- If `trust` is ever selectively enabled, it must reject any URL not matching our `<a href>` allowlist.
+`packages/website/src/url-open.ts`:
 
-### Shiki
+- **Host allowlist**: parser accepts only `github.com`, `www.github.com`,
+  `gist.github.com`, `raw.githubusercontent.com`, `gist.githubusercontent.com`.
+  All inputs are normalized to a fetch against `raw.githubusercontent.com`
+  or `gist.githubusercontent.com`. SSRF probes (`localhost`, RFC1918,
+  `169.254.169.254`, internal hostnames) are rejected at parse time.
+- **Protocol must be `https:`** — `file://`, `http://`, etc. rejected.
+- **Path extension filter**: explicit blob/raw URLs must end in `.md`,
+  `.markdown`, or `.mdx` (case-insensitive). Bare-repo / tree URLs synthesise
+  README.md.
+- **Redirects blocked** (`fetch(url, { redirect: 'error' })`). Redirect-based
+  bypass to non-allowlist hosts is impossible.
+- **5 MiB body cap** on every fetch. *Currently buffered*: the cap is
+  enforced after `arrayBuffer()` resolves, so a malicious server that
+  omits `content-length` and streams forever can exhaust client memory.
+  Streaming-reader replacement is in `BACKLOG.md`.
+- **Display name sanitisation**: control characters, zero-width characters,
+  and bidi-override characters are stripped from URL-derived display names;
+  length capped at 80 chars. Display goes through `textContent` so HTML
+  injection is moot — this is a phishing-aid hardening.
+- **Phishing gate on `?url=` boot param**: a confirmation modal appears
+  before any fetch, default focus on Cancel, with a warning about untrusted
+  content. The `?url=` param is stripped from the address bar before the
+  modal shows, so refresh produces a clean re-boot rather than a
+  re-prompt loop.
+- **Loaded URL is recorded as informational only**: Save falls through to
+  Save-As (we can't write back to GitHub).
 
-- Use the CSS-variables output mode, not the inline-style mode. This lets our CSP `style-src` omit `'unsafe-inline'`.
-- Validate language identifiers against Shiki's known-language list before passing them in. Unknown language → fall back to plain-text code block, not an error or uncontrolled passthrough.
+### Content Security Policy — Tauri desktop shell
 
-### Content Security Policy (website)
-
-Set via Cloudflare Pages `_headers` file at site root:
+Set in `packages/website/src-tauri/tauri.conf.json` → `app.security.csp`:
 
 ```
-Content-Security-Policy:
-  default-src 'self';
-  script-src 'self';
-  style-src 'self';
-  img-src 'self' data: https:;
-  font-src 'self' data:;
-  connect-src 'self';
-  frame-ancestors 'none';
-  base-uri 'self';
-  form-action 'none';
-  object-src 'none';
-  upgrade-insecure-requests
+default-src 'self' ipc: https://ipc.localhost;
+script-src 'self';
+style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+img-src 'self' data: https:;
+font-src 'self' data: https://fonts.gstatic.com;
+connect-src 'self' ipc: https://ipc.localhost ws://localhost:3333
+  http://localhost:3333 https://raw.githubusercontent.com
+  https://gist.githubusercontent.com https://fonts.googleapis.com
+  https://fonts.gstatic.com;
+frame-ancestors 'none';
+base-uri 'self';
+form-action 'none';
+object-src 'none';
 ```
 
-Key properties:
-- **No `'unsafe-inline'`** on `script-src` or `style-src` — requires Shiki in CSS-variable mode, no inline `<style>` tags, no inline event handlers.
-- **No `'unsafe-eval'`** — nothing should need it. If a dependency requires `eval`/`new Function`, reject the dependency.
-- **`connect-src 'self'`** — the core never calls the network; the website only fetches its own assets.
-- **`img-src` allows `https:` and `data:`** so user-supplied markdown can reference external images. This is a deliberate loosening; alternative is to strip all remote images, which makes shared technical docs unusable.
-- **`frame-ancestors 'none'`** — prevents embedding our site in iframes on other origins (clickjacking defense).
+Properties:
 
-Additional headers:
-```
-Strict-Transport-Security: max-age=63072000; includeSubDomains; preload
-Referrer-Policy: no-referrer
-Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
-X-Content-Type-Options: nosniff
-```
+- **No `'unsafe-inline'` on script-src** — no inline event handlers, no
+  inline `<script>` tags. If a dependency requires this, reject the
+  dependency.
+- **No `'unsafe-eval'` anywhere** — no `eval`, no `new Function`.
+- **`'unsafe-inline'` on style-src** is currently permitted because Tauri's
+  overlay title bar and Tiptap may inject inline styles. Tightening this
+  is tracked as a future hardening pass.
+- **`connect-src`** explicitly enumerates the URL loader hosts and the
+  Vite HMR endpoints (dev only). New external hosts require an explicit
+  CSP update.
+- **`img-src` allows `https:` and `data:`** so user-supplied markdown
+  can reference external images. This is a deliberate loosening; the
+  tradeoff is that stripping all remote images would make most shared
+  technical docs unusable. Note that `data:` here only opens up the
+  `<img src>` surface — the renderer's URI allowlist still blocks
+  `data:` everywhere else.
+- **`frame-ancestors 'none'`** — prevents embedding our app in iframes.
 
-### URL-shared content specifics
+### Tauri capabilities
 
-- The hash fragment is lz-string-compressed. Validate compressed length ≤ 2048 bytes before decompressing (DoS protection against decompression bombs).
-- After decompressing, treat the content as untrusted markdown — identical sanitization path to pasted content.
-- Display a small, persistent indicator when content came from a URL hash: "Shared via URL" with an option to clear. This gives users provenance awareness without being intrusive.
-- Do not auto-render on page load until the DOM is ready and the CSP is active.
+`packages/website/src-tauri/capabilities/default.json` grants:
 
-### Frontmatter
+- **Window** — `set-fullscreen`, `is-fullscreen`, `start-dragging`,
+  `toggle-maximize`. UI-only.
+- **Webview zoom** — `set-webview-zoom` for the Cmd+= / Cmd+- bindings.
+- **Dialog** — `open` / `save`. User-mediated by the OS dialog.
+- **Filesystem** — `read-text-file` and `write-text-file`. **Current
+  scope: `path: '**'` (all paths).** This is a known hardening gap;
+  see [BACKLOG.md](./BACKLOG.md) for the proper fix (Tauri 2 runtime
+  scope authorisation tied to dialog-returned paths). The interim
+  posture is acceptable only because the upstream rendering defences
+  block XSS — a sanitisation bypass would otherwise expose arbitrary
+  filesystem read/write.
 
-- Parse YAML frontmatter with `gray-matter` (or equivalent) that does NOT execute arbitrary YAML tags (`!!js/function`, custom constructors). Use the safe-loader path.
-- Render frontmatter fields (title, author, date) as text only — never as HTML, never pass through markdown-it a second time.
+`dragDropEnabled: false` on the main window means OS-level drag-drop is
+disabled; HTML5 drag-drop events fire and dropped files go through the
+same renderer pipeline as anything else.
 
-### Service worker
+## Pending defences
 
-- Cache only same-origin static assets (`.js`, `.css`, `.html`, `.woff2`, `.svg` from our own origin).
-- Never cache responses where the response URL origin differs from our origin.
-- Use versioned cache keys (`nicermd-v{build-hash}`) so deploys invalidate old caches cleanly.
-- Network-first for HTML shells, cache-first for hashed assets.
+The following are described in the threat model and the project plan but
+**are not yet implemented**. Each will move into [Defences in force](#defences-in-force)
+when the feature lands.
+
+- **CSP for the website** — set via Cloudflare Pages `_headers` once the
+  Cloudflare deploy lands. Until then the website has no CSP at all.
+  Mirrors the Tauri CSP above.
+- **KaTeX math rendering** — when added, `trust: false` (default) must be
+  set so `\href`, `\includegraphics`, etc. are disabled.
+- **Shiki syntax highlighting** — when added, use the CSS-variables output
+  mode (not inline styles), validate language identifiers against Shiki's
+  known list, fall back to plain-text for unknown languages.
+- **Service worker** — when added, cache only same-origin static assets
+  and never cache cross-origin responses; use versioned cache keys.
+- **Frontmatter parsing** — when added, use a safe-loader path (no
+  arbitrary YAML tags / `!!js/function`); render frontmatter fields as
+  text only.
+- **Compressed share URLs (`#payload`)** — when added, validate compressed
+  length before decompressing, treat decompressed content as untrusted
+  markdown identical to other inputs.
 
 ## Supply chain posture
 
-- **Lock files committed** (`pnpm-lock.yaml`), reproducible installs.
-- **Dependabot** enabled for security advisories and version updates.
+- **Lock file committed** (`pnpm-lock.yaml`), reproducible installs.
 - **Review bar for new runtime dependencies:**
-  - Must have > 1M weekly npm downloads OR be an Anthropic-maintained / well-known-maintainer package
-  - Must have no open high-severity CVEs
-  - Must have active maintenance (commits in last 12 months)
-  - Preferred: zero transitive dependencies
-- **Core package dependencies are scrutinized hardest** because they're inherited by every shell. Goal: core has < 5 runtime deps total.
-- **No `postinstall` scripts allowed** in direct dependencies (use `--ignore-scripts` in CI; audit manually for any that need them).
-- **No telemetry / network calls** from the core or from any shell without an explicit user opt-in. This is both a privacy stance and a supply-chain-attack reduction (compromised dependencies can't exfiltrate).
+  - Active maintenance (commits in last 12 months)
+  - No open high-severity CVEs
+  - Preferred: zero or few transitive dependencies
+- **Core package dependencies are scrutinized hardest** because they're
+  inherited by every shell. Goal: core has < 5 runtime deps total.
+  Currently: 2 (markdown-it, dompurify).
+- **Third-party attribution**: regenerated by `pnpm licenses:gen`
+  before each public release. See
+  [THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md).
+- **No telemetry / network calls** from the core or from any shell.
+  The URL loader is the only outbound network path, and only fires
+  after explicit user action.
 
 ## Chrome extension specifics (when built)
 
@@ -149,17 +231,26 @@ X-Content-Type-Options: nosniff
 
 ## Testing
 
-- **Torture-test corpus** of pathological markdown files in `samples/security/` (XSS attempts from common CVE databases, malformed structures, unicode edge cases, maximum-depth nesting). Run through the core in CI on every PR; any rendering that produces executable output fails the build.
-- **CSP is tested** in the deployed site via a simple integration check (curl the site, parse the CSP header, assert against the expected policy).
-- **DOMPurify config is unit-tested** against a curated list of bypass attempts.
+- **Red-team plan** lives in [`red-team/PLAN.md`](./red-team/PLAN.md) — maps
+  every defence above to concrete test cases. Re-run before each public
+  release.
+- **DOMPurify config** is unit-tested against a curated list of bypass
+  attempts (when the test pack lands — see step 6 of the launch plan).
 
 ## Invariants
 
 These are non-negotiable — if you're about to break one, stop and escalate:
 
 1. The core never makes network calls.
-2. markdown-it runs with `html: false`.
+2. Untrusted HTML never reaches the DOM unsanitised. The current setup
+   enforces this through three layers: markdown-it `html_block` elision,
+   markdown-it `html_inline` allow-listing, and a final DOMPurify pass.
 3. DOMPurify runs on all output before it reaches the DOM.
-4. CSP has no `'unsafe-inline'` on `script-src` or `style-src`, no `'unsafe-eval'` anywhere.
-5. No runtime dependency is added without meeting the review bar above.
-6. No shell bypasses the core to render markdown directly — all rendering goes through `nicermd-core`.
+4. CSP has no `'unsafe-inline'` on `script-src`, no `'unsafe-eval'`
+   anywhere, in any shell.
+5. URL loader's host allowlist stays narrow; new hosts require an
+   explicit CSP `connect-src` entry too.
+6. No runtime dependency is added without meeting the supply-chain
+   review bar above.
+7. No shell bypasses the core to render markdown directly — all rendering
+   goes through `nicermd-core`.
