@@ -4,6 +4,12 @@ A beautiful, zero-server markdown reader — and the page you're looking at is e
 
 Every heading, list, quote, and table below is plain markdown. Click anywhere and start typing: it behaves like a rich-text editor, but the underlying document stays as markdown you can save, share, or paste anywhere else.
 
+## Try it on a real document
+
+- [Markdown Cheatsheet](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fwiki%2Fadam-p%2Fmarkdown-here%2FMarkdown-Cheatsheet.md) — adam-p/markdown-here
+- [Awesome](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsindresorhus%2Fawesome%2Fmain%2Freadme.md) — sindresorhus/awesome
+- [Tauri README](?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftauri-apps%2Ftauri%2Fdev%2FREADME.md) — tauri-apps/tauri
+
 ## Keyboard shortcuts
 
 `Cmd` is shown for macOS — substitute `Ctrl` on Windows / Linux. The **Overrides** column flags shortcuts that replace a browser default.

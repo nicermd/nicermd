@@ -30,7 +30,7 @@ const PURIFY_CONFIG = {
     'sup', 'sub',
   ],
   ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class'],
-  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|#|data:image\/(?:png|jpe?g|gif|webp|svg\+xml))/i,
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[#?]|data:image\/(?:png|jpe?g|gif|webp|svg\+xml))/i,
 }
 
 export function render(markdown: string, options: RenderOptions = {}): string {
