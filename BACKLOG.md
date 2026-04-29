@@ -20,6 +20,24 @@ forgotten.
   is the right trade for a spike.
   _packages/website/src/url-open.ts resolveCandidates 'repo' case_
 
+## Tauri hardening
+
+- **`fs` plugin scope is currently `**` (entire filesystem).** Combined
+  with `read-text-file` + `write-text-file` permissions, this means the
+  webview has unrestricted file access via IPC — guarded today only by
+  upstream rendering defences (DOMPurify allowlist + html_block elision +
+  inline-tag allowlist). Defence-in-depth fix: switch to Tauri 2's
+  runtime scope authorisation pattern — paths returned by the dialog
+  plugin get added to the runtime fs scope, and `read-text-file` /
+  `write-text-file` reject anything outside it. Requires a small Rust
+  glue layer in `src-tauri/src/lib.rs`.
+  _packages/website/src-tauri/capabilities/default.json fs:scope_
+- **`style-src 'unsafe-inline'` in Tauri CSP.** Currently permitted
+  because Tauri's overlay title-bar chrome and Tiptap's editor may
+  inject inline styles. Audit each source and either move to
+  bundled-class styling or use a CSP nonce, then drop `'unsafe-inline'`.
+  _packages/website/src-tauri/tauri.conf.json security.csp_
+
 ## Fonts
 
 - **"More fonts" affordance.** Custom URL field or full Google Fonts
