@@ -127,6 +127,21 @@ function showRecoveryBanner(harness: Harness, snap: Snapshot): void {
   banner.append(message, restore, discard)
   document.body.appendChild(banner)
 
+  const onKeydown = (e: KeyboardEvent): void => {
+    const active = document.activeElement
+    if (active !== restore && active !== discard) return
+    if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') {
+      e.preventDefault()
+      ;(active === restore ? discard : restore).focus()
+    }
+  }
+  banner.addEventListener('keydown', onKeydown)
+
+  // Default focus on Restore — they had unsaved changes, so the
+  // safe-by-default choice is to keep them. Enter commits, Left/Right
+  // moves to Discard.
+  setTimeout(() => restore.focus(), 0)
+
   // Auto-dismiss banner if the user starts editing the boot doc — they've
   // implicitly chosen the current state. Backup stays in localStorage
   // until they make their choice or 24h passes.
