@@ -39,6 +39,36 @@ md.renderer.rules.html_inline = (tokens, idx) => {
   return INLINE_HTML_ALLOW.test(content) ? content : ''
 }
 
+// GitHub-flavoured slug for heading anchors. Real-world TOCs use
+// `[Headers](#headers)` patterns where the link target is the slugged
+// heading text. We mirror GitHub's algorithm: lowercase, strip
+// punctuation outside word chars / dashes / spaces, collapse whitespace
+// to dashes, trim. Collisions get suffixed `-1`, `-2`, … via a per-render
+// counter passed through `env`.
+function slugify(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/<[^>]+>/g, '')
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '')
+}
+
+md.renderer.rules.heading_open = (tokens, idx, mdOptions, env, self) => {
+  const inline = tokens[idx + 1]
+  const text = inline?.content ?? ''
+  const base = slugify(text)
+  if (base) {
+    const slugs: Map<string, number> = (env.headingSlugs ??= new Map())
+    const seen = slugs.get(base)
+    const slug = seen === undefined ? base : `${base}-${seen + 1}`
+    slugs.set(base, (seen ?? 0) + 1)
+    tokens[idx]!.attrSet('id', slug)
+  }
+  return self.renderToken(tokens, idx, mdOptions)
+}
+
 const PURIFY_CONFIG = {
   ALLOWED_TAGS: [
     'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
@@ -51,7 +81,7 @@ const PURIFY_CONFIG = {
     'span', 'div',
     'sup', 'sub', 'kbd', 'mark',
   ],
-  ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'aria-hidden'],
+  ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'aria-hidden'],
   ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[#?]|data:image\/(?:png|jpe?g|gif|webp|svg\+xml))/i,
 }
 
@@ -85,7 +115,9 @@ function collapseElidedPlaceholders(html: string): string {
 }
 
 export function render(markdown: string, options: RenderOptions = {}): string {
-  let html = md.render(markdown)
+  // Per-render env isolates heading-slug collision counters so two
+  // simultaneous renders don't share state (the `md` instance is global).
+  let html = md.render(markdown, { headingSlugs: new Map<string, number>() })
   html = collapseElidedPlaceholders(html)
   if (options.baseUrl) {
     html = rewriteRelativeUrls(html, options.baseUrl)
