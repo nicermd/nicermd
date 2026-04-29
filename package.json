@@ -11,6 +11,7 @@
     "dev:website": "pnpm --filter nicermd-website dev",
     "dev:core": "pnpm --filter nicermd-core dev",
     "typecheck": "pnpm -r typecheck",
+    "test": "pnpm -r test",
     "licenses:gen": "node scripts/generate-third-party-licenses.mjs"
   },
   "devDependencies": {

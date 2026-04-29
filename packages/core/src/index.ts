@@ -61,9 +61,12 @@ md.renderer.rules.heading_open = (tokens, idx, mdOptions, env, self) => {
   const base = slugify(text)
   if (base) {
     const slugs: Map<string, number> = (env.headingSlugs ??= new Map())
-    const seen = slugs.get(base)
-    const slug = seen === undefined ? base : `${base}-${seen + 1}`
-    slugs.set(base, (seen ?? 0) + 1)
+    const seen = slugs.get(base) ?? 0
+    // GitHub's algorithm: first occurrence is unsuffixed, subsequent
+    // occurrences suffix `-1`, `-2`, … . `seen` is the count of prior
+    // occurrences, so it doubles as the suffix index when non-zero.
+    const slug = seen === 0 ? base : `${base}-${seen}`
+    slugs.set(base, seen + 1)
     tokens[idx]!.attrSet('id', slug)
   }
   return self.renderToken(tokens, idx, mdOptions)
@@ -82,14 +85,29 @@ const PURIFY_CONFIG = {
     'sup', 'sub', 'kbd', 'mark',
   ],
   ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'aria-hidden'],
-  // No data: URIs. Browsers don't execute scripts inside `<img src="data:…">`,
-  // but `<a href="data:image/svg+xml,<svg onload=…>">` followed by a click
-  // does. Since the URI regex applies to every URL-bearing attribute, the
-  // only safe-by-default move is to drop data: entirely. If inline image
-  // embedding lands later, re-introduce via a tag-scoped DOMPurify hook
-  // that restores `data:image/<type>` only on `<img src>` (never `<a href>`).
+  // Safe URI schemes: https, http, mailto, fragment-only (#anchor),
+  // query-only (?url=…). No data: URIs anywhere — see the hook below
+  // for the full reasoning.
   ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[#?])/i,
 }
+
+// DOMPurify v3 has an internal allowlist that permits `data:` URIs on
+// img/audio/video/source/track regardless of ALLOWED_URI_REGEXP — set
+// via the IS_ALLOWED_URI / DATA_URI_TAGS internals. The regex change
+// alone isn't enough. A `uponSanitizeAttribute` hook gives a
+// belt-and-braces guarantee: any attribute whose value starts with
+// `data:` (after trim + lowercase) gets dropped. Browsers don't
+// execute scripts in `<img src="data:…">`, but `<a href="data:image/
+// svg+xml,<svg onload=…>">` followed by a click does — and the
+// internal allowlist would have permitted it. If inline image
+// embedding lands later, narrow the hook to permit `data:image/<type>`
+// only on `<img src>`.
+DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
+  const value = data.attrValue?.trim().toLowerCase() ?? ''
+  if (value.startsWith('data:')) {
+    data.keepAttr = false
+  }
+})
 
 // Same-origin / same-document hrefs we never rewrite even when a baseUrl
 // is set: protocol URIs, protocol-relative URIs, fragment-only (#anchor),

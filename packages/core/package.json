@@ -18,7 +18,8 @@
   "scripts": {
     "build": "tsup",
     "dev": "tsup --watch",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "dependencies": {
     "dompurify": "^3.2.0",
@@ -26,7 +27,9 @@
   },
   "devDependencies": {
     "@types/markdown-it": "^14.1.2",
+    "jsdom": "^29.1.0",
     "tsup": "^8.3.5",
-    "typescript": "^5.6.3"
+    "typescript": "^5.6.3",
+    "vitest": "^2"
   }
 }
