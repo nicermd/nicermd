@@ -40,6 +40,7 @@ import { openThemePicker } from './theme-picker'
 import { setupScrollStrip, showStrip } from './scroll-strip'
 import { setupFormatBar } from './format-bar'
 import { setupCommandPalette } from './command-palette'
+import { cycleOption } from './option-flag'
 import type { FormatAction } from './wysiwyg-engine'
 import './main.css'
 
@@ -556,6 +557,16 @@ function finish(harness: Harness): void {
     if (event.altKey && event.code === 'KeyF') {
       event.preventDefault()
       openFontPicker()
+      return
+    }
+    // Cmd+Shift+Alt+O — cycle the iteration A/B flag. Tauri-friendly
+    // counterpart to `?option=N` URLs: reloads into the next variant
+    // (option-flag.ts persists the choice via localStorage). Must
+    // precede the plain Cmd+Alt+O handler because that branch doesn't
+    // check shift and would otherwise swallow the shifted combo.
+    if (event.altKey && event.shiftKey && event.code === 'KeyO') {
+      event.preventDefault()
+      cycleOption()
       return
     }
     // Cmd/Ctrl + Alt/Option + O — open URL prompt. Slots into the
