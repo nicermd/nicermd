@@ -89,7 +89,7 @@ type ParseResult = { ok: true; parsed: Parsed } | { ok: false; reason: string }
 const REASON_NOT_GITHUB = 'Not a GitHub URL'
 const REASON_NOT_MARKDOWN = 'URL must point to a .md, .markdown, or .mdx file'
 
-function parseGithubUrl(input: string): ParseResult {
+export function parseGithubUrl(input: string): ParseResult {
   let trimmed = input.trim()
   // Tolerate protocol-less inputs like "github.com/user/repo" — common
   // when copy-pasting from chat / docs that omitted the scheme. Only
