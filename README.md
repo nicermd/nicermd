@@ -1,6 +1,6 @@
 # Nicer.md
 
-A beautiful, zero-server markdown reader. Paste, view, share — rendered with care.
+A nicer, zero-server markdown reader. Read, write, and save markdown — beautifully, in the same pane, with no server.
 
 **Status:** early development. The first public milestone is a working website at [nicermd.com](https://nicermd.com).
 
