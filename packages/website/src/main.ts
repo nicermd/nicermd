@@ -31,6 +31,7 @@ import { openFile, saveFile, newFile, setDocState, isDirty, markDirty, getCurren
 import { setupAutosave, checkRecovery } from './autosave'
 import { setupModeIcons } from './mode-icons'
 import { setupTitle } from './title'
+import { setupVersionBadge } from './version-badge'
 import { setupZoom, zoomIn, zoomOut, zoomReset, isTauri as isZoomTauri } from './zoom'
 import { initTheme, toggleRecentTheme, showThemeToast } from './themes'
 import { initFonts } from './fonts'
@@ -511,6 +512,7 @@ async function boot(): Promise<void> {
   setupModeIcons(harness, root)
   setupFormatBar(harness, root)
   setupCommandPalette(harness)
+  setupVersionBadge(root)
 
   // Resurface the strip on mode change — user benefits from re-seeing
   // filename + active mode whenever the editing context shifts.
