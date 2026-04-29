@@ -10,7 +10,8 @@
     "dev": "pnpm --filter nicermd-core build && pnpm --filter nicermd-website dev",
     "dev:website": "pnpm --filter nicermd-website dev",
     "dev:core": "pnpm --filter nicermd-core dev",
-    "typecheck": "pnpm -r typecheck"
+    "typecheck": "pnpm -r typecheck",
+    "licenses:gen": "node scripts/generate-third-party-licenses.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3"
