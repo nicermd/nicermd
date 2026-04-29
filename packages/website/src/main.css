@@ -1837,3 +1837,17 @@ html {
   border-radius: 12px;
   letter-spacing: 0.02em;
 }
+
+/* --- Elided HTML placeholder ---
+   Block-level HTML in markdown is replaced by core's renderer with a
+   thin centered ellipsis so the reader sees something was elided
+   without the visual noise of a labelled banner. */
+.nicermd-html-elided {
+  text-align: center;
+  color: var(--muted);
+  opacity: 0.55;
+  letter-spacing: 0.4em;
+  margin: 1.4em 0;
+  user-select: none;
+  font-size: 1.05em;
+}
