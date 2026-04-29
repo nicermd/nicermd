@@ -53,10 +53,9 @@ Headings go six levels deep. Lists nest cleanly:
    - Another
 3. Third step
 
-- [x] Render markdown beautifully
+- [x] Render markdown nicely
 - [x] Inline rich-text editing
-- [ ] Save back to file
-- [ ] Chrome extension
+- [x] Save back to file
 
 Tables align:
 
