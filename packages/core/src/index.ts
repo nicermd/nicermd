@@ -82,7 +82,13 @@ const PURIFY_CONFIG = {
     'sup', 'sub', 'kbd', 'mark',
   ],
   ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'aria-hidden'],
-  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[#?]|data:image\/(?:png|jpe?g|gif|webp|svg\+xml))/i,
+  // No data: URIs. Browsers don't execute scripts inside `<img src="data:…">`,
+  // but `<a href="data:image/svg+xml,<svg onload=…>">` followed by a click
+  // does. Since the URI regex applies to every URL-bearing attribute, the
+  // only safe-by-default move is to drop data: entirely. If inline image
+  // embedding lands later, re-introduce via a tag-scoped DOMPurify hook
+  // that restores `data:image/<type>` only on `<img src>` (never `<a href>`).
+  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[#?])/i,
 }
 
 // Same-origin / same-document hrefs we never rewrite even when a baseUrl

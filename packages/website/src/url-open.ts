@@ -268,6 +268,22 @@ function pushRecent(input: string, name: string): void {
   }
 }
 
+// Strip characters that allow visual confusion in title-strip / recents
+// rendering: bidi-override characters (U+202A–E, U+2066–9) reorder
+// displayed text; zero-width characters (U+200B–D, U+FEFF) hide
+// differences between similar-looking strings; control characters
+// (U+0000–1F, U+007F–9F) can corrupt the rendered line. Cap length
+// so a long crafted path doesn't overflow the strip. Display goes
+// through textContent so HTML injection is moot — this is a phishing-
+// aid hardening, not an XSS fix.
+function sanitiseDisplayName(name: string): string {
+  return name
+    .replace(/[\u0000-\u001F\u007F-\u009F]/g, '') // control chars
+    .replace(/[\u200B-\u200D\uFEFF]/g, '')          // zero-width chars
+    .replace(/[\u202A-\u202E\u2066-\u2069]/g, '')  // bidi overrides
+    .slice(0, 80)
+}
+
 // Build a label for the title strip + recents chip. Plain "README.md"
 // loses context fast — every bare-repo URL resolves to the same name —
 // so we prepend `<user>/<repo>` whenever we can recover it from the
@@ -279,6 +295,11 @@ function pushRecent(input: string, name: string): void {
 //   - direct     →  <basename>                (everything else)
 //   - gist       →  gist-<first-8-of-id>.md
 function displayNameFor(p: Parsed, fetchedUrl: string): string {
+  const raw = computeDisplayName(p, fetchedUrl)
+  return sanitiseDisplayName(raw)
+}
+
+function computeDisplayName(p: Parsed, fetchedUrl: string): string {
   if (p.kind === 'gist') return `gist-${p.id.slice(0, 8)}.md`
   if (p.kind === 'repo') return `${p.user}/${p.repo}`
   if (p.kind === 'tree') {
