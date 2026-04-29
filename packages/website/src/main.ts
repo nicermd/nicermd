@@ -27,7 +27,7 @@ import { render as renderMarkdown } from 'nicermd-core'
 import showcase from './samples/showcase.md?raw'
 import { setupTauriBridge } from './tauri-bridge'
 import { setupFileDrop } from './file-drop'
-import { openFile, saveFile, newFile, setDocState, isDirty, markDirty } from './doc-source'
+import { openFile, saveFile, newFile, setDocState, isDirty, markDirty, getCurrentSourceUrl } from './doc-source'
 import { setupAutosave, checkRecovery } from './autosave'
 import { setupModeIcons } from './mode-icons'
 import { setupTitle } from './title'
@@ -145,14 +145,20 @@ function mountRead(parent: HTMLElement, markdown: string): ModeHandle {
   const div = document.createElement('div')
   div.className = 'mode-read'
   let current = markdown
-  div.innerHTML = renderMarkdown(current)
+  // baseUrl resolves relative href/src in URL-loaded docs (e.g. a README's
+  // `images/logo.png`) against the source URL; null/undefined for local
+  // and showcase docs leaves URLs untouched.
+  const renderInto = (text: string): void => {
+    div.innerHTML = renderMarkdown(text, { baseUrl: getCurrentSourceUrl() ?? undefined })
+  }
+  renderInto(current)
   parent.appendChild(div)
   return {
     destroy: () => div.remove(),
     getMarkdown: () => current,
     setMarkdown: (md) => {
       current = md
-      div.innerHTML = renderMarkdown(md)
+      renderInto(md)
     },
   }
 }
@@ -252,7 +258,7 @@ function mountCodePlusPreview(
   parent.appendChild(wrap)
 
   const renderTo = (text: string): void => {
-    previewPane.innerHTML = renderMarkdown(text)
+    previewPane.innerHTML = renderMarkdown(text, { baseUrl: getCurrentSourceUrl() ?? undefined })
   }
   renderTo(markdown)
 
