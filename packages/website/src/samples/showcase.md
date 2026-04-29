@@ -18,6 +18,21 @@ A nicer, zero-server markdown reader. The page you're looking at is plain markdo
 - [Awesome](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsindresorhus%2Fawesome%2Fmain%2Freadme.md) — sindresorhus/awesome
 - [Tauri README](?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftauri-apps%2Ftauri%2Fdev%2FREADME.md) — tauri-apps/tauri
 
+## Project docs
+
+The project's own docs, all rendered in this very app:
+
+- [README](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fisherlock%2Fnicermd%2Fmain%2FREADME.md) — what this is and how to run it
+- [Shortcuts](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fisherlock%2Fnicermd%2Fmain%2FSHORTCUTS.md) — the full keyboard reference
+- [Architecture](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fisherlock%2Fnicermd%2Fmain%2FARCHITECTURE.md) — module boundaries and rationale
+- [Security](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fisherlock%2Fnicermd%2Fmain%2FSECURITY.md) — threat model and disclosure process
+- [Known issues](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fisherlock%2Fnicermd%2Fmain%2FKNOWN-ISSUES.md) — open bugs and recent fixes
+- [Backlog](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fisherlock%2Fnicermd%2Fmain%2FBACKLOG.md) — deferred work, candidates for future commits
+- [Changelog](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fisherlock%2Fnicermd%2Fmain%2FCHANGELOG.md) — version history
+- [Contributing](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fisherlock%2Fnicermd%2Fmain%2FCONTRIBUTING.md) — how to file bugs and feature requests
+- [License](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fisherlock%2Fnicermd%2Fmain%2FLICENSE.md) — MIT
+- [Third-party licenses](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fisherlock%2Fnicermd%2Fmain%2FTHIRD-PARTY-LICENSES.md) — every bundled dependency and its license
+
 ## What this is
 
 - **No server.** Everything runs in your browser. No accounts, no uploads, no telemetry.
