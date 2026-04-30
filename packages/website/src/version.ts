@@ -8,3 +8,7 @@
 
 export const APP_NAME = 'Nicer.md'
 export const APP_VERSION = 'v0.1 alpha'
+
+// Derived from APP_VERSION so the alpha flag never drifts out of sync
+// with the badge text. Flip by removing 'alpha' from APP_VERSION on GA.
+export const IS_ALPHA = APP_VERSION.toLowerCase().includes('alpha')

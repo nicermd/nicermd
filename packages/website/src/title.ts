@@ -15,7 +15,9 @@
 
 import type { Harness } from './main'
 import { isDirty, getCurrentName, getCurrentSourceUrl } from './doc-source'
-import { APP_NAME } from './version'
+import { APP_NAME, IS_ALPHA } from './version'
+
+const APP_TITLE = IS_ALPHA ? `${APP_NAME} (Alpha)` : APP_NAME
 
 let titleBarEl: HTMLElement | null = null
 let harnessRef: Harness | null = null
@@ -84,7 +86,7 @@ export function refreshTitle(): void {
   if (!harnessRef) return
   const name = getCurrentName() ?? 'Untitled'
   const display = (isDirty() ? '• ' : '') + name
-  document.title = `${display} — ${APP_NAME}`
+  document.title = `${display} — ${APP_TITLE}`
   if (titleBarEl) {
     titleBarEl.textContent = display
     // Native browser tooltip shows the source URL on hover for files
