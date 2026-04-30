@@ -4,3 +4,8 @@
   Referrer-Policy: no-referrer
   Permissions-Policy: geolocation=(), microphone=(), camera=(), payment=()
   X-Content-Type-Options: nosniff
+
+# Don't let CDNs (or browsers) sit on a stale SW. Updates have to ship
+# promptly so cache invalidation on activate actually fires.
+/sw.js
+  Cache-Control: no-cache
