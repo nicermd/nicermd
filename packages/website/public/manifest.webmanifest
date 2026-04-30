@@ -1,0 +1,16 @@
+{
+  "id": "/",
+  "name": "Nicer.md",
+  "short_name": "Nicer.md",
+  "description": "A nicer, zero-server markdown reader.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#ffffff",
+  "lang": "en",
+  "icons": [
+    { "src": "/favicon-192.png", "type": "image/png", "sizes": "192x192", "purpose": "any" },
+    { "src": "/favicon-512.png", "type": "image/png", "sizes": "512x512", "purpose": "any maskable" }
+  ]
+}
