@@ -1,0 +1,20 @@
+// Cloudflare Pages / Workers static-assets deploy config.
+//
+// We have no Worker code — this site is a pure client-side SPA. The
+// `assets` block tells Wrangler to upload `./dist` as static files
+// and skip its framework auto-detection (which otherwise tries to
+// run an `npm install` that fails on pnpm workspace: deps).
+//
+// `not_found_handling: single-page-application` makes 404s serve
+// `/index.html` so any future path-based routing degrades gracefully.
+// Today the only entry path is `/` with a `?url=…` query param; the
+// fallback is harmless either way.
+{
+  "$schema": "https://json.schemastore.org/wrangler.json",
+  "name": "nicermd",
+  "compatibility_date": "2026-04-30",
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
