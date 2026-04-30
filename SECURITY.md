@@ -170,6 +170,29 @@ Properties:
 disabled; HTML5 drag-drop events fire and dropped files go through the
 same renderer pipeline as anything else.
 
+### Service worker
+
+`packages/website/public/sw.js`, registered from `sw-register.ts`:
+
+- **Web only** — registration is skipped in Tauri (the desktop shell
+  has the app local) and in Vite dev (HMR + a SW that caches modules
+  is a debugging trap).
+- **Same-origin only** — cross-origin requests pass straight through
+  to the network. `raw.githubusercontent.com`, `fonts.googleapis.com`,
+  etc. are never cached or mediated by the SW. This keeps the cache
+  surface narrow and matches the strict-CSP posture.
+- **Versioned cache name** (`nicermd-<version>`). On `activate` any
+  cache that doesn't match the current version is dropped, so stale
+  bundles can't survive across releases. Bump `CACHE_VERSION` on each
+  user-facing release.
+- **No opaque or `range` responses are cached** — only basic, OK
+  same-origin responses are written back. This avoids quota-burning
+  partial responses and ambiguous cross-origin entries.
+- **Last-resort navigation fallback**: when offline and the requested
+  document isn't cached, the SW serves the cached `/` shell so the app
+  still boots. Better than the browser's "no connection" page when the
+  user has visited before.
+
 ## Pending defences
 
 The following are described in the threat model and the project plan but
@@ -184,8 +207,6 @@ when the feature lands.
 - **Shiki syntax highlighting** — when added, use the CSS-variables output
   mode (not inline styles), validate language identifiers against Shiki's
   known list, fall back to plain-text for unknown languages.
-- **Service worker** — when added, cache only same-origin static assets
-  and never cache cross-origin responses; use versioned cache keys.
 - **Frontmatter parsing** — when added, use a safe-loader path (no
   arbitrary YAML tags / `!!js/function`); render frontmatter fields as
   text only.

@@ -38,6 +38,7 @@ import { initFonts } from './fonts'
 import { openFontPicker } from './font-picker'
 import { openUrlPrompt, processBootUrlParam } from './url-open'
 import { openThemePicker } from './theme-picker'
+import { registerServiceWorker } from './sw-register'
 import { setupScrollStrip, showStrip } from './scroll-strip'
 import { setupFormatBar } from './format-bar'
 import { setupCommandPalette } from './command-palette'
@@ -430,6 +431,7 @@ export class Harness {
 async function boot(): Promise<void> {
   initTheme()
   initFonts()
+  registerServiceWorker()
 
   // Auto-open the theme picker on first-ever visit so users see the
   // catalog up front. Detected by absence of the localStorage key.
