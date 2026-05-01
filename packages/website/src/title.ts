@@ -15,9 +15,7 @@
 
 import type { Harness } from './main'
 import { isDirty, getCurrentName, getCurrentSourceUrl } from './doc-source'
-import { APP_NAME, IS_ALPHA } from './version'
-
-const APP_TITLE = IS_ALPHA ? `${APP_NAME} (Alpha)` : APP_NAME
+import { APP_NAME } from './version'
 
 let titleBarEl: HTMLElement | null = null
 let harnessRef: Harness | null = null
@@ -84,9 +82,15 @@ function wireTitleBarInteractions(el: HTMLElement): void {
 
 export function refreshTitle(): void {
   if (!harnessRef) return
-  const name = getCurrentName() ?? 'Untitled'
-  const display = (isDirty() ? '• ' : '') + name
-  document.title = `${display} — ${APP_TITLE}`
+  const rawName = getCurrentName()
+  const dirty = isDirty()
+  const isLanding = rawName === null && !dirty
+  // Landing: tab + strip both show the bare app name. Working state
+  // (file loaded or any keystroke): tab becomes '<display> — Nicer.md',
+  // strip shows '<display>'. Alpha is signaled exclusively by the
+  // corner badge + landing strap so the title stays uncluttered.
+  const display = isLanding ? APP_NAME : (dirty ? '• ' : '') + (rawName ?? 'Untitled')
+  document.title = isLanding ? APP_NAME : `${display} — ${APP_NAME}`
   if (titleBarEl) {
     titleBarEl.textContent = display
     // Native browser tooltip shows the source URL on hover for files
