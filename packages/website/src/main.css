@@ -597,8 +597,8 @@ html {
   z-index: 5;
   font-size: 10px;
   font-family: var(--font-body);
-  color: var(--muted);
-  opacity: 0.4;
+  color: var(--fg);
+  opacity: 0.5;
   user-select: none;
   letter-spacing: 0.02em;
   background: transparent;
@@ -606,7 +606,8 @@ html {
   padding: 2px 6px;
   border-radius: 4px;
   cursor: pointer;
-  transition: opacity 0.15s ease, background-color 0.15s ease;
+  transition: opacity 0.15s ease, background-color 0.15s ease, transform 200ms ease;
+  will-change: transform;
 }
 .version-badge:hover,
 .version-badge:focus-visible {
@@ -767,9 +768,13 @@ html {
 /* Format / command pill is bottom-anchored, so it slides down out of
    view (translateX is preserved for centring; transform stacks via
    composition). Inherits the same scroll-driven flag — the title strip
-   and the pill appear / disappear together. */
+   and the pill appear / disappear together. The version badge piggy-
+   backs on the same flag so all chrome hides as a single unit. */
 [data-strip-hidden="1"] .format-bar {
   transform: translateX(-50%) translateY(calc(100% + 14px));
+}
+[data-strip-hidden="1"] .version-badge {
+  transform: translateY(calc(100% + 8px));
 }
 
 /* Format / command pill. Always visible at low opacity. In modes
@@ -795,7 +800,7 @@ html {
   transition: opacity 160ms ease, padding 160ms ease,
     transform 240ms ease, border-color 240ms ease,
     box-shadow 240ms ease;
-  opacity: 0.55;
+  opacity: 0.7;
   cursor: pointer;
 }
 .format-bar:hover,
@@ -809,7 +814,7 @@ html {
   cursor: default;
 }
 .format-bar__dots {
-  color: var(--muted);
+  color: var(--fg);
   font-size: 12px;
   font-weight: 500;
   padding: 0 10px;
