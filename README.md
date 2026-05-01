@@ -2,7 +2,7 @@
 
 A nicer, zero-server markdown reader. Read, write, and save markdown — beautifully, in the same pane, with no server.
 
-**Status:** v0.1 alpha, pre-public. The first public milestone is a working website at [nicermd.com](https://nicermd.com).
+**Status:** v0.1 alpha. Live at [nicer.md](https://nicer.md).
 
 ## What it does
 

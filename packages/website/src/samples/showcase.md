@@ -45,7 +45,7 @@ The project's own docs, all rendered in this very app:
 
 ## Formatting at a glance
 
-Write **bold** with `**asterisks**`, *italic* with `*one*`, ~~strikethrough~~ with `~~tildes~~`, and inline code with `` `backticks` ``. Combine them however you like — ***bold italic***, or [a link that's also **strong**](https://nicermd.com).
+Write **bold** with `**asterisks**`, *italic* with `*one*`, ~~strikethrough~~ with `~~tildes~~`, and inline code with `` `backticks` ``. Combine them however you like — ***bold italic***, or [a link that's also **strong**](https://nicer.md).
 
 Headings go six levels deep. Lists nest cleanly:
 
