@@ -27,14 +27,14 @@ pub fn run() {
         .build(tauri::generate_context!())
         .expect("error while building tauri application");
 
-    // OS-level file-open events: macOS fires this when the user picks
-    // 'Open With → Nicer.md' in Finder, double-clicks a .md file with
-    // Nicer.md as the default app, or drops a file onto the Dock icon.
-    // We extract the file path and forward it to the frontend; the web
-    // listener (tauri-bridge.ts) reads the file via tauri-plugin-fs
-    // and updates the harness, same flow as the in-app Open dialog.
-    app.run(|app_handle, event| {
-        if let tauri::RunEvent::Opened { urls } = event {
+    app.run(|app_handle, event| match event {
+        // OS-level file-open events: macOS fires this when the user picks
+        // 'Open With → Nicer.md' in Finder, double-clicks a .md file with
+        // Nicer.md as the default app, or drops a file onto the Dock icon.
+        // We extract the file path and forward it to the frontend; the web
+        // listener (tauri-bridge.ts) reads the file via tauri-plugin-fs
+        // and updates the harness, same flow as the in-app Open dialog.
+        tauri::RunEvent::Opened { urls } => {
             for url in urls {
                 if let Ok(path) = url.to_file_path() {
                     let path_str = path.to_string_lossy().to_string();
@@ -44,6 +44,17 @@ pub fn run() {
                 }
             }
         }
+        // macOS convention is for apps to keep running with no windows;
+        // for a single-window reader that surprises users — they expect
+        // the red X to fully quit. Single-window app, so any close
+        // request means the user's done.
+        tauri::RunEvent::WindowEvent {
+            event: tauri::WindowEvent::CloseRequested { .. },
+            ..
+        } => {
+            app_handle.exit(0);
+        }
+        _ => {}
     });
 }
 
