@@ -1643,54 +1643,6 @@ html {
   font-style: italic;
 }
 
-.theme-picker__custom {
-  margin-top: 0.7rem;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-}
-.theme-picker__custom-label {
-  font-size: 0.72rem;
-  font-weight: 500;
-  color: var(--muted);
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
-  white-space: nowrap;
-}
-.theme-picker__custom-row {
-  display: flex;
-  flex: 1;
-  gap: 0.4rem;
-}
-.theme-picker__custom-input {
-  flex: 1;
-  background: var(--bg);
-  color: var(--fg);
-  border: 1px solid var(--border);
-  border-radius: 5px;
-  padding: 0.35rem 0.6rem;
-  font-family: var(--font-code);
-  font-size: 0.78rem;
-  min-width: 0;
-}
-.theme-picker__custom-input:focus {
-  outline: 2px solid color-mix(in srgb, var(--accent) 55%, transparent);
-  outline-offset: 1px;
-}
-.theme-picker__custom-apply {
-  background: var(--accent);
-  color: var(--bg);
-  border: 1px solid var(--accent);
-  border-radius: 5px;
-  padding: 0 0.85rem;
-  font-family: var(--font-body);
-  font-size: 0.78rem;
-  cursor: pointer;
-}
-.theme-picker__custom-apply:hover {
-  filter: brightness(1.05);
-}
-
 @media (max-width: 800px) {
   .theme-picker__grid {
     grid-template-columns: repeat(3, 1fr);

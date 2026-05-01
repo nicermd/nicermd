@@ -1,15 +1,17 @@
 // Theme picker modal. Opens centred over the app, dims the backdrop,
-// shows a grid of theme cards with live mini-previews, plus a
-// (scaffold-only for spike) Custom theme URL input.
+// and shows a grid of theme cards with mini-previews.
 //
-// Live preview: arrow keys move selection AND apply the highlighted
-// theme to the whole app immediately. Enter / click commits and persists.
-// Esc cancels and reverts to whatever was active when the picker opened.
+// Selection is decoupled from application: arrow keys move the
+// highlighted card visually but the live page theme stays fixed
+// until commit. Click a card or press Enter on the selected one to
+// commit; Esc / backdrop / × just closes. Avoids the previous
+// behaviour where every arrow tap repainted the entire app — the
+// flashing across 14+ themes felt like a strobe.
 //
 // Each card sets `data-theme` on itself so the theme's CSS variables
 // cascade ONLY to that card's content — same vars file, no duplication.
-// Selected indicator is a fixed-colour outline so it reads regardless of
-// which theme is currently being previewed.
+// Selected indicator is a fixed-colour outline so it reads regardless
+// of which theme is currently active in the page.
 
 import { THEMES, applyTheme, getActiveTheme, type Theme } from './themes'
 
@@ -21,10 +23,9 @@ export function openThemePicker(): void {
   if (isOpen) return
   isOpen = true
 
-  const original = getActiveTheme()
   let selectedIdx = Math.max(
     0,
-    THEMES.findIndex((t) => t.slug === original.slug),
+    THEMES.findIndex((t) => t.slug === getActiveTheme().slug),
   )
 
   const backdrop = document.createElement('div')
@@ -56,36 +57,11 @@ export function openThemePicker(): void {
     card.addEventListener('click', () => {
       commit(theme)
     })
-    card.addEventListener('mouseenter', () => {
-      selectIndex(idx)
-    })
     grid.appendChild(card)
     return card
   })
 
-  // Custom URL row (scaffold-only)
-  const custom = document.createElement('div')
-  custom.className = 'theme-picker__custom'
-  const customLabel = document.createElement('label')
-  customLabel.className = 'theme-picker__custom-label'
-  customLabel.textContent = 'Custom theme URL'
-  const customRow = document.createElement('div')
-  customRow.className = 'theme-picker__custom-row'
-  const customInput = document.createElement('input')
-  customInput.type = 'url'
-  customInput.placeholder = 'https://gist.github.com/.../theme.json'
-  customInput.className = 'theme-picker__custom-input'
-  const customApply = document.createElement('button')
-  customApply.type = 'button'
-  customApply.textContent = 'Apply'
-  customApply.className = 'theme-picker__custom-apply'
-  customApply.addEventListener('click', () => {
-    console.log('[theme-picker] custom URL (scaffold; fetch deferred):', customInput.value)
-  })
-  customRow.append(customInput, customApply)
-  custom.append(customLabel, customRow)
-
-  modal.append(header, grid, custom)
+  modal.append(header, grid)
   backdrop.appendChild(modal)
   document.body.appendChild(backdrop)
 
@@ -95,17 +71,10 @@ export function openThemePicker(): void {
     if (idx >= THEMES.length) idx = 0
     selectedIdx = idx
     cards.forEach((card, i) => card.classList.toggle('theme-card--selected', i === idx))
-    // Live preview: apply but don't persist yet — Esc reverts.
-    applyTheme(THEMES[idx]!.slug, false)
   }
 
   function commit(theme: Theme): void {
     applyTheme(theme.slug, true)
-    close()
-  }
-
-  function cancel(): void {
-    applyTheme(original.slug, false)
     close()
   }
 
@@ -119,7 +88,7 @@ export function openThemePicker(): void {
   const keyHandler = (event: KeyboardEvent): void => {
     if (event.key === 'Escape') {
       event.preventDefault()
-      cancel()
+      close()
       return
     }
     if (event.key === 'Enter') {
@@ -143,9 +112,9 @@ export function openThemePicker(): void {
     }
   }
 
-  closeBtn.addEventListener('click', cancel)
+  closeBtn.addEventListener('click', close)
   backdrop.addEventListener('click', (event) => {
-    if (event.target === backdrop) cancel()
+    if (event.target === backdrop) close()
   })
   window.addEventListener('keydown', keyHandler, true)
 }
