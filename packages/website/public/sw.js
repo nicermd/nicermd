@@ -9,7 +9,7 @@
 // SW lifecycle handles the rest: install → activate → claim → start
 // serving from the new cache, then drop the old one.
 
-const CACHE_VERSION = 'v0.1-alpha-1'
+const CACHE_VERSION = 'v0.1-alpha-2'
 const CACHE_NAME = `nicermd-${CACHE_VERSION}`
 
 // Boot-time assets we know by name. The hashed JS/CSS bundles aren't
