@@ -825,12 +825,17 @@ html {
   [data-shell="web"] .window-title {
     display: none;
   }
-  /* 44px clears Chrome PWA's chrome-button hit area when the title
-     bar is collapsed (~36-40px tall on Mac); below that, icons end
-     up partly inside the drag region and clicks get intercepted by
-     Chrome instead of reaching our handlers. */
+  /* When Chrome's PWA 'hide title bar' is on, the page viewport
+     extends to the very top of the window and Chrome overlays its
+     traffic lights + 3-dot menu over our content with a drag /
+     hit-test region behind them. 60px from page-top clears that
+     overlay strip in every state; -webkit-app-region: no-drag is
+     belt-and-braces — explicit hint to Chromium that this area is
+     interactive even if it falls inside a drag region. */
   [data-shell="web"] .mode-icons {
-    top: 44px;
+    top: 60px;
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
   }
   [data-shell="web"][data-strip-hidden="1"] .mode-icons {
     transform: none;
