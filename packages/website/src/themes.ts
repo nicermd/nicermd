@@ -26,10 +26,11 @@ export interface Theme {
 }
 
 export const THEMES: readonly Theme[] = [
-  // Originals — kept on system fonts so they stay zero-network.
-  { slug: 'nicer', name: 'Nicer', mode: 'light' },
-  { slug: 'nicer-dark', name: 'Nicer Dark', mode: 'dark' },
-  { slug: 'paper', name: 'Paper', mode: 'light', defaultProseFont: 'system-serif' },
+  // Headline pair — Atom's One Light / One Dark. Polished, mature
+  // palettes with balanced contrast, recognised across many editors.
+  { slug: 'one-light', name: 'One Light', mode: 'light', inspiredBy: 'Atom', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
+  { slug: 'one-dark', name: 'One Dark', mode: 'dark', inspiredBy: 'Atom', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
+  // Mono-styled originals — kept on system fonts so they stay zero-network.
   { slug: 'terminal-light', name: 'Terminal Light', mode: 'light', defaultProseFont: 'system-mono', defaultCodeFont: 'system' },
   { slug: 'terminal-dark', name: 'Terminal Dark', mode: 'dark', defaultProseFont: 'system-mono', defaultCodeFont: 'system' },
   // Community-palette tributes (palettes MIT/BSD; original credits below).
@@ -43,6 +44,7 @@ export const THEMES: readonly Theme[] = [
   { slug: 'dracula', name: 'Dracula', mode: 'dark', inspiredBy: 'Zeno Rocha', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
   { slug: 'everforest', name: 'Everforest', mode: 'dark', inspiredBy: 'sainnhe', defaultProseFont: 'lora', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'catppuccin-latte', name: 'Catppuccin Latte', mode: 'light', inspiredBy: 'Catppuccin', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
+  { slug: 'catppuccin-mocha', name: 'Catppuccin Mocha', mode: 'dark', inspiredBy: 'Catppuccin', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'ayu-light', name: 'Ayu Light', mode: 'light', inspiredBy: 'Ivan Konstantinov', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
   { slug: 'rose-pine-dawn', name: 'Rosé Pine Dawn', mode: 'light', inspiredBy: 'Rosé Pine', defaultProseFont: 'crimson-pro', defaultCodeFont: 'jetbrains-mono' },
   // Warm-print read — cream paper + deep brown ink, restrained earth-
@@ -52,7 +54,7 @@ export const THEMES: readonly Theme[] = [
 
 const STORAGE_KEY = 'nicermd:theme'
 const PREVIOUS_KEY = 'nicermd:theme-previous'
-const DEFAULT_SLUG = 'nicer'
+const DEFAULT_SLUG = 'one-light'
 
 function readStored(): string | null {
   try {

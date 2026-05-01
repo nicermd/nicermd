@@ -2,7 +2,7 @@
    light fallback palette; per-theme blocks override on
    [data-theme="..."]. CodeMirror's theme + highlight reference these
    with var(...) so the swap reaches both prose and code surfaces with
-   one attribute flip on <html>. The default boot theme is 'nicer'
+   one attribute flip on <html>. The default boot theme is 'one-light'
    (see DEFAULT_SLUG in themes.ts) — :root only paints if no
    data-theme attribute is set, which shouldn't happen in practice. */
 
@@ -46,98 +46,62 @@
   --cm-quote: #000000;
 }
 
-[data-theme='nicer'] {
-  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-code: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+/* Atom's signature light + dark. Mature palettes (10+ years), balanced
+   contrast for prose, recognisable across most editors. */
+[data-theme='one-light'] {
+  --bg: #fafafa;
+  --fg: #383a42;
+  --muted: #a0a1a7;
+  --border: #e5e5e6;
+  --surface: #f5f5f5;
 
-  --bg: #ffffff;
-  --fg: #1f2328;
-  --muted: #59636e;
-  --border: #d1d9e0;
-  --surface: #f6f8fa;
+  --link: #4078f2;
+  --accent: #4078f2;
 
-  --link: #0969da;
-  --accent: #0969da;
+  --code-bg: #f5f5f5;
+  --code-fg: #383a42;
 
-  --code-bg: #f6f8fa;
-  --code-fg: #1f2328;
+  --cm-bg: #fafafa;
+  --cm-fg: #383a42;
+  --cm-caret: #526fff;
+  --cm-selection: rgba(82, 111, 255, 0.18);
+  --cm-gutter-bg: #fafafa;
+  --cm-gutter-fg: #9d9d9f;
 
-  --cm-bg: #ffffff;
-  --cm-fg: #1f2328;
-  --cm-caret: #0969da;
-  --cm-selection: rgba(9, 105, 218, 0.18);
-  --cm-gutter-bg: #ffffff;
-  --cm-gutter-fg: #8c959f;
-
-  --cm-marker: #cf222e;
-  --cm-heading: #0550ae;
-  --cm-link: #0969da;
-  --cm-url: #1a7f37;
-  --cm-monospace: #0550ae;
-  --cm-quote: #1a7f37;
+  --cm-marker: #a626a4;
+  --cm-heading: #4078f2;
+  --cm-link: #50a14f;
+  --cm-url: #c18401;
+  --cm-monospace: #e45649;
+  --cm-quote: #a0a1a7;
 }
 
-[data-theme='nicer-dark'] {
-  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
-  --font-code: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
+[data-theme='one-dark'] {
+  --bg: #282c34;
+  --fg: #abb2bf;
+  --muted: #5c6370;
+  --border: #3e4451;
+  --surface: #2c313a;
 
-  --bg: #0d1117;
-  --fg: #f0f6fc;
-  --muted: #9198a1;
-  --border: #3d444d;
-  --surface: #161b22;
+  --link: #61afef;
+  --accent: #61afef;
 
-  --link: #4493f8;
-  --accent: #4493f8;
+  --code-bg: #2c313a;
+  --code-fg: #abb2bf;
 
-  --code-bg: #151b23;
-  --code-fg: #f0f6fc;
+  --cm-bg: #282c34;
+  --cm-fg: #abb2bf;
+  --cm-caret: #61afef;
+  --cm-selection: rgba(97, 175, 239, 0.22);
+  --cm-gutter-bg: #282c34;
+  --cm-gutter-fg: #495162;
 
-  --cm-bg: #0d1117;
-  --cm-fg: #f0f6fc;
-  --cm-caret: #4493f8;
-  --cm-selection: rgba(68, 147, 248, 0.25);
-  --cm-gutter-bg: #0d1117;
-  --cm-gutter-fg: #6e7681;
-
-  --cm-marker: #f85149;
-  --cm-heading: #79c0ff;
-  --cm-link: #4493f8;
-  --cm-url: #56d364;
-  --cm-monospace: #79c0ff;
-  --cm-quote: #56d364;
-}
-
-[data-theme='paper'] {
-  --font-body: ui-serif, Charter, 'Iowan Old Style', 'Hoefler Text', Georgia,
-    'Times New Roman', serif;
-  --font-code: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-
-  --bg: #faf6ee;
-  --fg: #2c2520;
-  --muted: #87796b;
-  --border: #e6dcc6;
-  --surface: #f3ecd9;
-
-  --link: #b04a16;
-  --accent: #b04a16;
-
-  --code-bg: #f3ecd9;
-  --code-fg: #2c2520;
-
-  --cm-bg: #faf6ee;
-  --cm-fg: #2c2520;
-  --cm-caret: #b04a16;
-  --cm-selection: rgba(176, 74, 22, 0.18);
-  --cm-gutter-bg: #faf6ee;
-  --cm-gutter-fg: #a8997f;
-
-  --cm-marker: #a04000;
-  --cm-heading: #5c2e09;
-  --cm-link: #b04a16;
-  --cm-url: #4f6628;
-  --cm-monospace: #6b3e2c;
-  --cm-quote: #4f6628;
+  --cm-marker: #c678dd;
+  --cm-heading: #61afef;
+  --cm-link: #98c379;
+  --cm-url: #e5c07b;
+  --cm-monospace: #e06c75;
+  --cm-quote: #5c6370;
 }
 
 [data-theme='terminal-light'] {
@@ -431,6 +395,34 @@
   --cm-url: #40a02b;
   --cm-monospace: #fe640b;
   --cm-quote: #179299;
+}
+
+[data-theme='catppuccin-mocha'] {
+  --bg: #1e1e2e;
+  --fg: #cdd6f4;
+  --muted: #6c7086;
+  --border: #313244;
+  --surface: #181825;
+
+  --link: #89b4fa;
+  --accent: #cba6f7;
+
+  --code-bg: #181825;
+  --code-fg: #cdd6f4;
+
+  --cm-bg: #1e1e2e;
+  --cm-fg: #cdd6f4;
+  --cm-caret: #f5e0dc;
+  --cm-selection: rgba(137, 180, 250, 0.22);
+  --cm-gutter-bg: #1e1e2e;
+  --cm-gutter-fg: #45475a;
+
+  --cm-marker: #f38ba8;
+  --cm-heading: #cba6f7;
+  --cm-link: #89b4fa;
+  --cm-url: #a6e3a1;
+  --cm-monospace: #fab387;
+  --cm-quote: #94e2d5;
 }
 
 [data-theme='ayu-light'] {
