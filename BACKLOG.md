@@ -68,3 +68,21 @@ forgotten.
 - **Bundled WOFF2s for desktop / mobile.** Tauri offline currently
   falls back to system fonts. Bundling the catalogue increases install
   size; revisit when Tauri/iOS distribution actually ships.
+
+## Public-repo polish
+
+Reviewed 2026-05-01 before flipping the repo public. None are
+embarrassing-without; do them when there's an excuse.
+
+- **Code of Conduct.** Boilerplate Contributor Covenant in
+  `CODE_OF_CONDUCT.md`. Public-repo norm but not a hard requirement
+  while the project is solo-maintained.
+- **GitHub Issue / PR templates.** `.github/ISSUE_TEMPLATE/bug.yml`,
+  `feature.yml`, plus a `pull_request_template.md`. Helps keep bug
+  reports actionable (browser / OS / build SHA prompts) once external
+  bug reports start arriving. Defer until the first one.
+- **README screenshot or short screencap.** A "what does this look
+  like" image at the top of the README — currently the repo lands
+  visitors on a wall of text. One screenshot of the showcase doc in
+  the One Light theme would carry most of the visual weight. Consider
+  a 5–10s screencap of mode switching once the workflow's settled.
