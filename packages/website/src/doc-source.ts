@@ -150,6 +150,7 @@ async function openViaFsa(
 async function openViaInputFallback(harness: Harness): Promise<void> {
   const input = document.createElement('input')
   input.type = 'file'
+  input.name = 'file-open'
   input.accept = '.md,.markdown,.mdx,text/markdown'
   input.style.display = 'none'
   document.body.appendChild(input)
