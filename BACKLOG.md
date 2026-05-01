@@ -38,6 +38,27 @@ forgotten.
   bundled-class styling or use a CSP nonce, then drop `'unsafe-inline'`.
   _packages/website/src-tauri/tauri.conf.json security.csp_
 
+## Distribution
+
+- **Layer 2: signed + notarized macOS builds.** Requires Apple Developer
+  Program enrollment ($99/year), a Developer ID Application certificate,
+  and the `APPLE_*` env vars wired into the build. Tauri 2 reads them
+  automatically and runs `notarytool` post-build. Drops the right-click-
+  Open Gatekeeper warning that Layer 1 builds carry. Defer until the app
+  has enough usage to make the warning real friction.
+- **Auto-update via plugin-updater.** `@tauri-apps/plugin-updater` reads
+  a signed update manifest from GitHub Releases. Adds ~200 lines + a
+  key-pair generation step. Worth doing once a couple of versions have
+  shipped and there are users to update.
+- **Universal binary CI.** `pnpm release:tauri` builds locally on a Mac
+  with both Rust targets installed. Moving this to GitHub Actions removes
+  the local-machine dependency and lets non-Mac contributors cut releases.
+  Needs `gh` token + (Layer 2) Apple secrets in repo settings.
+- **Windows / Linux builds.** Mac-first today. Windows would need a
+  code-signing cert (~$300-500/year) for a no-warning install; Linux
+  AppImage / deb / rpm could ship unsigned. Defer until cross-platform
+  user demand surfaces.
+
 ## Fonts
 
 - **"More fonts" affordance.** Custom URL field or full Google Fonts

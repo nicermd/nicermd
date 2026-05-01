@@ -2,7 +2,7 @@
   "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
   "productName": "Nicer.md",
   "version": "0.1.0",
-  "identifier": "com.nicermd.app",
+  "identifier": "md.nicer.app",
   "build": {
     "frontendDist": "../dist",
     "devUrl": "http://localhost:3333",

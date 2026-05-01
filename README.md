@@ -4,6 +4,12 @@ A nicer, zero-server markdown reader. Read, write, and save markdown — beautif
 
 **Status:** v0.1 alpha. Live at [nicer.md](https://nicer.md).
 
+## Download
+
+- **Web** — [nicer.md](https://nicer.md). Installable as a PWA (click the install icon in your browser's address bar).
+- **macOS** — [latest release on GitHub](https://github.com/isherlock/nicermd/releases?q=tauri). Universal binary (Apple Silicon + Intel). The build is currently unsigned — on first launch macOS will show a Gatekeeper warning; right-click the app → **Open** → **Open** in the dialog to bypass it. Subsequent launches work normally.
+- **Windows / Linux** — not yet built. Open an issue if you want one.
+
 ## What it does
 
 One rendering core, multiple thin shells. Everything runs on the user's device — no backend, no database, no telemetry.
@@ -40,9 +46,30 @@ pnpm dev:website   # vite dev server on the website
 The desktop shell:
 
 ```bash
-pnpm --filter nicermd-website tauri:dev      # dev window
-pnpm --filter nicermd-website tauri:build    # production .app + .dmg
+pnpm --filter nicermd-website tauri:dev               # dev window
+pnpm --filter nicermd-website tauri:build             # production .app + .dmg (current arch)
+pnpm --filter nicermd-website tauri:build:universal   # universal binary (Apple Silicon + Intel)
 ```
+
+The universal build needs both Rust targets installed:
+
+```bash
+rustup target add aarch64-apple-darwin x86_64-apple-darwin
+```
+
+## Releasing
+
+Macros for the Tauri release flow:
+
+```bash
+pnpm version:bump 0.2.0       # bumps tauri.conf.json + APP_VERSION label
+pnpm release:tauri --dry-run  # builds universal DMG, skips publish
+pnpm release:tauri            # builds + uploads to GitHub Releases (needs `gh auth`)
+```
+
+Builds are unsigned (Layer 1 distribution). For signed + notarized builds you'll need an Apple Developer account; see [BACKLOG.md](./BACKLOG.md) for the deferred Layer 2 work.
+
+When the release contains UI / CSS / SW changes, also bump `CACHE_VERSION` in `packages/website/public/sw.js` so the new SW activates and drops the old cache.
 
 ## Project docs
 

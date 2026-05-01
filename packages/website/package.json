@@ -13,7 +13,8 @@
     "test": "vitest run",
     "tauri": "tauri",
     "tauri:dev": "tauri dev",
-    "tauri:build": "tauri build"
+    "tauri:build": "tauri build",
+    "tauri:build:universal": "tauri build --target universal-apple-darwin"
   },
   "dependencies": {
     "@codemirror/commands": "^6.10.3",
