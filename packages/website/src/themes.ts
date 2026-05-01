@@ -27,7 +27,6 @@ export interface Theme {
 
 export const THEMES: readonly Theme[] = [
   // Originals — kept on system fonts so they stay zero-network.
-  { slug: 'default', name: 'Default', mode: 'light' },
   { slug: 'nicer', name: 'Nicer', mode: 'light' },
   { slug: 'nicer-dark', name: 'Nicer Dark', mode: 'dark' },
   { slug: 'paper', name: 'Paper', mode: 'light', defaultProseFont: 'system-serif' },
@@ -46,11 +45,14 @@ export const THEMES: readonly Theme[] = [
   { slug: 'catppuccin-latte', name: 'Catppuccin Latte', mode: 'light', inspiredBy: 'Catppuccin', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'ayu-light', name: 'Ayu Light', mode: 'light', inspiredBy: 'Ivan Konstantinov', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
   { slug: 'rose-pine-dawn', name: 'Rosé Pine Dawn', mode: 'light', inspiredBy: 'Rosé Pine', defaultProseFont: 'crimson-pro', defaultCodeFont: 'jetbrains-mono' },
+  // Warm-print read — cream paper + deep brown ink, restrained earth-
+  // tone syntax. Pairs naturally with a literary serif for body.
+  { slug: 'newsprint', name: 'Newsprint', mode: 'light', defaultProseFont: 'crimson-pro', defaultCodeFont: 'jetbrains-mono' },
 ]
 
 const STORAGE_KEY = 'nicermd:theme'
 const PREVIOUS_KEY = 'nicermd:theme-previous'
-const DEFAULT_SLUG = 'default'
+const DEFAULT_SLUG = 'nicer'
 
 function readStored(): string | null {
   try {
