@@ -808,14 +808,6 @@ html {
 [data-active-mode="2"] .format-bar {
   cursor: default;
 }
-/* First-load attention. Held for BOOT_VISIBLE_MS in format-bar.ts;
-   uses the accent colour to draw the eye, then fades to resting. */
-.format-bar--boot {
-  opacity: 1;
-  border-color: color-mix(in srgb, var(--accent) 50%, var(--border));
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06),
-    0 0 0 4px color-mix(in srgb, var(--accent) 18%, transparent);
-}
 .format-bar__dots {
   color: var(--muted);
   font-size: 12px;
