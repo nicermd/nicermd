@@ -30,7 +30,12 @@ export function setupVersionBadge(root: HTMLElement): void {
   const badge = document.createElement('button')
   badge.type = 'button'
   badge.className = 'version-badge'
-  badge.textContent = APP_VERSION
+  // In alpha the status word is the at-a-glance signal — the full
+  // version (v0.1 alpha) lives in the popover alongside build SHA
+  // and timestamp so the corner stays uncluttered. Non-alpha builds
+  // fall back to the full APP_VERSION on the rare chance the badge
+  // sticks around past GA.
+  badge.textContent = IS_ALPHA ? 'alpha' : APP_VERSION
   badge.setAttribute('aria-label', `${APP_VERSION} — about this release`)
   badge.addEventListener('click', () => openPopover())
   root.appendChild(badge)
@@ -71,22 +76,24 @@ function openPopover(): void {
     panel.appendChild(link)
   }
 
-  // Build provenance line — small, muted, last item before the close
-  // button. Lets the user verify which build the live site is on
-  // without leaving the page; SHA links to the commit on GitHub.
+  // Version + build line — small, muted, last item before the close
+  // button. The corner badge drops the version number to just 'alpha'
+  // for cleanliness, so the full APP_VERSION lives here for anyone
+  // who wants the precise number. SHA links to the GitHub commit.
   const meta = document.createElement('div')
   meta.className = 'alpha-popover__meta'
+  meta.append(APP_VERSION)
   if (BUILD_SHA && BUILD_SHA !== 'dev') {
-    const builtLabel = formatBuiltAt(BUILT_AT)
     const sha = document.createElement('a')
     sha.href = `${COMMIT_BASE_URL}${BUILD_SHA}`
     sha.target = '_blank'
     sha.rel = 'noopener noreferrer'
     sha.textContent = BUILD_SHA
-    meta.append('Build ', sha)
+    meta.append(' · ', sha)
+    const builtLabel = formatBuiltAt(BUILT_AT)
     if (builtLabel) meta.append(` · ${builtLabel}`)
   } else {
-    meta.textContent = 'Build dev'
+    meta.append(' · dev')
   }
   panel.appendChild(meta)
 
