@@ -8,9 +8,21 @@
 // what alpha means for this app — the corner badge is just the
 // affordance.
 
-import { APP_NAME, APP_VERSION, IS_ALPHA } from './version'
+import { APP_NAME, APP_VERSION, BUILD_SHA, BUILT_AT, IS_ALPHA } from './version'
 
 const ISSUES_URL = 'https://github.com/isherlock/nicermd/issues'
+const COMMIT_BASE_URL = 'https://github.com/isherlock/nicermd/commit/'
+
+// Format a build's ISO timestamp into a compact human form for the
+// popover meta line. Returns empty for empty input (dev / no build
+// timestamp), so the meta line silently degrades.
+function formatBuiltAt(iso: string): string {
+  if (!iso) return ''
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return ''
+  const pad = (n: number): string => String(n).padStart(2, '0')
+  return `${d.getUTCFullYear()}-${pad(d.getUTCMonth() + 1)}-${pad(d.getUTCDate())} ${pad(d.getUTCHours())}:${pad(d.getUTCMinutes())} UTC`
+}
 
 let popoverOpen = false
 
@@ -58,6 +70,25 @@ function openPopover(): void {
     link.textContent = 'Report a bug on GitHub'
     panel.appendChild(link)
   }
+
+  // Build provenance line — small, muted, last item before the close
+  // button. Lets the user verify which build the live site is on
+  // without leaving the page; SHA links to the commit on GitHub.
+  const meta = document.createElement('div')
+  meta.className = 'alpha-popover__meta'
+  if (BUILD_SHA && BUILD_SHA !== 'dev') {
+    const builtLabel = formatBuiltAt(BUILT_AT)
+    const sha = document.createElement('a')
+    sha.href = `${COMMIT_BASE_URL}${BUILD_SHA}`
+    sha.target = '_blank'
+    sha.rel = 'noopener noreferrer'
+    sha.textContent = BUILD_SHA
+    meta.append('Build ', sha)
+    if (builtLabel) meta.append(` · ${builtLabel}`)
+  } else {
+    meta.textContent = 'Build dev'
+  }
+  panel.appendChild(meta)
 
   const closeBtn = document.createElement('button')
   closeBtn.type = 'button'
