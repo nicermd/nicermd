@@ -585,6 +585,26 @@ html {
   display: flex;
 }
 
+/* Window-Controls-Overlay PWA mode (Chrome on macOS, Edge on Windows).
+   The OS chrome collapses to just the window controls (traffic lights
+   on macOS); our .window-title becomes the visual title bar. Reserve
+   the left edge for the controls — `env(titlebar-area-x)` returns the
+   x-offset where the controls end, so padding-left at least that wide
+   keeps the centred filename clear of them. The strip also becomes a
+   drag region (only the strip itself, not its children) so the OS
+   knows which area to use for window-move. */
+@media (display-mode: window-controls-overlay) {
+  .window-title {
+    padding-left: max(6rem, env(titlebar-area-x, 6rem));
+    -webkit-app-region: drag;
+    app-region: drag;
+  }
+  .window-title > * {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+}
+
 /* Faint bottom-right version badge. Visible in both shells. Sits
    above any document scroll, hidden in macOS native fullscreen so
    the reading view stays uncluttered. Pointer-events disabled so
