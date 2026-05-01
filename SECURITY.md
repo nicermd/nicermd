@@ -13,7 +13,7 @@ moves from the second section into the first.
 ### What we defend against
 
 1. **XSS via rendered HTML.** Attacker crafts markdown designed to produce dangerous HTML when rendered (inline scripts, `javascript:` URLs, event handlers on tags, SVG with `<script>`, etc.).
-2. **URL-shared payloads.** Attacker shares a `nicermd.com/?url=<github-url>` link, victim's browser loads the linked file and renders it. This is our primary novel attack surface — shared URLs are an attacker-controlled code path, not user-typed content.
+2. **URL-shared payloads.** Attacker shares a `nicer.md/?url=<github-url>` link, victim's browser loads the linked file and renders it. This is our primary novel attack surface — shared URLs are an attacker-controlled code path, not user-typed content.
 3. **HTML injection via markdown-it's HTML-in-markdown feature.** Raw HTML blocks inside markdown (`<script>alert(1)</script>` typed directly) would pass through markdown-it by default.
 4. **Dangerous link/image URLs.** `javascript:`, `data:` with scriptable MIME types, `file:`, `vbscript:`.
 5. **Visual confusion in document names.** Bidi-override / zero-width characters in URL-derived display names that could mislead about the source of a loaded document.
@@ -24,7 +24,7 @@ moves from the second section into the first.
 ### What we don't defend against (explicit)
 
 - **User pastes their own malicious content and views it.** They are both attacker and victim; not our problem.
-- **Targeted social engineering** ("click this nicermd.com URL to see something interesting" when the content is actually phishing or NSFW). No different from any web link. We show the source URL on hover for content loaded via `?url=` so users have provenance awareness.
+- **Targeted social engineering** ("click this nicer.md URL to see something interesting" when the content is actually phishing or NSFW). No different from any web link. We show the source URL on hover for content loaded via `?url=` so users have provenance awareness.
 - **Compromise of the user's machine, browser, or extensions.** Out of scope.
 - **TLS/MitM between the user and Cloudflare.** Cloudflare's infrastructure concern.
 
@@ -246,7 +246,7 @@ when the feature lands.
 
 ## Disclosure
 
-- **Report:** `security@nicermd.com` (Cloudflare Email Routing to maintainer) or a private GitHub Security Advisory.
+- **Report:** `security@nicer.md` (Cloudflare Email Routing to maintainer) or a private GitHub Security Advisory.
 - **Response time:** acknowledgment within 7 days; patch or mitigation target 30 days for confirmed vulnerabilities.
 - **Credit:** reporters acknowledged in the release notes unless they prefer otherwise.
 

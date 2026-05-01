@@ -63,7 +63,7 @@ function buildCommands(harness: Harness): Command[] {
         if (!sourceUrl) return
         // Use the current origin so dev-server users get a localhost
         // link they can actually visit; in production this becomes
-        // nicermd.com/?url=… (the recipient still sees the phishing
+        // nicer.md/?url=… (the recipient still sees the phishing
         // gate before any fetch happens — share links are not auto-
         // -trust, they just bootstrap the prompt).
         const shareUrl = `${window.location.origin}/?url=${encodeURIComponent(sourceUrl)}`

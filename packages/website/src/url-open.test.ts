@@ -58,7 +58,7 @@ describe('Host allowlist', () => {
   it('rejects internal hostnames', () => {
     reject('https://internal.intra/x.md')
     reject('https://corp.local/x.md')
-    reject('https://nicermd.com/x.md')
+    reject('https://nicer.md/x.md')
   })
   it('rejects look-alike hosts (must be exact match)', () => {
     reject('https://github.com.attacker.test/u/r/x.md')

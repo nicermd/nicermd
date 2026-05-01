@@ -90,8 +90,8 @@ describe('URL allowlist', () => {
   })
 
   it('preserves https:, http:, mailto:, fragment hrefs', () => {
-    const out = render('[a](https://nicermd.com) [b](http://x.test) [c](mailto:a@b.com) [d](#anchor)\n')
-    expect(out).toContain('href="https://nicermd.com"')
+    const out = render('[a](https://nicer.md) [b](http://x.test) [c](mailto:a@b.com) [d](#anchor)\n')
+    expect(out).toContain('href="https://nicer.md"')
     expect(out).toContain('href="http://x.test"')
     expect(out).toContain('href="mailto:a@b.com"')
     expect(out).toContain('href="#anchor"')
