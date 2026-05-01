@@ -810,6 +810,46 @@ html {
   transform: translateY(calc(100% + 8px));
 }
 
+/* PWA standalone on the web shell — Chrome draws its own thin title
+   bar with the page <title>, plus collapsible chrome buttons (back /
+   ext / 3-dot) at the right. Two adjustments to avoid stacking and
+   collisions:
+   - Hide our .window-title strip; Chrome's bar already shows the title.
+   - Push mode icons down by 32px so when Chrome's title bar collapses
+     and its chrome buttons overlay on the page content, they sit
+     above (not on top of) our icons.
+   - Pin mode icons against [data-strip-hidden] (our scroll-strip flag)
+     so scrolling doesn't translate them up into the chrome zone.
+   Tauri and plain browser tabs are unaffected. */
+@media (display-mode: standalone) {
+  [data-shell="web"] .window-title {
+    display: none;
+  }
+  [data-shell="web"] .mode-icons {
+    top: 32px;
+  }
+  [data-shell="web"][data-strip-hidden="1"] .mode-icons {
+    transform: none;
+  }
+}
+
+/* PWA WCO mode (display_override active). Chrome stops drawing a
+   title bar entirely; OS controls (traffic lights left, ext + menu
+   right) overlay on top of the web content. Our strip becomes the
+   only title bar — restore it (overrides the standalone hide above
+   since WCO also matches display-mode: standalone). Mode icons need
+   to clear the right-side controls overlay; env(titlebar-area-*)
+   tells us the safe horizontal range. */
+@media (display-mode: window-controls-overlay) {
+  [data-shell="web"] .window-title {
+    display: flex;
+  }
+  [data-shell="web"] .mode-icons {
+    top: 0;
+    right: max(12px, calc(100vw - env(titlebar-area-x) - env(titlebar-area-width) + 12px));
+  }
+}
+
 /* Format / command pill. Always visible at low opacity. In modes
    1/3/4 the resting "⌘K" label opens the command palette on click; in
    mode 2 it expands to a format toolbar via proximity reveal (handled
