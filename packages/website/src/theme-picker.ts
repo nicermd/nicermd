@@ -153,14 +153,20 @@ function createThemeCard(theme: Theme, selected: boolean): HTMLElement {
   const name = document.createElement('span')
   name.className = 'theme-card__name'
   name.textContent = theme.name
-  footer.append(name)
+  // Always render the inspired-by line, even when empty, so the
+  // theme name sits at the same Y position across every card.
+  // The U+00A0 placeholder reserves the line height without a
+  // visible glyph; aria-hidden keeps screen readers quiet.
+  const sub = document.createElement('span')
+  sub.className = 'theme-card__inspired'
   if (theme.inspiredBy) {
-    const sub = document.createElement('span')
-    sub.className = 'theme-card__inspired'
     sub.textContent = `Inspired by ${theme.inspiredBy}`
     sub.title = sub.textContent
-    footer.append(sub)
+  } else {
+    sub.textContent = '\u00A0'
+    sub.setAttribute('aria-hidden', 'true')
   }
+  footer.append(name, sub)
 
   card.append(preview, footer)
   return card
