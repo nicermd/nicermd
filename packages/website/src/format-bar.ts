@@ -9,10 +9,6 @@
 // title strip uses (see scroll-strip.ts) — scrolling down slides the
 // pill out, scrolling up brings it back, mode change resurfaces it.
 //
-// On first load the pill flashes at full opacity (BOOT_VISIBLE_MS) so
-// users notice the affordance before it settles to its quiet resting
-// state.
-//
 // Icons are Lucide originals (MIT) inlined as SVG paths. Same approach
 // as mode-icons.ts — avoids pulling the whole lucide package for a
 // handful of glyphs.
@@ -122,7 +118,6 @@ const BUTTONS: FormatButtonDef[] = [
 ]
 
 const PROXIMITY_PX = 120
-const BOOT_VISIBLE_MS = 2000
 
 // macOS uses the ⌘ glyph; Windows / Linux read more naturally as
 // "Ctrl+K". userAgentData.platform is the modern surface but isn't
@@ -142,7 +137,7 @@ const CMD_K_TITLE = isMac ? 'Command palette — ⌘K' : 'Command palette — Ct
 
 export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   const bar = document.createElement('div')
-  bar.className = 'format-bar format-bar--boot'
+  bar.className = 'format-bar'
   bar.setAttribute('role', 'toolbar')
   bar.setAttribute('aria-label', 'Commands and formatting')
   root.appendChild(bar)
@@ -275,9 +270,4 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
     isOpen = open
     bar.classList.toggle('format-bar--open', open)
   })
-
-  // Boot-time attention. Drop the highlight class after a short window
-  // so the pill fades to its resting opacity. Long enough to register
-  // peripherally, short enough not to nag.
-  setTimeout(() => bar.classList.remove('format-bar--boot'), BOOT_VISIBLE_MS)
 }
