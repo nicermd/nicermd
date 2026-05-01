@@ -1,7 +1,6 @@
 // Theme picker modal. Opens centred over the app, dims the backdrop,
-// shows a grid of theme cards with live mini-previews, plus a "Coming
-// soon" row of placeholder themes and a (scaffold-only for spike) Custom
-// theme URL input.
+// shows a grid of theme cards with live mini-previews, plus a
+// (scaffold-only for spike) Custom theme URL input.
 //
 // Live preview: arrow keys move selection AND apply the highlighted
 // theme to the whole app immediately. Enter / click commits and persists.
@@ -12,23 +11,7 @@
 // Selected indicator is a fixed-colour outline so it reads regardless of
 // which theme is currently being previewed.
 
-import { THEMES, applyTheme, getActiveTheme, type Theme, type ThemeMode } from './themes'
-
-interface PlaceholderTheme {
-  slug: string
-  name: string
-  mode: ThemeMode
-}
-
-// Several of the original placeholders graduated into the real
-// THEMES list (Solarized Light/Dark, Forest → Everforest, etc.).
-// Keep a small "Coming soon" rail for future ideas.
-const PLACEHOLDERS: PlaceholderTheme[] = [
-  { slug: 'sepia', name: 'Sepia', mode: 'light' },
-  { slug: 'high-contrast', name: 'High Contrast', mode: 'light' },
-  { slug: 'high-contrast-dark', name: 'High Contrast Dark', mode: 'dark' },
-  { slug: 'newsprint', name: 'Newsprint', mode: 'light' },
-]
+import { THEMES, applyTheme, getActiveTheme, type Theme } from './themes'
 
 const GRID_COLS = 4
 
@@ -66,8 +49,6 @@ export function openThemePicker(): void {
   closeBtn.textContent = '×'
   header.append(title, closeBtn)
 
-  // Single grid: real themes first, placeholders after. Visually
-  // consistent; placeholders are dimmed and not selectable.
   const grid = document.createElement('div')
   grid.className = 'theme-picker__grid'
   const cards: HTMLElement[] = THEMES.map((theme, idx) => {
@@ -81,7 +62,6 @@ export function openThemePicker(): void {
     grid.appendChild(card)
     return card
   })
-  PLACEHOLDERS.forEach((p) => grid.appendChild(createPlaceholderCard(p)))
 
   // Custom URL row (scaffold-only)
   const custom = document.createElement('div')
@@ -217,25 +197,3 @@ function createThemeCard(theme: Theme, selected: boolean): HTMLElement {
   return card
 }
 
-function createPlaceholderCard(p: PlaceholderTheme): HTMLElement {
-  const card = document.createElement('div')
-  card.className = 'theme-card theme-card--placeholder'
-  card.tabIndex = -1
-
-  const preview = document.createElement('div')
-  preview.className = 'theme-card__preview theme-card__preview--placeholder'
-  const text = document.createElement('div')
-  text.className = 'theme-card__placeholder-text'
-  text.textContent = 'Coming soon'
-  preview.appendChild(text)
-
-  const footer = document.createElement('div')
-  footer.className = 'theme-card__footer'
-  const name = document.createElement('span')
-  name.className = 'theme-card__name'
-  name.textContent = p.name
-  footer.append(name)
-
-  card.append(preview, footer)
-  return card
-}
