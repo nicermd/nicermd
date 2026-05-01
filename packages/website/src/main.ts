@@ -25,6 +25,7 @@ import { tags as t } from '@lezer/highlight'
 import { render as renderMarkdown } from 'nicermd-core'
 
 import showcase from './samples/showcase.md?raw'
+import { IS_MAC } from './platform'
 import { setupTauriBridge } from './tauri-bridge'
 import { setupFileDrop } from './file-drop'
 import { openFile, saveFile, newFile, setDocState, isDirty, markDirty, getCurrentSourceUrl } from './doc-source'
@@ -484,7 +485,13 @@ async function boot(): Promise<void> {
   host.className = 'mode-host'
   root.appendChild(host)
 
-  let bootMarkdown: string = showcase
+  // Showcase is authored Mac-side ('Cmd+1', 'Cmd+S', etc.). On non-Mac
+  // boots rewrite those tokens inside inline code spans only — prose
+  // outside backticks (if any) stays untouched. Only applies to the
+  // built-in landing doc; user-loaded markdown is rendered as-authored.
+  let bootMarkdown: string = IS_MAC
+    ? showcase
+    : showcase.replace(/`([^`]*)`/g, (_m, inner: string) => `\`${inner.replace(/\bCmd\+/g, 'Ctrl+')}\``)
   let harness: Harness
   // Tree-shake gate: import.meta.env.DEV is a compile-time `false` in
   // `pnpm build`, so the entire branch (and ./dev-features) is dead-code-

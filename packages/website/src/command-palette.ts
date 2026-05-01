@@ -18,6 +18,7 @@ import { openThemePicker } from './theme-picker'
 import { toggleRecentTheme, showThemeToast, showToast } from './themes'
 import { openFontPicker } from './font-picker'
 import { isTauri as isZoomTauri, zoomIn, zoomOut, zoomReset } from './zoom'
+import { IS_MAC } from './platform'
 
 interface Command {
   id: string
@@ -252,7 +253,10 @@ function openPaletteImpl(harness: Harness): void {
       if (cmd.shortcut) {
         const sc = document.createElement('span')
         sc.className = 'cmdp__shortcut'
-        sc.textContent = cmd.shortcut
+        // Shortcuts are authored Mac-side ('Cmd+K'); rewrite at render
+        // time for non-Mac so Windows / Linux readers don't see a key
+        // that doesn't exist on their keyboard.
+        sc.textContent = IS_MAC ? cmd.shortcut : cmd.shortcut.replace(/\bCmd\b/g, 'Ctrl')
         row.appendChild(sc)
       }
 
