@@ -477,6 +477,32 @@ async function boot(): Promise<void> {
     })()
   }
 
+  // PWA standalone-mode chrome detection. Chrome's PWA has a 'Hide
+  // title bar' toggle that doesn't change display-mode but DOES
+  // collapse the chrome strip — page viewport extends to the window
+  // top and Chrome overlays its controls (traffic lights / menu) on
+  // our content. We can't detect the toggle via CSS, but
+  // outerHeight - innerHeight is roughly the chrome height (~32-44px
+  // when shown, ~0 when hidden). main.css uses
+  // [data-pwa-chrome-hidden="1"] to push the mode icons down past
+  // the overlay row when chrome is hidden, and back to the
+  // viewport-top when chrome is shown.
+  if (!inTauri) {
+    const isStandalonePwa = (): boolean =>
+      typeof window.matchMedia === 'function' &&
+      window.matchMedia('(display-mode: standalone)').matches
+    const syncPwaChrome = (): void => {
+      if (!isStandalonePwa()) {
+        document.documentElement.dataset.pwaChromeHidden = '0'
+        return
+      }
+      const chromeHeight = window.outerHeight - window.innerHeight
+      document.documentElement.dataset.pwaChromeHidden = chromeHeight < 8 ? '1' : '0'
+    }
+    window.addEventListener('resize', syncPwaChrome)
+    syncPwaChrome()
+  }
+
   // Hide title strip + mode icons on scroll-down, restore on scroll-up.
   // Inert in mode 3 (split scrolls inside panes, not the document).
   setupScrollStrip()
