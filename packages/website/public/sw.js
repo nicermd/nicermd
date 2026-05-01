@@ -1,15 +1,25 @@
 // Service worker — keeps the app shell working offline and makes repeat
-// loads instant. Strategy is deliberately small: precache the static
-// boot-time assets, stale-while-revalidate for everything else
-// same-origin, and stay out of the way for cross-origin requests
-// (raw.githubusercontent.com, fonts, etc. — those stay network-only,
-// matching the strict-CSP posture).
+// loads instant. Two strategies:
+//
+//   - Navigation requests (HTML): network-first. The cached HTML
+//     references hashed bundle names that change every build, so a
+//     stale HTML would point at bundles the new deploy no longer
+//     serves. Network-first keeps users on the latest HTML when
+//     online; cache is the offline fallback only.
+//   - Everything else same-origin (JS, CSS, images): stale-while-
+//     revalidate. Hashed assets are immutable so cache-first is
+//     correct; the background refresh handles overwriting on rare
+//     content changes (favicons, manifest).
+//
+// Cross-origin requests (raw.githubusercontent.com, fonts, etc.) pass
+// straight through — those handle their own caching and we don't want
+// to widen the attack surface by mediating them.
 //
 // Bump CACHE_VERSION on each release so old caches are evicted. The
 // SW lifecycle handles the rest: install → activate → claim → start
 // serving from the new cache, then drop the old one.
 
-const CACHE_VERSION = 'v0.1-alpha-3'
+const CACHE_VERSION = 'v0.1-alpha-4'
 const CACHE_NAME = `nicermd-${CACHE_VERSION}`
 
 // Boot-time assets we know by name. The hashed JS/CSS bundles aren't
@@ -60,6 +70,30 @@ self.addEventListener('fetch', (event) => {
 
   event.respondWith(
     caches.open(CACHE_NAME).then(async (cache) => {
+      // Navigation requests (HTML) — network-first. Stale HTML
+      // would reference hashed bundle names the new deploy no
+      // longer serves, so we always try fresh first; cache is
+      // the offline fallback. SW shipped before alpha-4 used
+      // stale-while-revalidate here, which gave users an
+      // hours-old HTML in PWA installs after every deploy.
+      if (req.mode === 'navigate') {
+        try {
+          const fresh = await fetch(req)
+          if (fresh.ok && fresh.type === 'basic') {
+            cache.put(req, fresh.clone()).catch(() => {})
+          }
+          return fresh
+        } catch {
+          const cached = await cache.match(req)
+          if (cached) return cached
+          const shell = await cache.match('/')
+          if (shell) return shell
+          return new Response('Offline and not cached', { status: 503, statusText: 'Offline' })
+        }
+      }
+
+      // Everything else — stale-while-revalidate. Hashed bundles
+      // are immutable so cache-first is correct.
       const cached = await cache.match(req)
       const network = fetch(req)
         .then((res) => {
@@ -71,20 +105,12 @@ self.addEventListener('fetch', (event) => {
         .catch(() => undefined)
 
       if (cached) {
-        // Background-refresh; don't await.
         network.catch(() => {})
         return cached
       }
 
       const fresh = await network
       if (fresh) return fresh
-
-      // Last-resort: serve the cached shell for navigations so the
-      // app at least boots offline.
-      if (req.mode === 'navigate') {
-        const shell = await cache.match('/')
-        if (shell) return shell
-      }
       return new Response('Offline and not cached', { status: 503, statusText: 'Offline' })
     })
   )
