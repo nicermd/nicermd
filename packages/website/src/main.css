@@ -825,8 +825,12 @@ html {
   [data-shell="web"] .window-title {
     display: none;
   }
+  /* 44px clears Chrome PWA's chrome-button hit area when the title
+     bar is collapsed (~36-40px tall on Mac); below that, icons end
+     up partly inside the drag region and clicks get intercepted by
+     Chrome instead of reaching our handlers. */
   [data-shell="web"] .mode-icons {
-    top: 32px;
+    top: 44px;
   }
   [data-shell="web"][data-strip-hidden="1"] .mode-icons {
     transform: none;
