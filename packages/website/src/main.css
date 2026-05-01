@@ -1643,23 +1643,6 @@ html {
   font-style: italic;
 }
 
-.theme-card--placeholder {
-  opacity: 0.55;
-  cursor: not-allowed;
-}
-.theme-card--placeholder:hover {
-  transform: none;
-}
-.theme-card__preview--placeholder {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  color: var(--muted);
-  font-size: 11px;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
 .theme-picker__custom {
   margin-top: 0.7rem;
   display: flex;
