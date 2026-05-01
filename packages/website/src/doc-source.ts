@@ -115,18 +115,25 @@ export async function openFile(harness: Harness): Promise<void> {
   await openViaInputFallback(harness)
 }
 
+// Open a file from an explicit path (no dialog). Used by Tauri's
+// 'Open With…' / double-click flow — macOS fires RunEvent::Opened
+// with the chosen file's URL, which lib.rs forwards as a string path.
+export async function openFromTauriPath(harness: Harness, path: string): Promise<void> {
+  const { readTextFile } = await import('@tauri-apps/plugin-fs')
+  const text = await readTextFile(path)
+  setDocState(text, basename(path), { kind: 'tauri-path', path })
+  harness.replaceDoc(text)
+}
+
 async function openViaTauri(harness: Harness): Promise<void> {
   const { open } = await import('@tauri-apps/plugin-dialog')
-  const { readTextFile } = await import('@tauri-apps/plugin-fs')
   const result = await open({
     multiple: false,
     directory: false,
     filters: TAURI_FILE_FILTERS,
   })
   if (typeof result !== 'string') return
-  const text = await readTextFile(result)
-  setDocState(text, basename(result), { kind: 'tauri-path', path: result })
-  harness.replaceDoc(text)
+  await openFromTauriPath(harness, result)
 }
 
 async function openViaFsa(
