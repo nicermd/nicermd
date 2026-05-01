@@ -1,21 +1,63 @@
 # Contributing
 
-> Placeholder — contribution guidelines will be filled in once the project
-> is open to outside contributions.
+The project is in alpha (`v0.1.x`). The repo is public so the code is browsable, the license is real, and bug reports / suggestions can land. PRs from outside contributors are welcome but should be coordinated via an issue first — alpha-stage architecture is still moving and a long-running fork is more painful than a quick "hold on, let me explain" up front.
 
-For now, the project is in pre-1.0 development and the public repo exists
-mainly so the code is browseable and licensed openly. If you've found a bug
-or have a suggestion, the right channels are:
+## Reporting issues
 
-- **Bugs** — open an issue on GitHub. Quote the version (`pnpm exec vite -v`,
-  or the build hash on the about pane once that lands), the browser /
-  platform, and what you expected vs what happened.
-- **Security issues** — see [SECURITY.md](./SECURITY.md) for the
-  coordinated-disclosure process. Please do not file public issues for
-  security-sensitive findings.
-- **Feature requests** — issues are welcome. Note the work is currently
-  prioritised against the roadmap implicit in [BACKLOG.md](./BACKLOG.md)
-  and [KNOWN-ISSUES.md](./KNOWN-ISSUES.md).
+- **Bugs** — open an issue. Useful info: version (the build SHA in the corner-badge popover, or `git rev-parse --short HEAD` for self-built copies), browser / OS, repro steps, expected vs actual.
+- **Security issues** — see [SECURITY.md](./SECURITY.md) for coordinated disclosure. Don't open public issues for security findings.
+- **Feature requests** — issues welcome. Work is currently prioritised against [BACKLOG.md](./BACKLOG.md) and [KNOWN-ISSUES.md](./KNOWN-ISSUES.md).
 
-A full contributor guide (dev setup, coding standards, commit conventions,
-PR expectations) will land here before the first tagged release.
+## Dev setup
+
+```bash
+pnpm install
+pnpm dev           # builds core, runs website dev server (http://localhost:3333)
+pnpm typecheck     # tsc --noEmit across the workspace
+pnpm test          # vitest run, both packages
+```
+
+For desktop work:
+
+```bash
+pnpm --filter nicermd-website tauri:dev
+```
+
+## Coding conventions
+
+A few choices that aren't obvious from the code:
+
+- **No unrequested abstractions.** Three similar lines is better than a premature helper. Don't add error handling for impossible cases. Trust internal code; only validate at system boundaries.
+- **Comments explain *why*, not *what*.** Naming carries the *what*. Save comments for hidden constraints, surprising tradeoffs, references to specific bug fixes that aren't obvious from context.
+- **Small commits.** Each commit should be revertable. Bundle related changes; don't bundle unrelated ones. The commit-message body should explain reasoning, not just restate the diff.
+- **Strict TypeScript.** `noUncheckedIndexedAccess` is on. `any` is rare and usually wrong.
+- **No third-party brand names** in user-visible feature / theme / palette names. Community-palette tributes (Solarized, Nord, Catppuccin, etc.) get credited via an `inspiredBy` field in the theme registry, which renders as "Inspired by …" subtitle.
+- **Sanitisation invariant.** Untrusted HTML must never reach the DOM unsanitised — see [SECURITY.md](./SECURITY.md) for the three-layer defence.
+
+## Commit messages
+
+Lowercase imperative subjects, prefixed with type:
+
+```
+add: <something new>
+fix: <bug>
+remove: <something dropped>
+refactor: <internal restructuring, no behavior change>
+chore: <tooling, deps>
+docs: <docs-only>
+release: <version bump>
+```
+
+Body explains the *why* — the diff already shows the *what*. For non-trivial commits, also explain what was considered and rejected.
+
+## PR expectations
+
+- Branch from `main`, push to a `try/<topic>` or `feat/<topic>` branch (CF auto-deploys non-main branches to a preview URL — useful for visual changes).
+- Link the issue the PR addresses.
+- Tests pass (`pnpm test`), typecheck clean (`pnpm typecheck`), no new ESLint warnings if/when ESLint lands.
+- For visible changes, include a before/after screenshot or short Loom in the PR description.
+- Squash-merge via the GitHub UI; the squashed commit message follows the conventions above.
+
+## Releases
+
+The desktop binary and the web build version together — see the "Releasing" section of [README.md](./README.md). One-liner: `pnpm version:bump <semver>`, commit, `pnpm release:tauri`.
