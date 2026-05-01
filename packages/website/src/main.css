@@ -603,6 +603,15 @@ html {
     -webkit-app-region: no-drag;
     app-region: no-drag;
   }
+  /* Pin the strip + mode icons in WCO. Hide-on-scroll was designed
+     for tab mode where chrome sits above us; in WCO the only thing
+     above is the OS controls overlay, so 'hiding' the strip just
+     slides it under the extensions / settings buttons. The strip
+     IS the title bar here, so it stays put. */
+  [data-strip-hidden="1"] .window-title,
+  [data-strip-hidden="1"] .mode-icons {
+    transform: none;
+  }
 }
 
 /* Faint bottom-right version badge. Visible in both shells. Sits
@@ -808,19 +817,6 @@ html {
 }
 [data-strip-hidden="1"] .version-badge {
   transform: translateY(calc(100% + 8px));
-}
-
-/* In WCO mode, override the hide-on-scroll for the top chrome (title
-   strip + mode icons): there's no browser chrome above us to hide
-   into, only the OS controls overlay, so 'hiding' just slides them
-   under the extensions / settings buttons. The strip IS the title
-   bar in WCO, so it stays put. Format-bar + badge still hide
-   normally — they're at the bottom and don't fight the OS controls. */
-@media (display-mode: window-controls-overlay) {
-  [data-strip-hidden="1"] .window-title,
-  [data-strip-hidden="1"] .mode-icons {
-    transform: none;
-  }
 }
 
 /* Format / command pill. Always visible at low opacity. In modes
