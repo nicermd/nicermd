@@ -16,6 +16,7 @@
 import type { Harness } from './main'
 import type { FormatAction } from './wysiwyg-engine'
 import { openPalette } from './command-palette'
+import { IS_MAC } from './platform'
 
 interface FormatButtonDef {
   action: FormatAction
@@ -120,20 +121,10 @@ const BUTTONS: FormatButtonDef[] = [
 const PROXIMITY_PX = 120
 
 // macOS uses the ⌘ glyph; Windows / Linux read more naturally as
-// "Ctrl+K". userAgentData.platform is the modern surface but isn't
-// universally populated (notably absent in older webviews and Tauri's
-// macOS WKWebView in some cases), so fall back to navigator.platform
-// — deprecated but still reliable for OS detection.
-const isMac =
-  typeof navigator !== 'undefined' &&
-  /(Mac|iPad|iPhone)/i.test(
-    (navigator as unknown as { userAgentData?: { platform?: string } })
-      .userAgentData?.platform ??
-      navigator.platform ??
-      '',
-  )
-const CMD_K_LABEL = isMac ? '⌘K' : 'Ctrl+K'
-const CMD_K_TITLE = isMac ? 'Command palette — ⌘K' : 'Command palette — Ctrl+K'
+// "Ctrl+K". Detection lives in platform.ts so the same query-param
+// override (`?platform=win`) flips every label site-wide.
+const CMD_K_LABEL = IS_MAC ? '⌘K' : 'Ctrl+K'
+const CMD_K_TITLE = IS_MAC ? 'Command palette — ⌘K' : 'Command palette — Ctrl+K'
 
 export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   const bar = document.createElement('div')
