@@ -864,6 +864,16 @@ html {
   [data-shell="web"] .mode-icons {
     top: 0;
     right: max(12px, calc(100vw - env(titlebar-area-x) - env(titlebar-area-width) + 12px));
+    /* Explicitly mark the icons + their children as interactive even
+       though they sit inside the title-bar overlay area. Without this,
+       Chrome treats the whole top region as a drag zone when the user
+       toggles 'Hide title bar' and click events get captured. */
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
+  }
+  [data-shell="web"] .mode-icons > * {
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
   }
 }
 
