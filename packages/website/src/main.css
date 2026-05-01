@@ -603,6 +603,15 @@ html {
     -webkit-app-region: no-drag;
     app-region: no-drag;
   }
+  /* Pin the strip + mode icons in WCO. Hide-on-scroll was designed
+     for tab mode where chrome sits above us; in WCO the only thing
+     above is the OS controls overlay, so 'hiding' the strip just
+     slides it under the extensions / settings buttons. The strip
+     IS the title bar here, so it stays put. */
+  [data-strip-hidden="1"] .window-title,
+  [data-strip-hidden="1"] .mode-icons {
+    transform: none;
+  }
 }
 
 /* Faint bottom-right version badge. Visible in both shells. Sits
