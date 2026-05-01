@@ -3,18 +3,21 @@
 // chunk only ships to users running inside Tauri.
 //
 // Menu events emitted by src-tauri/src/lib.rs:
-//   menu:view-mode  (number)   — switch to mode 1..4
-//   menu:view-cycle ()         — cycle modes
-//   menu:view-focus-toggle ()  — focus mode toggle (TODO)
-//   menu:view-reload ()        — reload the WebView (Cmd+R)
-//   menu:file-new ()           — TODO
-//   menu:file-open ()          — opens system file dialog
-//   menu:file-save ()          — writes back to current source, falls
-//                                through to Save As if anonymous
-//   menu:file-save-as ()       — always opens save dialog
+//   menu:view-mode       (number) — switch to mode 1..4
+//   menu:view-cycle      ()       — cycle modes
+//   menu:view-focus-toggle ()     — focus mode toggle (TODO)
+//   menu:view-reload     ()       — reload the WebView (Cmd+R)
+//   menu:file-new        ()       — TODO
+//   menu:file-open       ()       — opens system file dialog
+//   menu:file-save       ()       — writes back to current source, falls
+//                                   through to Save As if anonymous
+//   menu:file-save-as    ()       — always opens save dialog
+//   menu:file-open-path  (string) — OS-level file-open (Open With,
+//                                   double-click, Dock drop) carrying
+//                                   the chosen file path.
 
 import type { Harness } from './main'
-import { openFile, saveFile, newFile } from './doc-source'
+import { openFile, saveFile, newFile, openFromTauriPath } from './doc-source'
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
@@ -53,5 +56,8 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
   })
   await listen('menu:view-reload', () => {
     window.location.reload()
+  })
+  await listen<string>('menu:file-open-path', (event) => {
+    void openFromTauriPath(harness, event.payload)
   })
 }

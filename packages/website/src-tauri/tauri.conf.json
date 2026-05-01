@@ -40,6 +40,15 @@
       "icons/icon.icns",
       "icons/icon.ico"
     ],
+    "fileAssociations": [
+      {
+        "ext": ["md", "markdown", "mdx"],
+        "name": "Markdown",
+        "description": "Markdown document",
+        "role": "Editor",
+        "mimeType": "text/markdown"
+      }
+    ],
     "macOS": {
       "minimumSystemVersion": "13.0"
     }

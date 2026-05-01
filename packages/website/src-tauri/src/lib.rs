@@ -8,7 +8,7 @@ use tauri::{AppHandle, Emitter, Wry};
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
-    tauri::Builder::default()
+    let app = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .setup(|app| {
@@ -24,8 +24,27 @@ pub fn run() {
             app.on_menu_event(handle_menu_event);
             Ok(())
         })
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+        .build(tauri::generate_context!())
+        .expect("error while building tauri application");
+
+    // OS-level file-open events: macOS fires this when the user picks
+    // 'Open With → Nicer.md' in Finder, double-clicks a .md file with
+    // Nicer.md as the default app, or drops a file onto the Dock icon.
+    // We extract the file path and forward it to the frontend; the web
+    // listener (tauri-bridge.ts) reads the file via tauri-plugin-fs
+    // and updates the harness, same flow as the in-app Open dialog.
+    app.run(|app_handle, event| {
+        if let tauri::RunEvent::Opened { urls } = event {
+            for url in urls {
+                if let Ok(path) = url.to_file_path() {
+                    let path_str = path.to_string_lossy().to_string();
+                    if let Err(err) = app_handle.emit("menu:file-open-path", path_str) {
+                        log::error!("failed to emit menu:file-open-path: {err}");
+                    }
+                }
+            }
+        }
+    });
 }
 
 fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
