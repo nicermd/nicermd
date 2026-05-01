@@ -40,7 +40,6 @@ export const THEMES: readonly Theme[] = [
   { slug: 'solarized-dark', name: 'Solarized Dark', mode: 'dark', inspiredBy: 'Ethan Schoonover', defaultProseFont: 'source-serif', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'nord', name: 'Nord', mode: 'dark', inspiredBy: 'Arctic Ice Studio', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
   { slug: 'gruvbox-dark', name: 'Gruvbox Dark', mode: 'dark', inspiredBy: 'Pavel Pertsev', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
-  { slug: 'tokyo-night', name: 'Tokyo Night', mode: 'dark', inspiredBy: 'enkia', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'dracula', name: 'Dracula', mode: 'dark', inspiredBy: 'Zeno Rocha', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
   { slug: 'everforest', name: 'Everforest', mode: 'dark', inspiredBy: 'sainnhe', defaultProseFont: 'lora', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'catppuccin-latte', name: 'Catppuccin Latte', mode: 'light', inspiredBy: 'Catppuccin', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },

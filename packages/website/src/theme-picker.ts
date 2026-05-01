@@ -60,6 +60,10 @@ export function openThemePicker(): void {
     grid.appendChild(card)
     return card
   })
+  // Trailing 'More themes' tile — disabled, signals more in the
+  // pipeline without committing to specifics. Not part of the
+  // selectable cards array, so arrow keys / Enter naturally skip it.
+  grid.appendChild(createMoreThemesCard())
 
   modal.append(header, grid)
   backdrop.appendChild(modal)
@@ -172,3 +176,31 @@ function createThemeCard(theme: Theme, selected: boolean): HTMLElement {
   return card
 }
 
+function createMoreThemesCard(): HTMLElement {
+  // Quiet trailing tile that completes the grid rectangle. No glyph
+  // or label — a 'More themes' disabled-button affordance reads as
+  // broken UI; an empty slot reads as intentional whitespace. The
+  // title attribute is the only on-hover signal of what it's for.
+  // Footer structure (name + inspired-by) is preserved with U+00A0
+  // placeholders so the tile's height matches the real cards.
+  const card = document.createElement('div')
+  card.className = 'theme-card theme-card--more'
+  card.setAttribute('aria-hidden', 'true')
+  card.title = 'More themes coming'
+
+  const preview = document.createElement('div')
+  preview.className = 'theme-card__preview'
+
+  const footer = document.createElement('div')
+  footer.className = 'theme-card__footer'
+  const name = document.createElement('span')
+  name.className = 'theme-card__name'
+  name.textContent = '\u00A0'
+  const sub = document.createElement('span')
+  sub.className = 'theme-card__inspired'
+  sub.textContent = '\u00A0'
+  footer.append(name, sub)
+
+  card.append(preview, footer)
+  return card
+}
