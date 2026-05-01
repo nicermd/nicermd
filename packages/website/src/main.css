@@ -1,10 +1,12 @@
-/* Theme variables. The :root block holds the Default theme; per-theme
-   blocks override on [data-theme="..."]. CodeMirror's theme + highlight
-   reference these with var(...) so the swap reaches both prose and code
-   surfaces with one attribute flip on <html>. */
+/* Theme variables. :root holds the foundational layout + a neutral
+   light fallback palette; per-theme blocks override on
+   [data-theme="..."]. CodeMirror's theme + highlight reference these
+   with var(...) so the swap reaches both prose and code surfaces with
+   one attribute flip on <html>. The default boot theme is 'nicer'
+   (see DEFAULT_SLUG in themes.ts) — :root only paints if no
+   data-theme attribute is set, which shouldn't happen in practice. */
 
-:root,
-[data-theme='default'] {
+:root {
   /* Layout */
   --reading-width: 720px;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
@@ -485,6 +487,39 @@
   --cm-url: #d7827e;
   --cm-monospace: #ea9d34;
   --cm-quote: #907aa9;
+}
+
+/* Warm-print / lamplight read. Cream paper, deep brown ink (not stark
+   black), restrained syntax colours leaning on muted earth tones —
+   moss greens and terracotta — instead of the crisper blue/red of
+   most code themes. Distinct from Paper (which is cooler and lighter)
+   by being more "long-form reading by lamplight." */
+[data-theme='newsprint'] {
+  --bg: #f4ecda;
+  --fg: #2a2520;
+  --muted: #7a6f5e;
+  --border: #d4c8a8;
+  --surface: #ede4cc;
+
+  --link: #6b3d2e;
+  --accent: #6b3d2e;
+
+  --code-bg: #ede4cc;
+  --code-fg: #2a2520;
+
+  --cm-bg: #f4ecda;
+  --cm-fg: #2a2520;
+  --cm-caret: #6b3d2e;
+  --cm-selection: rgba(107, 61, 46, 0.18);
+  --cm-gutter-bg: #f4ecda;
+  --cm-gutter-fg: #a89a82;
+
+  --cm-marker: #5a4830;
+  --cm-heading: #3a2818;
+  --cm-link: #6b3d2e;
+  --cm-url: #4a5e2e;
+  --cm-monospace: #5a4830;
+  --cm-quote: #4a5e2e;
 }
 
 /* --- Layout & shared --- */
