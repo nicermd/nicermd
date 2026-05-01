@@ -825,17 +825,17 @@ html {
   [data-shell="web"] .window-title {
     display: none;
   }
-  /* When Chrome's PWA 'hide title bar' is on, the page viewport
-     extends to the very top of the window and Chrome overlays its
-     traffic lights + 3-dot menu over our content with a drag /
-     hit-test region behind them. 60px from page-top clears that
-     overlay strip in every state; -webkit-app-region: no-drag is
-     belt-and-braces — explicit hint to Chromium that this area is
-     interactive even if it falls inside a drag region. */
+  /* Default: icons sit at viewport-top (= just below Chrome's title
+     bar when it's visible). main.ts sets data-pwa-chrome-hidden="1"
+     on resize when Chrome's 'Hide title bar' toggle removes the
+     chrome strip — viewport then extends to the window top and
+     Chrome overlays traffic lights / menu over our content. In that
+     state we push icons down to clear the overlay row. */
   [data-shell="web"] .mode-icons {
-    top: 60px;
-    -webkit-app-region: no-drag;
-    app-region: no-drag;
+    top: 0;
+  }
+  [data-shell="web"][data-pwa-chrome-hidden="1"] .mode-icons {
+    top: 36px;
   }
   [data-shell="web"][data-strip-hidden="1"] .mode-icons {
     transform: none;
