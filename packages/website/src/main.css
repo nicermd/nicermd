@@ -834,8 +834,16 @@ html {
   [data-shell="web"] .mode-icons {
     top: 0;
   }
+  /* Chrome extends its title-bar drag region down into the content
+     when 'Hide title bar' is on (right-click in this zone shows
+     back / reload / task manager — the title-bar context menu).
+     60px clears it on Mac. -webkit-app-region: no-drag is the
+     belt-and-braces hint that this specific area is interactive
+     even if it falls inside Chrome's drag zone. */
   [data-shell="web"][data-pwa-chrome-hidden="1"] .mode-icons {
-    top: 36px;
+    top: 60px;
+    -webkit-app-region: no-drag;
+    app-region: no-drag;
   }
   [data-shell="web"][data-strip-hidden="1"] .mode-icons {
     transform: none;
