@@ -183,6 +183,7 @@ function openPaletteImpl(harness: Harness): void {
   const input = document.createElement('input')
   input.className = 'cmdp__input'
   input.type = 'text'
+  input.name = 'cmdp-search'
   input.placeholder = 'Search commands…'
   input.setAttribute('aria-label', 'Command search')
   input.autocomplete = 'off'

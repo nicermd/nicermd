@@ -569,7 +569,9 @@ export function openUrlPrompt(harness: Harness): void {
   const input = document.createElement('input')
   input.className = 'url-open__input'
   input.type = 'url'
+  input.name = 'open-url'
   input.placeholder = 'https://github.com/…'
+  input.setAttribute('aria-label', 'GitHub URL to open')
   input.spellcheck = false
   input.autocomplete = 'off'
   // Same anti-autofill cocktail as the command palette — Chrome /

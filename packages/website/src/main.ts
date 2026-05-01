@@ -615,6 +615,20 @@ function finish(harness: Harness): void {
       }
       return
     }
+    // Cmd/Ctrl + 1..4 — direct mode jump. event.code over event.key so
+    // the binding is stable across keyboard layouts. Mac users on
+    // Safari can't use Cmd+1..4 (Safari reserves them for tab switch);
+    // plain Ctrl+1..4 also fires our handler via the ctrlKey branch.
+    if (
+      event.code === 'Digit1' ||
+      event.code === 'Digit2' ||
+      event.code === 'Digit3' ||
+      event.code === 'Digit4'
+    ) {
+      event.preventDefault()
+      harness.switchTo(Number(event.code.slice(5)))
+      return
+    }
     if (event.code === 'KeyS') {
       event.preventDefault()
       void saveFile(harness)
@@ -666,11 +680,6 @@ function finish(harness: Harness): void {
         void zoomReset()
         return
       }
-    }
-    const n = Number(event.key)
-    if (Number.isInteger(n) && n >= 1 && n <= 4) {
-      event.preventDefault()
-      harness.switchTo(n)
     }
   })
 }
