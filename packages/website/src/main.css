@@ -285,34 +285,6 @@
   --cm-quote: #8ec07c;
 }
 
-[data-theme='tokyo-night'] {
-  --bg: #1a1b26;
-  --fg: #c0caf5;
-  --muted: #565f89;
-  --border: #292e42;
-  --surface: #1f2335;
-
-  --link: #7aa2f7;
-  --accent: #bb9af7;
-
-  --code-bg: #1f2335;
-  --code-fg: #c0caf5;
-
-  --cm-bg: #1a1b26;
-  --cm-fg: #c0caf5;
-  --cm-caret: #c0caf5;
-  --cm-selection: rgba(122, 162, 247, 0.25);
-  --cm-gutter-bg: #1a1b26;
-  --cm-gutter-fg: #3b4261;
-
-  --cm-marker: #f7768e;
-  --cm-heading: #bb9af7;
-  --cm-link: #7aa2f7;
-  --cm-url: #9ece6a;
-  --cm-monospace: #e0af68;
-  --cm-quote: #7dcfff;
-}
-
 [data-theme='dracula'] {
   --bg: #282a36;
   --fg: #f8f8f2;
@@ -1644,6 +1616,18 @@ html {
   .theme-picker__grid {
     grid-template-columns: repeat(2, 1fr);
   }
+}
+
+/* Trailing tile that just completes the grid rectangle. Same card
+   geometry as a real theme; no glyph, no label — opacity dims it
+   so the grid still reads as 'this slot is intentionally empty'
+   rather than 'broken card.' No hover lift / cursor change. */
+.theme-card--more {
+  cursor: default;
+  opacity: 0.45;
+}
+.theme-card--more:hover {
+  transform: none;
 }
 
 /* --- Font picker --- */
