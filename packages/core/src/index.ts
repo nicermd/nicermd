@@ -1,8 +1,9 @@
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import { getTheme, getThemes } from './themes.js'
+import { containsHtml, normalizeHtml } from './normalize-html.js'
 
-export { getTheme, getThemes }
+export { getTheme, getThemes, containsHtml, normalizeHtml }
 export type { Theme, ThemeMode } from './themes.js'
 
 export interface RenderOptions {
@@ -139,9 +140,13 @@ function collapseElidedPlaceholders(html: string): string {
 }
 
 export function render(markdown: string, options: RenderOptions = {}): string {
+  // Step 0: convert a small set of common HTML idioms back to markdown
+  // so the renderer doesn't elide things it could render natively.
+  // See normalize-html.ts for the supported patterns.
+  const normalised = normalizeHtml(markdown)
   // Per-render env isolates heading-slug collision counters so two
   // simultaneous renders don't share state (the `md` instance is global).
-  let html = md.render(markdown, { headingSlugs: new Map<string, number>() })
+  let html = md.render(normalised, { headingSlugs: new Map<string, number>() })
   html = collapseElidedPlaceholders(html)
   if (options.baseUrl) {
     html = rewriteRelativeUrls(html, options.baseUrl)
