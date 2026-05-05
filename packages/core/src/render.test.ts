@@ -18,10 +18,23 @@ function renderToDoc(markdown: string): Document {
 
 describe('HTML elision', () => {
   it('elides block HTML to a single placeholder', () => {
-    const out = render('<div align="center"><img src="https://example.com/logo.png"></div>\n')
+    // Use a pattern the normaliser does not recognise: a <details> block
+    // with a <summary>. (<div align>+<img> would be converted to a real
+    // markdown image — see normalize-html.test.ts for that path.)
+    const out = render('<details><summary>Open me</summary>\n\nHidden body.\n\n</details>\n')
     expect(out).toContain('nicermd-html-elided')
-    expect(out).not.toContain('<img src="https://example.com/logo.png"')
-    expect(out).not.toContain('align="center"')
+    expect(out).not.toContain('<details')
+    expect(out).not.toContain('<summary')
+  })
+
+  it('renders normalisable HTML idioms as real markdown (not elided)', () => {
+    // The pre-render normaliser converts these specific patterns; this
+    // test pins the new behaviour so a future regression of the
+    // normaliser is caught here as well as in normalize-html.test.ts.
+    const out = render('<div align="center"><img src="https://example.com/logo.png" alt="logo"></div>\n')
+    expect(out).not.toContain('nicermd-html-elided')
+    expect(out).toContain('src="https://example.com/logo.png"')
+    expect(out).toContain('alt="logo"')
   })
 
   it('collapses consecutive block-HTML placeholders into one', () => {

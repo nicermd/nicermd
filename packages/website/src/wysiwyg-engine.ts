@@ -11,6 +11,7 @@ import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
 import { Markdown } from 'tiptap-markdown'
 import type { MarkdownStorage } from 'tiptap-markdown'
+import { normalizeHtml } from 'nicermd-core'
 
 // Format actions exposed to the format bar / future palette. Names map
 // 1:1 to Tiptap commands, with `h1`/`h2` flattening the level argument
@@ -41,6 +42,14 @@ export function createWysiwyg(
   markdown: string,
   onChange?: (markdown: string) => void,
 ): WysiwygHandle {
+  // Normalise on input so Tiptap sees converted markdown (real image
+  // nodes, not unparseable HTML soup) — round-trip is then identity-
+  // stable for the patterns we recognise. The original is preserved
+  // separately so an unedited toggle can return it byte-for-byte.
+  const originalMarkdown = markdown
+  const normalised = normalizeHtml(markdown)
+  let isDirty = false
+
   const editor = new Editor({
     element: parent,
     extensions: [
@@ -63,8 +72,9 @@ export function createWysiwyg(
         transformCopiedText: true,
       }),
     ],
-    content: markdown,
+    content: normalised,
     onUpdate: ({ editor: ed }) => {
+      isDirty = true
       if (!onChange) return
       const storage = (ed.storage as unknown as { markdown: MarkdownStorage }).markdown
       onChange(storage.getMarkdown())
@@ -112,7 +122,15 @@ export function createWysiwyg(
 
   return {
     destroy: () => editor.destroy(),
-    getMarkdown: () => markdownStorage.getMarkdown(),
+    // If the user never edited, return the original markdown untouched.
+    // This is what keeps "toggle into Write and back without editing"
+    // from rewriting HTML scaffolding the user didn't ask to change —
+    // the dominant flow on read-only browsing of a README. Only when
+    // the user has actually edited do we commit Tiptap's serialised
+    // output (which operates on the normalised input, so the resulting
+    // diff is at least clean: <img> → ![]() rather than escape-mangled
+    // text).
+    getMarkdown: () => (isDirty ? markdownStorage.getMarkdown() : originalMarkdown),
     toggleFormat: (action) => ACTIONS[action](),
     isFormatActive: (action) => queryActive(action),
     onFormatUpdate: (cb) => {

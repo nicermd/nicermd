@@ -22,7 +22,7 @@ import { markdown } from '@codemirror/lang-markdown'
 import { GFM } from '@lezer/markdown'
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'
-import { render as renderMarkdown } from 'nicermd-core'
+import { render as renderMarkdown, containsHtml } from 'nicermd-core'
 
 import showcase from './samples/showcase.md?raw'
 import { IS_MAC } from './platform'
@@ -48,6 +48,24 @@ import type { FormatAction } from './wysiwyg-engine'
 import './main.css'
 
 const THEME_STORAGE_KEY = 'nicermd:theme'
+
+// Tiptap (mode 2) round-trips HTML by re-serialising it as markdown,
+// which means HTML scaffolding the user opened will be converted on
+// save the moment they make any edit. The pre-render normaliser keeps
+// the conversion clean (img → ![]() rather than escape-mangled text),
+// but it's still a behavioural change the user should opt into. Show
+// a one-time confirm the first time they enter Write on an HTML-
+// containing doc, then remember the dismissal across sessions.
+const HTML_EDIT_WARNING_KEY = 'nicermd:html-edit-warning-dismissed'
+
+function confirmHtmlEditOnce(): boolean {
+  if (localStorage.getItem(HTML_EDIT_WARNING_KEY)) return true
+  const ok = window.confirm(
+    'This file contains HTML scaffolding. Editing it in Write mode will convert HTML to markdown equivalents (e.g. <img> → ![](…)) when you save. Continue?',
+  )
+  if (ok) localStorage.setItem(HTML_EDIT_WARNING_KEY, '1')
+  return ok
+}
 
 interface ModeHandle {
   destroy(): void
@@ -397,8 +415,15 @@ export class Harness {
 
   switchTo(key: number): void {
     if (key === this.currentMode && this.currentHandle) return
+    // Capture the current text from the active mode before destroying
+    // it — this is the text we'll use both for the HTML check and to
+    // hand to the next mode.
+    const currentText = this.currentHandle?.getMarkdown() ?? this.currentMarkdown
+    if (key === 2 && containsHtml(currentText)) {
+      if (!confirmHtmlEditOnce()) return
+    }
     if (this.currentHandle) {
-      this.currentMarkdown = this.currentHandle.getMarkdown()
+      this.currentMarkdown = currentText
       this.currentHandle.destroy()
       this.currentHandle = null
     }
