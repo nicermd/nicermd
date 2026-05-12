@@ -1410,6 +1410,23 @@ html {
   padding-left: 1em;
   color: var(--muted);
 }
+/* HTML scaffolding the engine couldn't represent as native nodes is
+ * "parked" in fenced code blocks for round-trip safety, and rendered
+ * here as a sanitised live preview so Write mode shows nice content
+ * instead of raw <div> source. user-select: none signals "preserved
+ * verbatim, not editable" without screaming about it; cursor stays as
+ * default so dragging text around the preview still works. */
+.mode-wysiwyg .ProseMirror .nicermd-parked-html-preview {
+  margin: 0 0 1em;
+  user-select: none;
+  cursor: default;
+}
+.mode-wysiwyg .ProseMirror .nicermd-parked-html-preview img {
+  max-width: 100%;
+}
+.mode-wysiwyg .ProseMirror .nicermd-parked-html-preview a {
+  color: var(--link);
+}
 .mode-wysiwyg .ProseMirror hr {
   border: none;
   border-top: 1px solid var(--border);

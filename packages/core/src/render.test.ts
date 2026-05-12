@@ -14,40 +14,40 @@ function renderToDoc(markdown: string): Document {
   return parser.parseFromString(`<div id="root">${render(markdown)}</div>`, 'text/html')
 }
 
-// --- HTML elision (markdown-it html: true + custom rules) ----------------
+// --- HTML handling: pass through to DOMPurify ---------------------------
 
-describe('HTML elision', () => {
-  it('elides block HTML to a single placeholder', () => {
-    // Use a pattern the normaliser does not recognise: a <details> block
-    // with a <summary>. (<div align>+<img> would be converted to a real
-    // markdown image — see normalize-html.test.ts for that path.)
-    const out = render('<details><summary>Open me</summary>\n\nHidden body.\n\n</details>\n')
-    expect(out).toContain('nicermd-html-elided')
-    expect(out).not.toContain('<details')
-    expect(out).not.toContain('<summary')
-  })
-
-  it('renders normalisable HTML idioms as real markdown (not elided)', () => {
-    // The pre-render normaliser converts these specific patterns; this
-    // test pins the new behaviour so a future regression of the
-    // normaliser is caught here as well as in normalize-html.test.ts.
+describe('HTML rendering', () => {
+  it('renders normalisable HTML idioms via the normaliser path', () => {
+    // The pre-render normaliser converts these specific patterns to
+    // markdown image syntax. See normalize-html.test.ts for the full
+    // transform set.
     const out = render('<div align="center"><img src="https://example.com/logo.png" alt="logo"></div>\n')
-    expect(out).not.toContain('nicermd-html-elided')
     expect(out).toContain('src="https://example.com/logo.png"')
     expect(out).toContain('alt="logo"')
   })
 
-  it('collapses consecutive block-HTML placeholders into one', () => {
-    const md = '<div>a</div>\n\n<div>b</div>\n\n<div>c</div>\n'
-    const out = render(md)
-    const matches = out.match(/nicermd-html-elided/g) ?? []
-    expect(matches.length).toBe(1)
+  it('passes other block HTML through to DOMPurify (no elision)', () => {
+    // Block HTML the normaliser doesn't recognise is no longer replaced
+    // with an ellipsis placeholder — it renders inline and DOMPurify's
+    // tag/attr/URI allowlist remains the load-bearing safety layer.
+    const out = render('<details><summary>Open me</summary>\n\nHidden body.\n\n</details>\n')
+    expect(out).not.toContain('nicermd-html-elided')
+    // <details> and <summary> aren't in ALLOWED_TAGS today, so they
+    // unwrap (children kept) — we assert the inner text survives.
+    expect(out).toContain('Open me')
+    expect(out).toContain('Hidden body')
+  })
+
+  it('keeps allowed HTML tags like <div> intact', () => {
+    const out = render('<div>plain</div>\n')
+    // <div> is in ALLOWED_TAGS; passes through.
+    expect(out).toContain('<div>plain</div>')
   })
 
   it('drops inline HTML outside the allowlist', () => {
     const out = render('Hello <span class="evil">world</span>\n')
-    // <span> is in the inline-HTML drop list (only br/kbd/sub/sup/mark
-    // survive). The text "world" stays; the wrapping markup goes.
+    // <span> is in the inline-HTML drop list at the markdown-it
+    // renderer layer (only br/kbd/sub/sup/mark survive there).
     expect(out).toContain('world')
     expect(out).not.toContain('<span class="evil">')
   })
@@ -65,6 +65,109 @@ describe('HTML elision', () => {
     expect(out).not.toContain('<iframe')
     expect(out).not.toContain('<object')
     expect(out).not.toContain('alert(1)')
+  })
+})
+
+// --- Allowlist hardening (regression pins for the expanded tag/attr set) -
+
+describe('Allowlist hardening', () => {
+  // The expanded allowlist (center, details, summary, figure, dl, …,
+  // align, width, height, …) adds surface area. These tests pin the
+  // *negative* invariants: a newly-permitted tag does not bring along
+  // event-handler attrs or nested scripts.
+
+  it('strips event handlers on permitted block tags', () => {
+    const out = render('<details onclick="alert(1)"><summary onmouseover="alert(2)">Open</summary>Body</details>\n')
+    expect(out).toContain('<details')
+    expect(out).not.toMatch(/onclick=/i)
+    expect(out).not.toMatch(/onmouseover=/i)
+    expect(out).not.toContain('alert(')
+  })
+
+  it('preserves <details open> and the rest of allowed attrs', () => {
+    const out = render('<details open><summary>S</summary><p>B</p></details>\n')
+    expect(out).toContain('<details open=""')
+    expect(out).toContain('<summary>S</summary>')
+  })
+
+  it('keeps <center> but drops a nested <script>', () => {
+    const out = render('<center>Hi<script>alert(1)</script></center>\n')
+    expect(out).toContain('<center>Hi</center>')
+    expect(out).not.toContain('<script')
+    expect(out).not.toContain('alert(')
+  })
+
+  it('keeps the align attribute as presentational only', () => {
+    const out = render('<div align="center">x</div>\n')
+    expect(out).toContain('align="center"')
+  })
+
+  it('does not honour align as a URL surface (no scheme bypass via align)', () => {
+    // align="javascript:…" is a deprecated-attribute-value gag — `align`
+    // is not URI-bearing so DOMPurify keeps the literal string, but the
+    // browser does not navigate or execute anything from it. We still
+    // pin the rendered output so the value can't accidentally migrate
+    // into a script-running context via a future renderer change.
+    const out = render('<div align="javascript:alert(1)">x</div>\n')
+    expect(out).not.toMatch(/<script/i)
+    expect(out).not.toContain('alert(1)')
+  })
+
+  it('strips style attributes even on newly-permitted tags', () => {
+    const out = render('<figure style="background: red"><figcaption style="color: blue">x</figcaption></figure>\n')
+    expect(out).not.toMatch(/style=/i)
+  })
+
+  it('keeps width/height as static layout hints', () => {
+    const out = render('<img src="https://x.test/i.png" alt="i" width="120" height="60">\n')
+    expect(out).toContain('width="120"')
+    expect(out).toContain('height="60"')
+  })
+
+  it('strips form/input/button/iframe/object even with the wider list', () => {
+    const md = '<form><input><button>x</button></form>\n\n<iframe src="x"></iframe>\n\n<object data="x"></object>\n'
+    const out = render(md)
+    expect(out).not.toContain('<form')
+    expect(out).not.toContain('<input')
+    expect(out).not.toContain('<button')
+    expect(out).not.toContain('<iframe')
+    expect(out).not.toContain('<object')
+  })
+
+  it('drops disallowed media tags (picture/source/video/audio) but keeps the fallback img', () => {
+    // Wrap in a <div> so markdown-it treats this as block HTML (rule 6).
+    // A bare <picture>…</picture> on a single line tokenises as inline HTML
+    // and is dropped wholesale by the inline allowlist before DOMPurify sees
+    // anything — that's a separate, less interesting code path.
+    const out = render('<div><picture><source srcset="https://x.test/dark.png" media="(prefers-color-scheme: dark)"><img src="https://x.test/light.png" alt="i"></picture></div>\n')
+    expect(out).not.toContain('<picture')
+    expect(out).not.toContain('<source')
+    expect(out).toContain('src="https://x.test/light.png"')
+  })
+})
+
+describe('External link hardening', () => {
+  it('adds rel="noopener noreferrer" to absolute http(s) links', () => {
+    const out = render('[example](https://example.com)\n')
+    expect(out).toMatch(/<a[^>]*\brel="noopener noreferrer"/i)
+    expect(out).toContain('href="https://example.com"')
+  })
+
+  it('adds rel to mailto: links', () => {
+    const out = render('[mail](mailto:a@b.com)\n')
+    expect(out).toMatch(/<a[^>]*\brel="noopener noreferrer"/i)
+  })
+
+  it('does NOT add rel to fragment-only links (same-page anchors)', () => {
+    const out = render('[here](#section)\n')
+    expect(out).toContain('href="#section"')
+    expect(out).not.toMatch(/\brel=/i)
+  })
+
+  it('does NOT add rel to query-only links (in-app deep links)', () => {
+    const out = render('[doc](?url=https%3A%2F%2Fx)\n')
+    expect(out).toContain('href="?url=https%3A%2F%2Fx"')
+    expect(out).not.toMatch(/\brel=/i)
   })
 })
 

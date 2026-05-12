@@ -30,9 +30,13 @@ describe('img → markdown image', () => {
       .toBe('![a](https://x.test/a.png "t")\n')
   })
 
-  it('drops irrelevant attributes (width/height/loading)', () => {
-    expect(normalizeHtml('<img src="https://x.test/a.png" alt="a" width="200" height="100" loading="lazy">\n'))
-      .toBe('![a](https://x.test/a.png)\n')
+  it('passes through as raw HTML when width/height/loading/srcset/sizes are present', () => {
+    // Markdown image syntax can't express dimensions or responsive
+    // attributes, so the normaliser leaves the tag as raw HTML and
+    // lets DOMPurify carry it through the renderer. Without this the
+    // attributes would be silently dropped.
+    const input = '<img src="https://x.test/a.png" alt="a" width="200" height="100" loading="lazy">\n'
+    expect(normalizeHtml(input)).toBe(input)
   })
 
   it('leaves <img> with no src untouched', () => {
@@ -70,44 +74,38 @@ describe('linked image → markdown linked image', () => {
   })
 })
 
-describe('wrapper unwrap (<div align>, <p align>, <center>)', () => {
-  it('unwraps <div align="center">', () => {
-    expect(normalizeHtml('<div align="center"><img src="https://x.test/a.png" alt="a"></div>\n'))
-      .toBe('![a](https://x.test/a.png)\n')
+describe('centring wrappers pass through (no unwrap)', () => {
+  // The normaliser used to strip wrappers and hoist the inner image to
+  // markdown. Now that DOMPurify's allowlist includes <center> and
+  // the `align` attribute, wrappers carry the centring through to the
+  // rendered output, so we leave them alone.
+
+  it('leaves <div align="center"> with inner <img> intact', () => {
+    const input = '<div align="center"><img src="https://x.test/a.png" alt="a"></div>\n'
+    expect(normalizeHtml(input)).toBe(input)
   })
 
-  it('unwraps <p align="center">', () => {
-    expect(normalizeHtml('<p align="center"><img src="https://x.test/a.png" alt="a"></p>\n'))
-      .toBe('![a](https://x.test/a.png)\n')
+  it('leaves <p align="center"> intact', () => {
+    const input = '<p align="center"><img src="https://x.test/a.png" alt="a"></p>\n'
+    expect(normalizeHtml(input)).toBe(input)
   })
 
-  it('unwraps <center>', () => {
-    expect(normalizeHtml('<center><img src="https://x.test/a.png" alt="a"></center>\n'))
-      .toBe('![a](https://x.test/a.png)\n')
+  it('leaves <center> intact', () => {
+    const input = '<center><img src="https://x.test/a.png" alt="a"></center>\n'
+    expect(normalizeHtml(input)).toBe(input)
   })
 
-  it('recurses on inner content', () => {
+  it('leaves multi-line centred linked images intact', () => {
     const input = `<div align="center">
   <a href="https://h.test/">
     <img src="https://x.test/a.png" alt="a">
   </a>
 </div>
 `
-    expect(normalizeHtml(input)).toBe('[![a](https://x.test/a.png)](https://h.test/)\n')
+    expect(normalizeHtml(input)).toBe(input)
   })
 
-  it('handles nested same-tag wrappers via depth counting', () => {
-    const input = '<div align="center"><div>nested</div><img src="https://x.test/a.png" alt="a"></div>\n'
-    // Outer wrapper unwraps. The HTML walker for inner content then
-    // processes each top-level element: <div>nested</div> isn't a
-    // recognised pattern (passes through), <img> matches and converts.
-    const out = normalizeHtml(input)
-    expect(out).toContain('<div>nested</div>')
-    expect(out).toContain('![a](https://x.test/a.png)')
-    expect(out).not.toMatch(/^<div align/i)
-  })
-
-  it('leaves a non-align <div> alone (still elided downstream)', () => {
+  it('leaves a non-align <div> alone', () => {
     const input = '<div>plain</div>\n'
     expect(normalizeHtml(input)).toBe(input)
   })
@@ -176,13 +174,8 @@ describe('awesome-snippet.md fixture', () => {
     expect(containsHtml(src)).toBe(true)
   })
 
-  it('unwraps the top centred logo block', () => {
-    expect(out).toContain('![](https://example.com/awesome-media/logo.svg)')
-    expect(out).not.toMatch(/<div align/)
-  })
-
-  it('does not introduce new HTML scaffolding', () => {
-    expect(out).not.toContain('<center>')
+  it('keeps the top centred wrapper so the renderer can preserve centring', () => {
+    expect(out).toContain('<div align="center">')
   })
 
   it('preserves the prose content unchanged', () => {
@@ -201,21 +194,20 @@ describe('tauri-snippet.md fixture', () => {
     expect(containsHtml(src)).toBe(true)
   })
 
-  it('converts the linked logo to markdown linked-image syntax', () => {
-    expect(out).toContain('[![Tauri logo](https://example.com/tauri/logo.svg)](https://example.com/tauri)')
+  it('keeps the centring wrappers intact', () => {
+    // The wrappers carry the centred layout; we no longer hoist their
+    // inner image to bare markdown. DOMPurify allows <div align>
+    // through, so this renders centred in all three modes.
+    expect(out).toContain('<div align="center">')
   })
 
-  it('converts each badge image to markdown linked-image syntax', () => {
-    expect(out).toContain('[![build status](https://example.com/build-status.svg)](https://example.com/build)')
-    expect(out).toContain('[![version](https://example.com/version.svg)](https://example.com/version)')
-  })
-
-  it('leaves the navigation block (which contains <h3> + <span>) elided downstream', () => {
-    // The middle div has structural HTML our v1 normaliser does not handle
-    // (h3, span). It should pass through to the renderer's elision step.
-    // We assert the fact that normalizeHtml left it as a recognisable HTML
-    // chunk, not a converted markdown image.
-    expect(out).toMatch(/<h3>|<a href="https:\/\/example\.com\/start/)
+  it('preserves the inner anchors and images as-is', () => {
+    // No markdown-image rewrite — the original <a href>+<img> structure
+    // survives so it renders identically in Read, Write (parked
+    // preview), and Split modes.
+    expect(out).toContain('https://example.com/tauri/logo.svg')
+    expect(out).toContain('https://example.com/build-status.svg')
+    expect(out).toContain('https://example.com/version.svg')
   })
 
   it('preserves the prose body unchanged', () => {

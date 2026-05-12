@@ -5,13 +5,15 @@
 
 import { Editor } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
+import { CodeBlock } from '@tiptap/extension-code-block'
+import { Image } from '@tiptap/extension-image'
 import { Table } from '@tiptap/extension-table'
 import { TableRow } from '@tiptap/extension-table-row'
 import { TableCell } from '@tiptap/extension-table-cell'
 import { TableHeader } from '@tiptap/extension-table-header'
 import { Markdown } from 'tiptap-markdown'
 import type { MarkdownStorage } from 'tiptap-markdown'
-import { normalizeHtml } from 'nicermd-core'
+import { parkHtml, unparkHtml, sanitizeHtml } from 'nicermd-core'
 
 // Format actions exposed to the format bar / future palette. Names map
 // 1:1 to Tiptap commands, with `h1`/`h2` flattening the level argument
@@ -37,17 +39,63 @@ export interface WysiwygHandle {
   onFormatUpdate(cb: () => void): () => void
 }
 
+// Sentinel info-string shared with nicermd-core's parkHtml. Block HTML
+// in the source is wrapped in a fenced code block with this language;
+// the node view below renders those blocks as their sanitised HTML
+// preview so the user still sees the original visual in Write mode,
+// while the underlying code block stays opaque on round-trip.
+const PARK_LANG = '__nicermd_html__'
+
+export interface WysiwygOptions {
+  // Resolves relative href / src inside parked-HTML previews. Matches
+  // the baseUrl render() accepts so URL-loaded docs whose scaffolding
+  // points at e.g. `.github/splash.png` resolve correctly.
+  baseUrl?: string
+}
+
 export function createWysiwyg(
   parent: HTMLElement,
   markdown: string,
   onChange?: (markdown: string) => void,
+  options: WysiwygOptions = {},
 ): WysiwygHandle {
-  // Normalise on input so Tiptap sees converted markdown (real image
-  // nodes, not unparseable HTML soup) — round-trip is then identity-
-  // stable for the patterns we recognise. The original is preserved
-  // separately so an unedited toggle can return it byte-for-byte.
+  const baseUrl = options.baseUrl
+
+  // Extended CodeBlock with a node view that branches on language:
+  // - For parked-HTML blocks: render an inert sanitised preview so the
+  //   user sees the rendered content (logo, badges, headings) and not
+  //   the raw <div> source.
+  // - For everything else: ordinary <pre><code> with a contentDOM that
+  //   ProseMirror manages — same as the default behaviour.
+  // Defined inside createWysiwyg so the node view closes over baseUrl;
+  // moving it to module scope would lose per-doc URL resolution.
+  const HtmlAwareCodeBlock = CodeBlock.extend({
+    addNodeView() {
+      return ({ node }) => {
+        if (node.attrs.language === PARK_LANG) {
+          const dom = document.createElement('div')
+          dom.className = 'nicermd-parked-html-preview'
+          dom.contentEditable = 'false'
+          dom.innerHTML = sanitizeHtml(node.textContent, { baseUrl })
+          return { dom }
+        }
+        const pre = document.createElement('pre')
+        const code = document.createElement('code')
+        if (node.attrs.language) {
+          code.className = `language-${node.attrs.language as string}`
+        }
+        pre.appendChild(code)
+        return { dom: pre, contentDOM: code }
+      }
+    },
+  })
+  // Park block HTML in fenced code blocks before Tiptap sees it. The
+  // code-block primitive is one of the few Markdown constructs Tiptap
+  // round-trips byte-for-byte, so wrapping HTML in it neutralises the
+  // serialiser-mangling problem entirely — even mid-edit. unparkHtml
+  // on the way out restores the original HTML.
   const originalMarkdown = markdown
-  const normalised = normalizeHtml(markdown)
+  const parked = parkHtml(markdown)
   let isDirty = false
 
   const editor = new Editor({
@@ -57,7 +105,17 @@ export function createWysiwyg(
         // Default opens links on click — fights editing. Off here so a
         // click-through happens via the format bar / keyboard later.
         link: { openOnClick: false },
+        // Replaced below with HtmlAwareCodeBlock that swaps the node
+        // view for our parked-HTML language.
+        codeBlock: false,
       }),
+      HtmlAwareCodeBlock,
+      // Markdown images — StarterKit v3 doesn't bundle the Image node,
+      // so markdown like `![alt](src)` (and the linked-image badge
+      // pattern used in most READMEs) renders as nothing without this.
+      // inline:false keeps images as block-level for paragraph layout
+      // parity with Read mode.
+      Image.configure({ inline: false, allowBase64: false }),
       // GFM tables — StarterKit doesn't bundle these, so add them
       // explicitly. resizable lets users drag column borders.
       Table.configure({ resizable: true }),
@@ -72,12 +130,12 @@ export function createWysiwyg(
         transformCopiedText: true,
       }),
     ],
-    content: normalised,
+    content: parked,
     onUpdate: ({ editor: ed }) => {
       isDirty = true
       if (!onChange) return
       const storage = (ed.storage as unknown as { markdown: MarkdownStorage }).markdown
-      onChange(storage.getMarkdown())
+      onChange(unparkHtml(storage.getMarkdown()))
     },
   })
 
@@ -122,15 +180,13 @@ export function createWysiwyg(
 
   return {
     destroy: () => editor.destroy(),
-    // If the user never edited, return the original markdown untouched.
-    // This is what keeps "toggle into Write and back without editing"
-    // from rewriting HTML scaffolding the user didn't ask to change —
-    // the dominant flow on read-only browsing of a README. Only when
-    // the user has actually edited do we commit Tiptap's serialised
-    // output (which operates on the normalised input, so the resulting
-    // diff is at least clean: <img> → ![]() rather than escape-mangled
-    // text).
-    getMarkdown: () => (isDirty ? markdownStorage.getMarkdown() : originalMarkdown),
+    // Clean exit (no edits): return the original markdown untouched —
+    // no parse/serialise round-trip, no parking residue. Dirty exit:
+    // pull Tiptap's serialised output and strip the parking fences so
+    // the saved file looks like the source again (HTML in HTML, not in
+    // code blocks).
+    getMarkdown: () =>
+      isDirty ? unparkHtml(markdownStorage.getMarkdown()) : originalMarkdown,
     toggleFormat: (action) => ACTIONS[action](),
     isFormatActive: (action) => queryActive(action),
     onFormatUpdate: (cb) => {

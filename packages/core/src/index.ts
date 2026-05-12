@@ -2,8 +2,9 @@ import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
 import { getTheme, getThemes } from './themes.js'
 import { containsHtml, normalizeHtml } from './normalize-html.js'
+import { parkHtml, unparkHtml } from './park-html.js'
 
-export { getTheme, getThemes, containsHtml, normalizeHtml }
+export { getTheme, getThemes, containsHtml, normalizeHtml, parkHtml, unparkHtml }
 export type { Theme, ThemeMode } from './themes.js'
 
 export interface RenderOptions {
@@ -22,17 +23,15 @@ const md = new MarkdownIt({
   typographer: true,
 })
 
-// Block-level HTML is a markdown-reader anti-pattern: GitHub READMEs
-// commonly nest `<div align="center">` scaffolding around logos, badges,
-// and sponsor strips that don't translate outside GitHub's renderer.
-// We replace each block with a thin centered ellipsis so the reader
-// sees that something was elided without rendering the soup. Inline HTML
-// drops silently except for a small allowlist of useful formatting tags
-// (br/kbd/sub/sup/mark); DOMPurify still gates final output.
-const ELIDED_PLACEHOLDER =
-  '<div class="nicermd-html-elided" aria-hidden="true">⋯</div>\n'
-
-md.renderer.rules.html_block = () => ELIDED_PLACEHOLDER
+// Block-level HTML passes through to DOMPurify rather than being elided.
+// Earlier versions replaced each html_block with a centred ellipsis on the
+// theory that block HTML in READMEs is GitHub-renderer-specific soup; in
+// practice that elided real content users want to read (centred logos,
+// badge strips, callout boxes). DOMPurify with our strict tag/attr/URI
+// allowlist is the load-bearing defence — and parking + sanitisation in
+// Write mode have demonstrated it's sufficient. Inline HTML still uses
+// a narrow allowlist for the formatting tags we trust verbatim.
+md.renderer.rules.html_block = (tokens, idx) => tokens[idx]!.content
 
 const INLINE_HTML_ALLOW = /^<\/?(?:br|kbd|sub|sup|mark)\b[^>]*\/?>$/i
 md.renderer.rules.html_inline = (tokens, idx) => {
@@ -54,6 +53,21 @@ function slugify(text: string): string {
     .replace(/\s+/g, '-')
     .replace(/-+/g, '-')
     .replace(/^-+|-+$/g, '')
+}
+
+// External links (anything with an absolute http/https/mailto scheme)
+// get `rel="noopener noreferrer"`. Two defences for the price of one
+// short rule: noopener prevents the destination accessing `window.opener`
+// if the user middle-clicks / Cmd-clicks to a new tab; noreferrer
+// suppresses the Referer header. Same-page (`#`) and same-origin
+// query-only (`?…`) links are left alone — they're navigating the app.
+md.renderer.rules.link_open = (tokens, idx, mdOptions, _env, self) => {
+  const tok = tokens[idx]!
+  const href = tok.attrGet('href') ?? ''
+  if (/^(?:https?|mailto):/i.test(href)) {
+    tok.attrSet('rel', 'noopener noreferrer')
+  }
+  return self.renderToken(tokens, idx, mdOptions)
 }
 
 md.renderer.rules.heading_open = (tokens, idx, mdOptions, env, self) => {
@@ -79,33 +93,68 @@ const PURIFY_CONFIG = {
     'p', 'a', 'ul', 'ol', 'li',
     'code', 'pre',
     'blockquote', 'em', 'strong', 'del', 's',
-    'hr', 'br',
+    'hr', 'br', 'wbr',
     'img',
     'table', 'thead', 'tbody', 'tr', 'th', 'td',
     'span', 'div',
+    'center',
     'sup', 'sub', 'kbd', 'mark',
+    'details', 'summary',
+    'figure', 'figcaption',
+    'dl', 'dt', 'dd',
+    'u', 'i', 'b', 'small', 'q', 'cite', 'abbr', 'time',
   ],
-  ALLOWED_ATTR: ['href', 'src', 'alt', 'title', 'class', 'id', 'aria-hidden'],
-  // Safe URI schemes: https, http, mailto, fragment-only (#anchor),
-  // query-only (?url=…). No data: URIs anywhere — see the hook below
-  // for the full reasoning.
-  ALLOWED_URI_REGEXP: /^(?:(?:https?|mailto):|[#?])/i,
+  ALLOWED_ATTR: [
+    'href', 'src', 'alt', 'title', 'class', 'id',
+    // `align` (deprecated but widely used in READMEs for <div align>
+    // and <p align> centring) is presentational-only — no scripting
+    // surface. `width`/`height` likewise affect layout, no behaviour.
+    'align', 'width', 'height',
+    // Table cell spans and <details open> default state.
+    'colspan', 'rowspan', 'open',
+    // <time datetime="…"> for human-readable timestamps.
+    'datetime',
+    // Accessibility — read-only, no scripting risk.
+    'aria-hidden', 'aria-label', 'aria-labelledby', 'aria-describedby',
+    // External-link hardening — see the link_open renderer rule above.
+    'rel',
+  ],
+  // URI scheme validation lives in the hook below rather than in
+  // ALLOWED_URI_REGEXP, because DOMPurify v3 applies the regex to every
+  // attribute value (not just URL-bearing ones) — that strips `align`,
+  // `width`, etc. whose values don't look like URLs. The hook scopes
+  // the check to attributes that actually carry URIs.
 }
 
-// DOMPurify v3 has an internal allowlist that permits `data:` URIs on
-// img/audio/video/source/track regardless of ALLOWED_URI_REGEXP — set
-// via the IS_ALLOWED_URI / DATA_URI_TAGS internals. The regex change
-// alone isn't enough. A `uponSanitizeAttribute` hook gives a
-// belt-and-braces guarantee: any attribute whose value starts with
-// `data:` (after trim + lowercase) gets dropped. Browsers don't
-// execute scripts in `<img src="data:…">`, but `<a href="data:image/
-// svg+xml,<svg onload=…>">` followed by a click does — and the
-// internal allowlist would have permitted it. If inline image
-// embedding lands later, narrow the hook to permit `data:image/<type>`
-// only on `<img src>`.
+// URI-bearing attributes we want to validate against an explicit scheme
+// allowlist. Anything else is left to DOMPurify's tag/attr defaults.
+const URI_ATTRS = new Set(['href', 'src', 'xlink:href'])
+
+// Safe URI schemes: https, http, mailto, fragment-only (#anchor),
+// query-only (?url=…). No data: URIs anywhere — see the hook for the
+// full reasoning.
+const URI_ALLOWED_RE = /^(?:(?:https?|mailto):|[#?])/i
+
 DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
-  const value = data.attrValue?.trim().toLowerCase() ?? ''
-  if (value.startsWith('data:')) {
+  const raw = data.attrValue?.trim() ?? ''
+  const lower = raw.toLowerCase()
+
+  // Belt-and-braces data: block — DOMPurify v3 has an internal allow
+  // list that permits data: URIs on img/audio/video/source/track. The
+  // hook drops them unconditionally. <img src="data:"> doesn't execute
+  // scripts, but <a href="data:image/svg+xml,…<script>"> followed by a
+  // click does, and the internal allow list would have permitted it.
+  // If inline image embedding lands later, narrow this to permit
+  // `data:image/<type>` only on <img src>.
+  if (lower.startsWith('data:')) {
+    data.keepAttr = false
+    return
+  }
+
+  // For genuinely URI-bearing attrs, enforce our strict scheme
+  // allowlist. Protocol-relative URLs (//host/path) don't match and are
+  // dropped — they hide the resolved scheme and provide phishing aid.
+  if (URI_ATTRS.has(data.attrName) && !URI_ALLOWED_RE.test(raw)) {
     data.keepAttr = false
   }
 })
@@ -129,14 +178,22 @@ function rewriteRelativeUrls(html: string, baseUrl: string): string {
   )
 }
 
-// Awesome-style docs put N consecutive HTML blocks back-to-back;
-// collapse the run into a single placeholder so the reader doesn't see
-// a wall of ellipses.
-function collapseElidedPlaceholders(html: string): string {
-  return html.replace(
-    /(<div class="nicermd-html-elided"[^>]*>⋯<\/div>\s*){2,}/g,
-    ELIDED_PLACEHOLDER,
-  )
+// Direct HTML → safe-HTML pass, for callers that already have HTML (no
+// markdown-it round-trip needed). Used by the Tiptap node view that
+// previews parked-HTML blocks in Write mode. Accepts a baseUrl so
+// relative href / src (e.g. README scaffolding pointing at
+// `.github/splash.png`) resolve against the source repo URL — same
+// behaviour render() applies for URL-loaded docs.
+export interface SanitizeHtmlOptions {
+  baseUrl?: string
+}
+
+export function sanitizeHtml(html: string, options: SanitizeHtmlOptions = {}): string {
+  let out = html
+  if (options.baseUrl) {
+    out = rewriteRelativeUrls(out, options.baseUrl)
+  }
+  return DOMPurify.sanitize(out, PURIFY_CONFIG) as string
 }
 
 export function render(markdown: string, options: RenderOptions = {}): string {
@@ -147,7 +204,6 @@ export function render(markdown: string, options: RenderOptions = {}): string {
   // Per-render env isolates heading-slug collision counters so two
   // simultaneous renders don't share state (the `md` instance is global).
   let html = md.render(normalised, { headingSlugs: new Map<string, number>() })
-  html = collapseElidedPlaceholders(html)
   if (options.baseUrl) {
     html = rewriteRelativeUrls(html, options.baseUrl)
   }

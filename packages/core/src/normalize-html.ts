@@ -82,77 +82,16 @@ function transformBlock(html: string): string | null {
 
   if (matchBr(trimmed)) return ''
 
-  const wrapped = matchWrapper(trimmed)
-  if (wrapped !== null) {
-    // The inner of a wrapper is HTML, not markdown — markdown-it would
-    // fold consecutive HTML lines into one block and our patterns only
-    // match single elements. Walk the inner directly as HTML, applying
-    // transformBlock to each top-level element we find.
-    return normalizeInnerHtml(wrapped).trim()
-  }
-
+  // Wrappers like <div align="center">, <p align="center">, <center>
+  // used to be unwrapped here so the inner image could be hoisted into
+  // a real markdown image. That stripped the centring along with the
+  // wrapper, which made Tauri- and Awesome-style READMEs look noticeably
+  // off versus how they read on GitHub. Now that DOMPurify's allowlist
+  // includes <center> and the `align` attribute, wrappers render in
+  // place — with their centring intact. We keep them as raw HTML and
+  // let the renderer's html_block path (and DOMPurify) carry them
+  // through unchanged.
   return null
-}
-
-// Walks an HTML fragment, applying transformBlock to each top-level
-// element. Whitespace between elements is preserved verbatim. Used for
-// wrapper inners; not for top-level markdown processing (that's the job
-// of the markdown-it tokeniser pass at entry).
-function normalizeInnerHtml(inner: string): string {
-  const out: string[] = []
-  let pos = 0
-  while (pos < inner.length) {
-    const ws = /^\s+/.exec(inner.slice(pos))
-    if (ws) {
-      out.push(ws[0])
-      pos += ws[0].length
-      continue
-    }
-    if (inner[pos] !== '<') {
-      // Plain text run between elements — keep verbatim.
-      const nextLt = inner.indexOf('<', pos)
-      if (nextLt === -1) {
-        out.push(inner.slice(pos))
-        break
-      }
-      out.push(inner.slice(pos, nextLt))
-      pos = nextLt
-      continue
-    }
-    const elem = readElement(inner, pos)
-    if (!elem) {
-      // Malformed or unrecognised HTML — pass remainder through.
-      out.push(inner.slice(pos))
-      break
-    }
-    const transformed = transformBlock(elem.text)
-    out.push(transformed !== null ? transformed : elem.text)
-    pos = elem.end
-  }
-  return out.join('')
-}
-
-const VOID_ELEMENTS = new Set([
-  'area', 'base', 'br', 'col', 'embed', 'hr',
-  'img', 'input', 'link', 'meta', 'source', 'track', 'wbr',
-])
-
-interface ReadElement {
-  text: string
-  end: number
-}
-
-function readElement(s: string, from: number): ReadElement | null {
-  const startMatch = /^<([a-zA-Z][a-zA-Z0-9]*)\b([^>]*?)(\/?)>/s.exec(s.slice(from))
-  if (!startMatch) return null
-  const tag = startMatch[1]!.toLowerCase()
-  const isSelfClosing = startMatch[3] === '/' || VOID_ELEMENTS.has(tag)
-  const openEnd = from + startMatch[0].length
-  if (isSelfClosing) return { text: s.slice(from, openEnd), end: openEnd }
-  const closeIdx = findMatchingClose(s, tag, openEnd)
-  if (closeIdx === -1) return null
-  const closeEnd = s.indexOf('>', closeIdx) + 1
-  return { text: s.slice(from, closeEnd), end: closeEnd }
 }
 
 // --- Pattern matchers ----------------------------------------------------
@@ -165,6 +104,12 @@ function matchImg(html: string): string | null {
   const attrs = parseAttrs(m[1] ?? '')
   const src = attrs.src
   if (!src) return null
+  // If the img carries attributes that markdown image syntax can't
+  // express, return null so the raw HTML passes through to render()
+  // unchanged — DOMPurify then preserves width/height/loading/srcset
+  // on the rendered <img>. Without this, normalising would silently
+  // drop those attrs.
+  if (attrs.width || attrs.height || attrs.loading || attrs.srcset || attrs.sizes) return null
   const alt = attrs.alt ?? ''
   const title = attrs.title
   return title ? `![${alt}](${src} "${escapeMdTitle(title)}")` : `![${alt}](${src})`
@@ -187,65 +132,6 @@ const BR_RE = /^<br\s*\/?>$/i
 
 function matchBr(html: string): boolean {
   return BR_RE.test(html)
-}
-
-// --- Wrapper unwrap (depth-counting find of matching close) --------------
-
-const WRAPPER_OPEN_RE = /^<(div|p)\b([^>]*\balign\s*=\s*("center"|'center'|center)[^>]*)>/is
-const CENTER_OPEN_RE = /^<center\b([^>]*)>/is
-
-function matchWrapper(html: string): string | null {
-  let tag: 'div' | 'p' | 'center'
-  let openLen: number
-  const divP = WRAPPER_OPEN_RE.exec(html)
-  const center = CENTER_OPEN_RE.exec(html)
-  if (divP) {
-    tag = divP[1]!.toLowerCase() as 'div' | 'p'
-    openLen = divP[0].length
-  } else if (center) {
-    tag = 'center'
-    openLen = center[0].length
-  } else {
-    return null
-  }
-
-  const closeIdx = findMatchingClose(html, tag, openLen)
-  if (closeIdx === -1) return null
-
-  // The matched wrapper must be the entire block — otherwise we'd be
-  // unwrapping something embedded in a larger HTML soup, which the
-  // elision should keep covering as a unit.
-  const closeTagEnd = html.indexOf('>', closeIdx) + 1
-  const trailing = html.slice(closeTagEnd).trim()
-  if (trailing !== '') return null
-
-  return html.slice(openLen, closeIdx).trim()
-}
-
-function findMatchingClose(html: string, tag: string, from: number): number {
-  // Walks the string counting opens/closes of `tag`. Returns the index
-  // of the `<` of the matching close, or -1 if not balanced. Case-
-  // insensitive on the tag name; ignores whitespace inside close tag.
-  const openRe = new RegExp(`<${tag}\\b[^>]*>`, 'gi')
-  const closeRe = new RegExp(`</${tag}\\s*>`, 'gi')
-  let depth = 1
-  let pos = from
-  // eslint-disable-next-line no-constant-condition
-  while (true) {
-    openRe.lastIndex = pos
-    closeRe.lastIndex = pos
-    const nextOpen = openRe.exec(html)
-    const nextClose = closeRe.exec(html)
-    if (!nextClose) return -1
-    if (nextOpen && nextOpen.index < nextClose.index) {
-      depth++
-      pos = nextOpen.index + nextOpen[0].length
-    } else {
-      depth--
-      if (depth === 0) return nextClose.index
-      pos = nextClose.index + nextClose[0].length
-    }
-  }
 }
 
 // --- Attribute parsing ---------------------------------------------------
