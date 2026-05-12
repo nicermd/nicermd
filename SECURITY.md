@@ -43,41 +43,93 @@ new MarkdownIt({
 
 `html: true` is intentional — it lets the markdown-it lexer recognise HTML
 constructs so we can intercept them at the renderer level rather than letting
-them slip through as escaped text. The actual defence is a three-layer
-override:
+them slip through as escaped text. The defence is two-layer:
 
-1. **Block-level HTML is elided** to a single `⋯` placeholder
-   (`<div class="nicermd-html-elided">`). README files often nest
-   `<div align="center">` scaffolding around logos and badges that don't
-   translate outside GitHub's renderer; the placeholder shows a section
-   was elided without rendering its content.
-2. **Inline HTML is filtered through a static allowlist regex** that permits
-   only `br|kbd|sub|sup|mark`. Anything else is dropped silently.
-3. **DOMPurify runs as a final-pass sanitizer** on the entire output (see
-   below) — defence-in-depth in case a future plugin or rule override
-   reintroduces an HTML path.
+1. **Inline HTML is filtered through a static allowlist regex** that permits
+   only `br|kbd|sub|sup|mark`. Anything else is dropped silently at the
+   renderer level, before sanitisation.
+2. **DOMPurify runs as a final-pass sanitizer** on the entire output with a
+   strict tag/attribute/URI allowlist (see below). Block HTML flows into
+   this pass and is constrained to a fixed set of structural and
+   presentational tags. Tags outside the allowlist are dropped (children
+   kept by default), attributes outside the allowlist are stripped, and
+   URI values are validated against an explicit scheme allowlist.
 
-This deviates from the historical "set `html: false`" advice for markdown-it,
-in favour of giving the reader a visible "block elided" affordance. Either
-approach satisfies the underlying invariant: untrusted HTML must not reach
-the DOM unsanitized.
+An earlier revision additionally elided block HTML to a `⋯` placeholder
+before sanitisation — a defence-in-depth layer that pre-empted DOMPurify
+even getting block HTML. We dropped that elision once Write mode's
+HTML-parking (see below) had demonstrated the DOMPurify-only path was
+sufficient for the threat model, and because the elision was hiding real
+README content (centred logos, badge strips, callout boxes) that DOMPurify
+was already equipped to render safely.
+
+### Write-mode HTML parking
+
+Mode 2 (the Tiptap WYSIWYG editor) cannot round-trip arbitrary HTML
+through its document model — its markdown serialiser tends to escape or
+mangle anything that isn't representable as a native Tiptap node. To
+preserve HTML scaffolding across edit/save cycles, every `html_block`
+in the source is wrapped in a fenced code block with a sentinel info
+string (`__nicermd_html__`) before Tiptap parses, and unwrapped on the
+way out. A custom node view renders the parked content as a sanitised
+preview (via `sanitizeHtml`) so Write mode shows the same visual as
+Read mode rather than raw `<div>` source.
+
+This means:
+
+- HTML scaffolding survives Write-mode editing untouched — the saved
+  file matches the source file byte-for-byte for HTML regions.
+- The sanitisation surface is identical to Read mode: same DOMPurify
+  configuration, same tag/attr/URI allowlist.
+- A bug in DOMPurify would surface identically in both modes; there is
+  no second pass and no parallel sanitiser.
 
 ### DOMPurify pass on rendered output
 
 Configuration in `packages/core/src/index.ts`:
 
-- **Allowed tags**: standard markdown elements only — headings, paragraphs,
-  lists, code/pre, links, images, table elements, blockquote, hr, span/div
-  (no inline styles), `kbd/sub/sup/mark`.
+- **Allowed tags**: standard markdown elements (headings, paragraphs,
+  lists, code/pre, links, images, table elements, blockquote, hr,
+  span/div, `kbd`/`sub`/`sup`/`mark`) plus a curated set of README-
+  scaffolding tags that DOMPurify is the load-bearing defence for:
+  `center`, `details`, `summary`, `figure`, `figcaption`, `dl`/`dt`/`dd`,
+  `u`, `i`, `b`, `small`, `q`, `cite`, `abbr`, `time`, `wbr`. All of
+  these are structural or inline-formatting only — no scripting, no
+  network, no JS-driven interactivity.
 - **Allowed attributes**: `href`, `src`, `alt`, `title`, `class`, `id`,
-  `aria-hidden`. No event handlers, no `style`.
+  `align`, `width`, `height`, `colspan`, `rowspan`, `open` (for
+  `<details open>`), `datetime`, `aria-hidden`, `aria-label`,
+  `aria-labelledby`, `aria-describedby`, `rel`. No event handlers
+  (`onclick=`, etc.), no `style`, no `formaction`, no `srcset`, no
+  `background`. Adding new attributes goes through the supply-chain
+  review process below.
 - **Allowed URI schemes**: `https:`, `http:`, `mailto:`, fragment-only
-  (`#anchor`), and query-only (`?url=…` for in-app deep links). **No
-  `data:` URIs anywhere** — even `data:image/*` has been removed because
-  the URI regex applies to every URL-bearing attribute, and a clicked
+  (`#anchor`), and query-only (`?url=…` for in-app deep links).
+  Protocol-relative URLs (`//host/path`) are blocked — they hide the
+  resolved scheme and provide phishing aid. **No `data:` URIs anywhere**
+  — even `data:image/*` has been removed because a clicked
   `<a href="data:image/svg+xml,…<svg onload=…>">` executes the embedded
   script. If inline image embedding lands later, it'll be re-introduced
   via a tag-scoped DOMPurify hook (`<img src>` only).
+
+The URI scheme allowlist is enforced via a `uponSanitizeAttribute`
+hook rather than DOMPurify's `ALLOWED_URI_REGEXP` config option. The
+config-driven regex is applied to *every* attribute value, not just
+URL-bearing ones, which silently strips e.g. `align="center"` and
+`width="500"` because those values don't match a URI pattern. The hook
+scopes the URI check to the attributes that actually carry URIs
+(`href`, `src`, `xlink:href`) and additionally drops `data:` on every
+attribute as a belt-and-braces layer.
+
+### External-link hardening
+
+Every absolute-scheme link (`https:`, `http:`, `mailto:`) gets
+`rel="noopener noreferrer"` added at the markdown-it renderer level
+(`link_open` rule). Two protections in one short rule: `noopener`
+prevents the destination accessing `window.opener` if the user
+middle-clicks or Cmd-clicks to a new tab; `noreferrer` suppresses the
+`Referer` header. Same-page (`#section`) and query-only (`?url=…`)
+links are left alone — they're navigating the app itself.
 
 ### URL loader
 
@@ -255,17 +307,23 @@ when the feature lands.
 - **Red-team plan** lives in [`red-team/PLAN.md`](./red-team/PLAN.md) — maps
   every defence above to concrete test cases. Re-run before each public
   release.
-- **DOMPurify config** is unit-tested against a curated list of bypass
-  attempts (when the test pack lands — see step 6 of the launch plan).
+- **Renderer hardening pack** in `packages/core/src/render.test.ts` pins
+  the URI-scheme allowlist, the tag/attr allowlist (positive and
+  negative), event-handler stripping on every permitted tag, and the
+  external-link `rel` rule. Run on every commit via `pnpm test`. New
+  allowlist entries must come with a hardening test in the same pass.
 
 ## Invariants
 
 These are non-negotiable — if you're about to break one, stop and escalate:
 
 1. The core never makes network calls.
-2. Untrusted HTML never reaches the DOM unsanitised. The current setup
-   enforces this through three layers: markdown-it `html_block` elision,
-   markdown-it `html_inline` allow-listing, and a final DOMPurify pass.
+2. Untrusted HTML never reaches the DOM unsanitised. Inline HTML is
+   filtered by an allowlist regex at the markdown-it renderer level;
+   block HTML and the final output are sanitised by DOMPurify with the
+   tag/attr/URI configuration above. Write-mode HTML is parked into
+   code blocks, rendered for preview through the same `sanitizeHtml`
+   path, and unparked on save — there is no second sanitiser anywhere.
 3. DOMPurify runs on all output before it reaches the DOM.
 4. CSP has no `'unsafe-inline'` on `script-src`, no `'unsafe-eval'`
    anywhere, in any shell.

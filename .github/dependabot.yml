@@ -1,0 +1,56 @@
+# Dependabot config — keeps DOMPurify, markdown-it, and the rest of the
+# runtime / dev dependency graph current. DOMPurify in particular is the
+# load-bearing defence for block-HTML sanitisation (see SECURITY.md);
+# each upstream advisory matters and we don't want to learn about it
+# only when an external researcher writes us.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 5
+    # Group most updates so the weekly PR volume is manageable. Security-
+    # critical packages (DOMPurify, markdown-it) get their own PRs so an
+    # urgent patch isn't blocked behind unrelated minor bumps.
+    groups:
+      security-critical:
+        patterns:
+          - "dompurify"
+          - "markdown-it"
+        update-types:
+          - "patch"
+          - "minor"
+      tiptap:
+        patterns:
+          - "@tiptap/*"
+          - "tiptap-markdown"
+      codemirror:
+        patterns:
+          - "@codemirror/*"
+          - "@lezer/*"
+          - "codemirror"
+      tooling:
+        patterns:
+          - "typescript"
+          - "vite"
+          - "vitest"
+          - "tsup"
+        update-types:
+          - "patch"
+          - "minor"
+
+  # Cargo for the Tauri shell. Lower cadence — the Rust glue is small
+  # and Tauri itself ships infrequently.
+  - package-ecosystem: cargo
+    directory: "/packages/website/src-tauri"
+    schedule:
+      interval: monthly
+    open-pull-requests-limit: 3
+
+  # GitHub Actions if/when we add workflows. Cheap to enable now.
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: monthly
