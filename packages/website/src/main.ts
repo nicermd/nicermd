@@ -398,8 +398,54 @@ export class Harness {
     this.localChangeListeners.forEach((cb) => cb(md))
   }
 
-  switchTo(key: number): void {
+  // In-flight mode-switch animation timer. The transition splits into
+  // a 150ms leave + 150ms enter; the timer fires at the midpoint to
+  // swap content. If a second switch arrives during the first one's
+  // leave phase, we cancel the pending swap and start fresh.
+  private transitionTimer: number | null = null
+
+  // Animate the .mode-host on every mode change so the swap reads as a
+  // light slide rather than an instant content jump (the Read↔Write
+  // pair looks near-identical otherwise). Direction inference:
+  //   - explicit param wins (cycle / cyclePrevious pass 'forward' /
+  //     'backward' to ride over the key-wrap edge cases)
+  //   - otherwise: target > current → 'forward', else 'backward'
+  // Forward = new content slides in from the right; backward = from
+  // the left. Matches the direction of the corresponding touch swipe.
+  // Users with prefers-reduced-motion get an instant switch.
+  switchTo(key: number, direction?: 'forward' | 'backward'): void {
     if (key === this.currentMode && this.currentHandle) return
+    const dir = direction ?? (key > this.currentMode ? 'forward' : 'backward')
+    const reducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
+    // First mount or reduced-motion: skip the animation entirely.
+    if (!this.currentHandle || reducedMotion) {
+      this.doSwitch(key)
+      return
+    }
+    if (this.transitionTimer !== null) {
+      window.clearTimeout(this.transitionTimer)
+      this.transitionTimer = null
+    }
+    // Phase 1 — slide the current host out in the gesture direction.
+    this.host.classList.remove(
+      'mode-host--enter-forward',
+      'mode-host--enter-backward',
+    )
+    this.host.classList.add(`mode-host--leave-${dir}`)
+    this.transitionTimer = window.setTimeout(() => {
+      this.transitionTimer = null
+      this.doSwitch(key)
+      // Phase 2 — drop the leave class and add the enter class. The
+      // enter keyframes start the new content offset on the opposite
+      // side and slide it home; total visual span is ~300ms.
+      this.host.classList.remove('mode-host--leave-forward', 'mode-host--leave-backward')
+      this.host.classList.add(`mode-host--enter-${dir}`)
+    }, 150)
+  }
+
+  private doSwitch(key: number): void {
     if (this.currentHandle) {
       this.currentMarkdown = this.currentHandle.getMarkdown()
       this.currentHandle.destroy()
@@ -408,20 +454,27 @@ export class Harness {
     const next = MODES.find((m) => m.key === key)
     if (!next) return
     this.currentMode = key
-    this.currentHandle = next.mount(this.host, this.currentMarkdown, this.handleLocalChange)
+    this.currentHandle = next.mount(
+      this.host,
+      this.currentMarkdown,
+      this.handleLocalChange,
+    )
     this.modeChangeListeners.forEach((cb) => cb(key, next.label))
   }
 
   cycle(): void {
     const next = (this.currentMode % MODES.length) + 1
-    this.switchTo(next)
+    // Pass 'forward' explicitly so the 4 → 1 wrap reads as forward
+    // (key comparison would infer 'backward' from target < current).
+    this.switchTo(next, 'forward')
   }
 
   // Reverse cycle — touch swipe-right maps to this. Same wrap logic
-  // as cycle() but stepping backward (1 → 4, 2 → 1, …).
+  // as cycle() but stepping backward (1 → 4, 2 → 1, …). Passes
+  // 'backward' to override the wrap-direction inference.
   cyclePrevious(): void {
     const prev = ((this.currentMode - 2 + MODES.length) % MODES.length) + 1
-    this.switchTo(prev)
+    this.switchTo(prev, 'backward')
   }
 
   // Format command surface — delegates to the active mode handle if it
