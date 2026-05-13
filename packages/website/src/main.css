@@ -597,37 +597,17 @@ html {
 [data-tauri="1"] .window-title {
   display: flex;
 }
-/* Narrow viewports — phones in portrait. Two changes from the desktop
-   layout:
-   - Drop the centred flex and use a left-aligned block, so the
-     filename starts at the left edge of the strip and ellipsis bites
-     on the right. This is the standard file-manager affordance and
-     reads better than a centred-with-ellipsis truncation that would
-     hide both ends of a long name. Block + line-height handles
-     vertical centring without needing flex.
-   - Widen padding-right to 8rem (= 128px). The .mode-icons occupy
-     right:[12..122] from the viewport edge; 7rem (112px) was just shy
-     and let long filenames slip behind the icons. 8rem clears them
-     with a small buffer.
-   - Tighten padding-left to a small gutter so the title has more room. */
+/* Narrow viewports — phones in portrait. Keep the flex centring of
+   the desktop layout (centred when the name fits, ellipsis on the
+   right when it doesn't), but widen padding-right enough to keep the
+   centred text out from under the .mode-icons row.
+   The icons occupy right:[12..122] from the viewport edge; 7rem
+   (112px) was just shy and let long filenames slip behind them.
+   8rem (128px) clears them with a small buffer. Padding-left also
+   tightens to a small gutter so the centred area is roomier. */
 @media (max-width: 560px) {
-  [data-tauri="1"] .window-title {
-    display: block;
-    line-height: 28px;
-    text-align: left;
+  .window-title {
     padding: 0 8rem 0 0.75rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-  /* The span inside is now decorative; the truncation lives on the
-     block parent. Reset the span back to inline so it doesn't fight
-     the block's text-align / truncation. */
-  .window-title__text {
-    display: inline;
-    min-width: auto;
-    max-width: none;
-    overflow: visible;
   }
 }
 
