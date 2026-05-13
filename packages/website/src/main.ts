@@ -405,15 +405,29 @@ export class Harness {
   private transitionTimer: number | null = null
 
   // Animate the .mode-host on every mode change so the swap reads as a
-  // light slide rather than an instant content jump (the Read↔Write
-  // pair looks near-identical otherwise). Direction inference:
-  //   - explicit param wins (cycle / cyclePrevious pass 'forward' /
-  //     'backward' to ride over the key-wrap edge cases)
-  //   - otherwise: target > current → 'forward', else 'backward'
-  // Forward = new content slides in from the right; backward = from
-  // the left. Matches the direction of the corresponding touch swipe.
-  // Users with prefers-reduced-motion get an instant switch.
-  switchTo(key: number, direction?: 'forward' | 'backward'): void {
+  // signal rather than an instant content jump (the Read↔Write pair
+  // looks near-identical otherwise). Two styles:
+  //
+  //   - 'slide' (~300ms, directional) — only the touch-swipe handler
+  //     triggers this. Matches the gesture: content slides 20px out in
+  //     the direction your finger moved, then the new content slides
+  //     in from the opposite side. Reads as causal because the user's
+  //     own movement initiated it.
+  //   - 'fade' (~120ms, default) — keyboard shortcuts, mode-icon
+  //     clicks, and Cmd+Shift+M cycle. Discrete deliberate actions
+  //     don't have a gesture direction to match, and a 300ms slide
+  //     reads as delay rather than signal there. A quick opacity dip
+  //     is short enough not to feel laggy but visible enough to
+  //     confirm the swap, especially for Read↔Write.
+  //
+  // Direction (slide only) defaults to: target > current → 'forward'.
+  // cycle / cyclePrevious override to handle the wrap edges.
+  // prefers-reduced-motion users skip the animation entirely.
+  switchTo(
+    key: number,
+    direction?: 'forward' | 'backward',
+    style: 'fade' | 'slide' = 'fade',
+  ): void {
     if (key === this.currentMode && this.currentHandle) return
     const dir = direction ?? (key > this.currentMode ? 'forward' : 'backward')
     const reducedMotion = window.matchMedia(
@@ -428,21 +442,29 @@ export class Harness {
       window.clearTimeout(this.transitionTimer)
       this.transitionTimer = null
     }
-    // Phase 1 — slide the current host out in the gesture direction.
-    this.host.classList.remove(
+    const allClasses = [
+      'mode-host--leave-forward',
+      'mode-host--leave-backward',
       'mode-host--enter-forward',
       'mode-host--enter-backward',
-    )
-    this.host.classList.add(`mode-host--leave-${dir}`)
+      'mode-host--fade-out',
+      'mode-host--fade-in',
+    ]
+    this.host.classList.remove(...allClasses)
+    const leaveClass =
+      style === 'slide' ? `mode-host--leave-${dir}` : 'mode-host--fade-out'
+    const enterClass =
+      style === 'slide' ? `mode-host--enter-${dir}` : 'mode-host--fade-in'
+    // Slide takes 150ms each half; fade is 60ms each half. Total visual
+    // span is 300ms for slide, 120ms for fade.
+    const halfDuration = style === 'slide' ? 150 : 60
+    this.host.classList.add(leaveClass)
     this.transitionTimer = window.setTimeout(() => {
       this.transitionTimer = null
       this.doSwitch(key)
-      // Phase 2 — drop the leave class and add the enter class. The
-      // enter keyframes start the new content offset on the opposite
-      // side and slide it home; total visual span is ~300ms.
-      this.host.classList.remove('mode-host--leave-forward', 'mode-host--leave-backward')
-      this.host.classList.add(`mode-host--enter-${dir}`)
-    }, 150)
+      this.host.classList.remove(leaveClass)
+      this.host.classList.add(enterClass)
+    }, halfDuration)
   }
 
   private doSwitch(key: number): void {
@@ -462,19 +484,19 @@ export class Harness {
     this.modeChangeListeners.forEach((cb) => cb(key, next.label))
   }
 
-  cycle(): void {
+  cycle(style: 'fade' | 'slide' = 'fade'): void {
     const next = (this.currentMode % MODES.length) + 1
     // Pass 'forward' explicitly so the 4 → 1 wrap reads as forward
     // (key comparison would infer 'backward' from target < current).
-    this.switchTo(next, 'forward')
+    this.switchTo(next, 'forward', style)
   }
 
   // Reverse cycle — touch swipe-right maps to this. Same wrap logic
   // as cycle() but stepping backward (1 → 4, 2 → 1, …). Passes
   // 'backward' to override the wrap-direction inference.
-  cyclePrevious(): void {
+  cyclePrevious(style: 'fade' | 'slide' = 'fade'): void {
     const prev = ((this.currentMode - 2 + MODES.length) % MODES.length) + 1
-    this.switchTo(prev, 'backward')
+    this.switchTo(prev, 'backward', style)
   }
 
   // Format command surface — delegates to the active mode handle if it
