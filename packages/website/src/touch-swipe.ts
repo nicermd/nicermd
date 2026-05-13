@@ -66,9 +66,12 @@ export function setupTouchSwipe(harness: Harness, host: HTMLElement): void {
       if (Math.abs(dy) > MAX_VERTICAL_PX) return
       if (Math.abs(dx) < SWIPE_THRESHOLD_PX) return
       // Clean horizontal swipe. Left = next mode, right = previous —
-      // matches the typical carousel / tab-bar convention.
-      if (dx < 0) harness.cycle()
-      else harness.cyclePrevious()
+      // matches the typical carousel / tab-bar convention. The 'slide'
+      // style is gesture-only: the directional animation mirrors the
+      // swipe and feels causal. Keyboard / icon-click paths default
+      // to the lighter 'fade' style.
+      if (dx < 0) harness.cycle('slide')
+      else harness.cyclePrevious('slide')
     },
     { passive: true },
   )

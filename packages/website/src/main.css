@@ -577,15 +577,38 @@ html {
 .mode-host--enter-backward {
   animation: mode-host-enter-backward 150ms ease-out;
 }
+
+/* Lighter fade variant — keyboard shortcuts, mode-icon clicks and the
+   keyboard cycle. Just an opacity dip on swap with no translation, so
+   it doesn't introduce the directional 'slide' that only feels right
+   when paired with a swipe gesture. 60ms each half = 120ms total,
+   short enough not to feel laggy but visible enough that Read↔Write
+   no longer looks like a no-op. */
+@keyframes mode-host-fade-out {
+  to { opacity: 0; }
+}
+@keyframes mode-host-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.mode-host--fade-out {
+  animation: mode-host-fade-out 60ms ease-out forwards;
+}
+.mode-host--fade-in {
+  animation: mode-host-fade-in 60ms ease-out;
+}
+
 /* Respect the OS-level motion preference. The Harness also short-
    circuits the animation in JS so reduced-motion users don't pay the
-   150ms transition timer — this rule is the defence-in-depth in case
-   a class somehow lands on the host. */
+   transition timer — this rule is the defence-in-depth in case a
+   class somehow lands on the host. */
 @media (prefers-reduced-motion: reduce) {
   .mode-host--leave-forward,
   .mode-host--leave-backward,
   .mode-host--enter-forward,
-  .mode-host--enter-backward {
+  .mode-host--enter-backward,
+  .mode-host--fade-out,
+  .mode-host--fade-in {
     animation: none;
   }
 }
