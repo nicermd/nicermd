@@ -294,9 +294,17 @@ function sanitiseDisplayName(name: string): string {
 //   - direct     →  <user>/<repo>/<filename>  (when on raw host)
 //   - direct     →  <basename>                (everything else)
 //   - gist       →  gist-<first-8-of-id>.md
+//
+// Trailing `/README.md` is then stripped (case-insensitive) — for the
+// dominant URL-load case (someone opens a repo README), the repo path
+// is the identifier and the `/README.md` suffix is redundant noise that
+// pushes long org/repo combinations into truncation on narrow viewports.
+// For non-README files the suffix stays since the filename is what
+// disambiguates multiple docs from the same repo.
 function displayNameFor(p: Parsed, fetchedUrl: string): string {
   const raw = computeDisplayName(p, fetchedUrl)
-  return sanitiseDisplayName(raw)
+  const stripped = raw.replace(/\/README\.md$/i, '')
+  return sanitiseDisplayName(stripped || raw)
 }
 
 function computeDisplayName(p: Parsed, fetchedUrl: string): string {
