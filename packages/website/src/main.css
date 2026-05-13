@@ -597,17 +597,23 @@ html {
 [data-tauri="1"] .window-title {
   display: flex;
 }
-/* Narrow viewports — phones in portrait. Keep the flex centring of
-   the desktop layout (centred when the name fits, ellipsis on the
-   right when it doesn't), but widen padding-right enough to keep the
-   centred text out from under the .mode-icons row.
-   The icons occupy right:[12..122] from the viewport edge; 7rem
-   (112px) was just shy and let long filenames slip behind them.
-   8rem (128px) clears them with a small buffer. Padding-left also
-   tightens to a small gutter so the centred area is roomier. */
+/* Narrow viewports — phones in portrait. Centre the filename to the
+   page, not to the space between left/right padding. Asymmetric
+   padding (a small left gutter + a wider right pad to clear the
+   .mode-icons row) shifts the flex-centred text noticeably off
+   page-centre, which reads as wrong on a small screen.
+   Instead: drop the padding and let the text element page-centre via
+   the flex container, then cap its max-width so it reserves space
+   on BOTH sides symmetrically. 16rem total reservation (8rem each
+   side) keeps the truncated text clear of the icons row on the right
+   and mirrors the reservation on the left so the text stays
+   visually centred to the viewport. */
 @media (max-width: 560px) {
-  .window-title {
-    padding: 0 8rem 0 0.75rem;
+  [data-tauri="1"] .window-title {
+    padding: 0;
+  }
+  .window-title__text {
+    max-width: calc(100vw - 16rem);
   }
 }
 
