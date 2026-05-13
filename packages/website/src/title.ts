@@ -65,26 +65,25 @@ export function setupTitle(harness: Harness, root: HTMLElement): void {
   refreshTitle()
 }
 
-// Middle-truncate `fullText` so it fits in `el`'s clientWidth without
-// overflowing. Keeps an equal number of characters from both ends and
-// inserts an ellipsis in the middle, e.g.
-//   architecture-decision-record-04.md  →  archit…rd-04.md
-// The end-side bias means the file extension (the most identifying
-// suffix, usually) survives even hard truncation. Binary search runs
-// O(log n) layout queries — a handful for any realistic filename.
-function fitMiddle(el: HTMLElement, fullText: string): void {
+// End-anchored truncate: keep the tail of `fullText` visible, push the
+// leading characters off behind a single ellipsis, e.g.
+//   tauri-apps/tauri/ARCHITECTURE.md  →  …i/ARCHITECTURE.md
+// The filename is the most disambiguating part when reading multiple
+// files from one repo, so anchoring the visible window to the right
+// gives more useful info than middle-truncation (which split chars
+// evenly and often kept neither half intact). The dominant README
+// case avoids this path entirely — displayNameFor strips the trailing
+// `/README.md` so the title is just the short `user/repo`.
+// Binary search runs O(log n) layout queries per refresh.
+function fitEnd(el: HTMLElement, fullText: string): void {
   el.textContent = fullText
   if (el.scrollWidth <= el.clientWidth) return
-  // The longest possible 'keep' is half the string minus one char for
-  // the ellipsis; we then search downward for the largest value that
-  // still fits.
   let lo = 1
-  let hi = Math.floor((fullText.length - 1) / 2)
+  let hi = fullText.length - 1
   let best = 0
   while (lo <= hi) {
     const mid = Math.floor((lo + hi) / 2)
-    el.textContent =
-      fullText.slice(0, mid) + '…' + fullText.slice(fullText.length - mid)
+    el.textContent = '…' + fullText.slice(fullText.length - mid)
     if (el.scrollWidth <= el.clientWidth) {
       best = mid
       lo = mid + 1
@@ -93,13 +92,11 @@ function fitMiddle(el: HTMLElement, fullText: string): void {
     }
   }
   if (best === 0) {
-    // Even '<first>…<last>' doesn't fit — fall back to the CSS ellipsis
-    // path. Visible result will be the leading characters of fullText
-    // with a single '…' on the right, courtesy of text-overflow.
+    // Even '…<last-char>' doesn't fit — leave fullText for CSS to
+    // clip; rare on any realistic viewport.
     el.textContent = fullText
   } else {
-    el.textContent =
-      fullText.slice(0, best) + '…' + fullText.slice(fullText.length - best)
+    el.textContent = '…' + fullText.slice(fullText.length - best)
   }
 }
 
@@ -152,7 +149,7 @@ export function refreshTitle(): void {
   const display = isLanding ? APP_NAME : (dirty ? '• ' : '') + (rawName ?? 'Untitled')
   document.title = isLanding ? APP_NAME : `${display} — ${APP_NAME}`
   if (titleBarEl && titleTextEl) {
-    fitMiddle(titleTextEl, display)
+    fitEnd(titleTextEl, display)
     // Native browser tooltip shows the source URL on hover for files
     // loaded via Open-URL. Removed cleanly when the next doc is loaded
     // from disk / drag-drop / new — getCurrentSourceUrl() returns null
