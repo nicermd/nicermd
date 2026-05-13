@@ -544,6 +544,52 @@ html {
   flex-direction: column;
 }
 
+/* Mode-transition slide. Harness.switchTo() drives this in two phases:
+   leave-{forward,backward} fires while the old mode is still mounted
+   (visible content slides 20px out and fades); 150ms later the JS swaps
+   in the new mode and applies enter-{forward,backward} (new content
+   starts offset 20px in the opposite direction, slides home). Total
+   visual span ~300ms. Read↔Write looks near-identical content-wise, so
+   this is the cue that telegraphs the swap. */
+@keyframes mode-host-leave-forward {
+  to { transform: translateX(-20px); opacity: 0; }
+}
+@keyframes mode-host-leave-backward {
+  to { transform: translateX(20px); opacity: 0; }
+}
+@keyframes mode-host-enter-forward {
+  from { transform: translateX(20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+@keyframes mode-host-enter-backward {
+  from { transform: translateX(-20px); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.mode-host--leave-forward {
+  animation: mode-host-leave-forward 150ms ease-out forwards;
+}
+.mode-host--leave-backward {
+  animation: mode-host-leave-backward 150ms ease-out forwards;
+}
+.mode-host--enter-forward {
+  animation: mode-host-enter-forward 150ms ease-out;
+}
+.mode-host--enter-backward {
+  animation: mode-host-enter-backward 150ms ease-out;
+}
+/* Respect the OS-level motion preference. The Harness also short-
+   circuits the animation in JS so reduced-motion users don't pay the
+   150ms transition timer — this rule is the defence-in-depth in case
+   a class somehow lands on the host. */
+@media (prefers-reduced-motion: reduce) {
+  .mode-host--leave-forward,
+  .mode-host--leave-backward,
+  .mode-host--enter-forward,
+  .mode-host--enter-backward {
+    animation: none;
+  }
+}
+
 /* Title strip — 28px reserved at the top for the filename + mode
    icons in both web and Tauri shells. In Tauri this same strip
    overlaps the macOS traffic-light area (titleBarStyle: "Overlay"),
