@@ -18,7 +18,6 @@ import { isDirty, getCurrentName, getCurrentSourceUrl } from './doc-source'
 import { APP_NAME } from './version'
 
 let titleBarEl: HTMLElement | null = null
-let titleTextEl: HTMLElement | null = null
 let harnessRef: Harness | null = null
 
 function isTauri(): boolean {
@@ -30,18 +29,6 @@ export function setupTitle(harness: Harness, root: HTMLElement): void {
 
   titleBarEl = document.createElement('div')
   titleBarEl.className = 'window-title'
-  // Left-anchored brand mark. The filename is centred via the parent's
-  // flex layout; the logo lives in its own absolutely-positioned child
-  // so it doesn't shift the centring as the filename grows or shrinks.
-  const logo = document.createElement('img')
-  logo.className = 'window-title__logo'
-  logo.src = '/favicon-256.png'
-  logo.alt = ''
-  logo.setAttribute('aria-hidden', 'true')
-  titleBarEl.appendChild(logo)
-  titleTextEl = document.createElement('span')
-  titleTextEl.className = 'window-title__text'
-  titleBarEl.appendChild(titleTextEl)
   root.appendChild(titleBarEl)
 
   if (isTauri()) {
@@ -104,8 +91,8 @@ export function refreshTitle(): void {
   // corner badge + landing strap so the title stays uncluttered.
   const display = isLanding ? APP_NAME : (dirty ? '• ' : '') + (rawName ?? 'Untitled')
   document.title = isLanding ? APP_NAME : `${display} — ${APP_NAME}`
-  if (titleBarEl && titleTextEl) {
-    titleTextEl.textContent = display
+  if (titleBarEl) {
+    titleBarEl.textContent = display
     // Native browser tooltip shows the source URL on hover for files
     // loaded via Open-URL. Removed cleanly when the next doc is loaded
     // from disk / drag-drop / new — getCurrentSourceUrl() returns null
