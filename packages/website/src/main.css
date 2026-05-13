@@ -585,20 +585,6 @@ html {
   display: flex;
 }
 
-/* Inline images inside headings — scale to the heading font so a
-   logo or badge sitting beside the title reads as part of the line
-   rather than a stand-alone graphic. Applies across rendered modes
-   (read / split preview / wysiwyg surface). Caps user-authored
-   headings with oversized images at the same scale so they don't
-   dominate the line either. */
-.mode-read :is(h1, h2, h3, h4, h5, h6) img,
-.mode-split__preview :is(h1, h2, h3, h4, h5, h6) img,
-.mode-wysiwyg__surface :is(h1, h2, h3, h4, h5, h6) img {
-  max-height: 1.1em;
-  width: auto;
-  vertical-align: -0.15em;
-}
-
 /* Window-Controls-Overlay PWA mode (Chrome on macOS, Edge on Windows).
    The OS chrome collapses to just the window controls (traffic lights
    on macOS); our .window-title becomes the visual title bar. Reserve
