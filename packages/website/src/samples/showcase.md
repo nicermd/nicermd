@@ -1,5 +1,3 @@
-<p align="center"><img src="/favicon-256.png" alt="" width="48" height="48" /></p>
-
 # Nicer.md
 
 > **Alpha release** — early days, expect rough edges. Your data stays on your device; there's no server. [Report a bug on GitHub](https://github.com/isherlock/nicermd/issues).

@@ -1615,8 +1615,17 @@ html {
 .theme-picker__header {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
+}
+/* Small brand mark left of the title — the modal panel has its own
+   bg so the icon doesn't fight the page theme. Sized to roughly the
+   title's cap-height so the two read as a paired wordmark. */
+.theme-picker__logo {
+  width: 22px;
+  height: 22px;
+  user-select: none;
+  flex: 0 0 auto;
 }
 .theme-picker__title {
   margin: 0;
@@ -1633,6 +1642,7 @@ html {
   cursor: pointer;
   padding: 0 0.4rem;
   border-radius: 4px;
+  margin-left: auto;
 }
 .theme-picker__close:hover {
   color: var(--fg);
