@@ -89,6 +89,37 @@ export function createWysiwyg(
       }
     },
   })
+
+  // Resolve relative src against baseUrl at render time. Same intent as
+  // rewriteRelativeUrls in nicermd-core, but applied in the editor DOM
+  // only — the ProseMirror node attrs keep the original relative path
+  // so save-out matches the source file byte-for-byte. Without this,
+  // markdown `![](.github/cover.png)` in a URL-loaded README renders as
+  // a broken image in Write mode (browser resolves against the app
+  // origin, not the README's origin).
+  const ABSOLUTE_OR_SAME_DOC_RE = /^(?:[a-z][a-z0-9+.-]*:|\/\/|[#?])/i
+  const resolveSrc = (src: string): string => {
+    if (!baseUrl || !src || ABSOLUTE_OR_SAME_DOC_RE.test(src)) return src
+    try {
+      return new URL(src, baseUrl).href
+    } catch {
+      return src
+    }
+  }
+  const BaseUrlAwareImage = Image.extend({
+    addNodeView() {
+      return ({ node }) => {
+        const dom = document.createElement('img')
+        const src = (node.attrs.src as string | null) ?? ''
+        dom.src = resolveSrc(src)
+        const alt = node.attrs.alt as string | null
+        if (alt) dom.alt = alt
+        const title = node.attrs.title as string | null
+        if (title) dom.title = title
+        return { dom }
+      }
+    },
+  })
   // Park block HTML in fenced code blocks before Tiptap sees it. The
   // code-block primitive is one of the few Markdown constructs Tiptap
   // round-trips byte-for-byte, so wrapping HTML in it neutralises the
@@ -115,7 +146,12 @@ export function createWysiwyg(
       // pattern used in most READMEs) renders as nothing without this.
       // inline:false keeps images as block-level for paragraph layout
       // parity with Read mode.
-      Image.configure({ inline: false, allowBase64: false }),
+      // The node view resolves relative src against baseUrl in the DOM
+      // only — the underlying ProseMirror attrs (and therefore the
+      // serialised markdown on save) keep the original relative form.
+      // Without this, README cover/badge images load from
+      // localhost:3333/<path> and show broken icons in Write mode.
+      BaseUrlAwareImage.configure({ inline: false, allowBase64: false }),
       // GFM tables — StarterKit doesn't bundle these, so add them
       // explicitly. resizable lets users drag column borders.
       Table.configure({ resizable: true }),

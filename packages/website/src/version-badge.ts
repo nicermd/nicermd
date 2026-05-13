@@ -54,6 +54,17 @@ function openPopover(): void {
   panel.setAttribute('aria-modal', 'true')
   panel.setAttribute('aria-label', `About ${APP_NAME}`)
 
+  // Brand mark above the title — the popover is the canonical 'about
+  // this app' surface, so the logo lands here without competing with
+  // reading content. Decorative; aria-hidden because the title text
+  // immediately follows.
+  const logo = document.createElement('img')
+  logo.className = 'alpha-popover__logo'
+  logo.src = '/favicon-256.png'
+  logo.alt = ''
+  logo.setAttribute('aria-hidden', 'true')
+  panel.appendChild(logo)
+
   const title = document.createElement('div')
   title.className = 'alpha-popover__title'
   title.textContent = IS_ALPHA ? `${APP_NAME} is in alpha` : APP_NAME
