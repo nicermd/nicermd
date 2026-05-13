@@ -43,6 +43,7 @@ import { registerServiceWorker } from './sw-register'
 import { setupScrollStrip, showStrip } from './scroll-strip'
 import { setupFormatBar } from './format-bar'
 import { setupCommandPalette } from './command-palette'
+import { setupTouchSwipe } from './touch-swipe'
 import { cycleOption } from './option-flag'
 import type { FormatAction } from './wysiwyg-engine'
 import './main.css'
@@ -416,6 +417,13 @@ export class Harness {
     this.switchTo(next)
   }
 
+  // Reverse cycle — touch swipe-right maps to this. Same wrap logic
+  // as cycle() but stepping backward (1 → 4, 2 → 1, …).
+  cyclePrevious(): void {
+    const prev = ((this.currentMode - 2 + MODES.length) % MODES.length) + 1
+    this.switchTo(prev)
+  }
+
   // Format command surface — delegates to the active mode handle if it
   // implements the optional methods (currently mode 2 / WYSIWYG).
   // Returns no-ops elsewhere so the format bar can call without
@@ -550,6 +558,11 @@ async function boot(): Promise<void> {
   setupFormatBar(harness, root)
   setupCommandPalette(harness)
   setupVersionBadge(root)
+  // Touch swipe on the doc surface cycles modes. Scoped to .mode-host
+  // (which `host` IS) so top chrome and bottom format bar keep their
+  // own behaviour; filters in the gesture handler exclude editor
+  // surfaces so text selection in Write / Code modes still works.
+  setupTouchSwipe(harness, host)
 
   // Resurface the strip on mode change — user benefits from re-seeing
   // filename + active mode whenever the editing context shifts.
