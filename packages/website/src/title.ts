@@ -49,7 +49,58 @@ export function setupTitle(harness: Harness, root: HTMLElement): void {
 
   harness.onLocalChange(() => refreshTitle())
   document.addEventListener('nicermd:source-changed', () => refreshTitle())
+  // Re-fit middle truncation when the viewport changes — the constraint
+  // is purely width-based, so the kept-chars count can grow on a phone
+  // rotated to landscape and shrink back on portrait. rAF batching
+  // avoids running the binary search on every resize event during a
+  // smooth-resize gesture.
+  let resizeRaf: number | null = null
+  window.addEventListener('resize', () => {
+    if (resizeRaf !== null) return
+    resizeRaf = requestAnimationFrame(() => {
+      resizeRaf = null
+      refreshTitle()
+    })
+  })
   refreshTitle()
+}
+
+// Middle-truncate `fullText` so it fits in `el`'s clientWidth without
+// overflowing. Keeps an equal number of characters from both ends and
+// inserts an ellipsis in the middle, e.g.
+//   architecture-decision-record-04.md  →  archit…rd-04.md
+// The end-side bias means the file extension (the most identifying
+// suffix, usually) survives even hard truncation. Binary search runs
+// O(log n) layout queries — a handful for any realistic filename.
+function fitMiddle(el: HTMLElement, fullText: string): void {
+  el.textContent = fullText
+  if (el.scrollWidth <= el.clientWidth) return
+  // The longest possible 'keep' is half the string minus one char for
+  // the ellipsis; we then search downward for the largest value that
+  // still fits.
+  let lo = 1
+  let hi = Math.floor((fullText.length - 1) / 2)
+  let best = 0
+  while (lo <= hi) {
+    const mid = Math.floor((lo + hi) / 2)
+    el.textContent =
+      fullText.slice(0, mid) + '…' + fullText.slice(fullText.length - mid)
+    if (el.scrollWidth <= el.clientWidth) {
+      best = mid
+      lo = mid + 1
+    } else {
+      hi = mid - 1
+    }
+  }
+  if (best === 0) {
+    // Even '<first>…<last>' doesn't fit — fall back to the CSS ellipsis
+    // path. Visible result will be the leading characters of fullText
+    // with a single '…' on the right, courtesy of text-overflow.
+    el.textContent = fullText
+  } else {
+    el.textContent =
+      fullText.slice(0, best) + '…' + fullText.slice(fullText.length - best)
+  }
 }
 
 function wireTitleBarInteractions(el: HTMLElement): void {
@@ -101,7 +152,7 @@ export function refreshTitle(): void {
   const display = isLanding ? APP_NAME : (dirty ? '• ' : '') + (rawName ?? 'Untitled')
   document.title = isLanding ? APP_NAME : `${display} — ${APP_NAME}`
   if (titleBarEl && titleTextEl) {
-    titleTextEl.textContent = display
+    fitMiddle(titleTextEl, display)
     // Native browser tooltip shows the source URL on hover for files
     // loaded via Open-URL. Removed cleanly when the next doc is loaded
     // from disk / drag-drop / new — getCurrentSourceUrl() returns null
