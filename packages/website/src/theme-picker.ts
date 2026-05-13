@@ -37,9 +37,16 @@ export function openThemePicker(): void {
   modal.setAttribute('aria-modal', 'true')
   modal.setAttribute('aria-label', 'Choose a theme')
 
-  // Header
+  // Header — small brand mark beside the title. The modal panel has
+  // its own bg, so the icon's white centre blends into the panel
+  // rather than the themed reading view. Decorative; aria-hidden.
   const header = document.createElement('div')
   header.className = 'theme-picker__header'
+  const logo = document.createElement('img')
+  logo.className = 'theme-picker__logo'
+  logo.src = '/favicon-256.png'
+  logo.alt = ''
+  logo.setAttribute('aria-hidden', 'true')
   const title = document.createElement('h2')
   title.className = 'theme-picker__title'
   title.textContent = 'Choose a theme'
@@ -48,7 +55,7 @@ export function openThemePicker(): void {
   closeBtn.setAttribute('aria-label', 'Close picker')
   closeBtn.type = 'button'
   closeBtn.textContent = '×'
-  header.append(title, closeBtn)
+  header.append(logo, title, closeBtn)
 
   const grid = document.createElement('div')
   grid.className = 'theme-picker__grid'
