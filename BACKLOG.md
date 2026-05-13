@@ -20,6 +20,34 @@ forgotten.
   is the right trade for a spike.
   _packages/website/src/url-open.ts resolveCandidates 'repo' case_
 
+## Rendering / HTML
+
+- **`<picture>` support for dark-mode-aware images.** Many modern READMEs
+  use `<picture>` with `<source media="(prefers-color-scheme: …)">` to
+  swap the cover image per theme. Currently both the block-HTML path
+  (rule 6 doesn't list `picture` so the tag is tokenised as inline HTML
+  and stripped by the inline allowlist) and the would-be allowed path
+  (`<source srcset="…">` is relative-path soup not currently rewritten)
+  break. Two pieces, ship together:
+  - Rewrite `srcset` candidate URLs against `baseUrl` in
+    `rewriteRelativeUrls` (parse comma-separated `<url> <descriptor>`
+    pairs; resolve each URL; preserve descriptors).
+  - Add `picture` / `source` to the DOMPurify allowlist + handle inline
+    position (either widen the inline allowlist or pre-process to a
+    block in `normalize-html.ts`).
+  No driver today, but real-world README rendering hits this often
+  enough that it's worth doing once `<picture>` shows up in a doc the
+  user actually wants to read.
+  _packages/core/src/index.ts rewriteRelativeUrls + PURIFY_CONFIG_
+
+- **Tag-scoped `data:` image hook.** The DOMPurify URI hook currently
+  drops `data:` URIs on every attribute as a blanket measure. If inline
+  image embedding (base64 `<img src="data:image/png;base64,…">`) ever
+  becomes a feature, narrow the block to permit `data:image/<type>` on
+  `<img src>` only — keeping everything else (especially `<a href>`)
+  blocked. Speculative; only do if the feature lands.
+  _packages/core/src/index.ts uponSanitizeAttribute hook_
+
 ## Tauri hardening
 
 - **`fs` plugin scope is currently `**` (entire filesystem).** Combined
