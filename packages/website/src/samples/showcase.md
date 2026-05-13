@@ -1,6 +1,4 @@
-<p align="center"><img src="/favicon-256.png" alt="" width="96" height="96" /></p>
-
-# Nicer.md
+# ![](/favicon-256.png) Nicer.md
 
 > **Alpha release** — early days, expect rough edges. Your data stays on your device; there's no server. [Report a bug on GitHub](https://github.com/isherlock/nicermd/issues).
 

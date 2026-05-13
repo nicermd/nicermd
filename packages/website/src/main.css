@@ -585,28 +585,18 @@ html {
   display: flex;
 }
 
-/* Brand mark on the left of the title strip. Absolutely positioned so
-   it doesn't push the centred filename. ~18px is small enough not to
-   dominate the 28px strip but big enough to read as the orange 'n'. */
-.window-title__logo {
-  position: absolute;
-  left: 12px;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 18px;
-  height: 18px;
-  pointer-events: none;
-  user-select: none;
-  opacity: 0.85;
-}
-.window-title__text {
-  /* Inherits the parent's flex centring; just lets the text behave
-     like the previous direct-textContent rendering. */
-  display: inline-block;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+/* Inline images inside headings — scale to the heading font so a
+   logo or badge sitting beside the title reads as part of the line
+   rather than a stand-alone graphic. Applies across rendered modes
+   (read / split preview / wysiwyg surface). Caps user-authored
+   headings with oversized images at the same scale so they don't
+   dominate the line either. */
+.mode-read :is(h1, h2, h3, h4, h5, h6) img,
+.mode-split__preview :is(h1, h2, h3, h4, h5, h6) img,
+.mode-wysiwyg__surface :is(h1, h2, h3, h4, h5, h6) img {
+  max-height: 1.1em;
+  width: auto;
+  vertical-align: -0.15em;
 }
 
 /* Window-Controls-Overlay PWA mode (Chrome on macOS, Edge on Windows).
