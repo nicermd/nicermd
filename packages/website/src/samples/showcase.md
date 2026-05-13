@@ -1,3 +1,5 @@
+<p align="center"><img src="/favicon-256.png" alt="" width="96" height="96" /></p>
+
 # Nicer.md
 
 > **Alpha release** — early days, expect rough edges. Your data stays on your device; there's no server. [Report a bug on GitHub](https://github.com/isherlock/nicermd/issues).
@@ -19,6 +21,15 @@ A nicer, zero-server markdown reader. The page you're looking at is plain markdo
 - [Markdown Cheatsheet](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fwiki%2Fadam-p%2Fmarkdown-here%2FMarkdown-Cheatsheet.md) — adam-p/markdown-here
 - [Awesome](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsindresorhus%2Fawesome%2Fmain%2Freadme.md) — sindresorhus/awesome
 - [Tauri README](?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftauri-apps%2Ftauri%2Fdev%2FREADME.md) — tauri-apps/tauri
+
+Or read the docs of the libraries that power Nicer.md itself:
+
+- [markdown-it](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fmarkdown-it%2Fmarkdown-it%2Fmaster%2FREADME.md) — the parser behind every mode
+- [DOMPurify](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcure53%2FDOMPurify%2Fmain%2FREADME.md) — the HTML sanitiser
+- [Tiptap](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fueberdosis%2Ftiptap%2Fmain%2FREADME.md) — the rich-text editor in Write mode
+- [CodeMirror](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fcodemirror%2Fdev%2Fmain%2FREADME.md) — the editor in Code and Split modes
+- [Vitest](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fvitest-dev%2Fvitest%2Fmain%2FREADME.md) — the test runner behind every release
+- [Vite](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fvitejs%2Fvite%2Fmain%2FREADME.md) — the build tool that ships this page
 
 ## Project docs
 
