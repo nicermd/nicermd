@@ -18,6 +18,7 @@ import { isDirty, getCurrentName, getCurrentSourceUrl } from './doc-source'
 import { APP_NAME } from './version'
 
 let titleBarEl: HTMLElement | null = null
+let titleTextEl: HTMLElement | null = null
 let harnessRef: Harness | null = null
 
 function isTauri(): boolean {
@@ -29,6 +30,14 @@ export function setupTitle(harness: Harness, root: HTMLElement): void {
 
   titleBarEl = document.createElement('div')
   titleBarEl.className = 'window-title'
+  // Text in a child span so text-overflow:ellipsis fires reliably:
+  // text-overflow needs an element with overflow:hidden + nowrap of
+  // its own, and a centred flex container doesn't qualify (the text
+  // node is laid out as an anonymous flex item). The child carries
+  // the truncation rules; the parent stays a clean flex centre.
+  titleTextEl = document.createElement('span')
+  titleTextEl.className = 'window-title__text'
+  titleBarEl.appendChild(titleTextEl)
   root.appendChild(titleBarEl)
 
   if (isTauri()) {
@@ -91,8 +100,8 @@ export function refreshTitle(): void {
   // corner badge + landing strap so the title stays uncluttered.
   const display = isLanding ? APP_NAME : (dirty ? '• ' : '') + (rawName ?? 'Untitled')
   document.title = isLanding ? APP_NAME : `${display} — ${APP_NAME}`
-  if (titleBarEl) {
-    titleBarEl.textContent = display
+  if (titleBarEl && titleTextEl) {
+    titleTextEl.textContent = display
     // Native browser tooltip shows the source URL on hover for files
     // loaded via Open-URL. Removed cleanly when the next doc is loaded
     // from disk / drag-drop / new — getCurrentSourceUrl() returns null
