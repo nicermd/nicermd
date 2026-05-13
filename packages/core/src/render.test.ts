@@ -298,6 +298,21 @@ describe('Relative URL rewriting', () => {
     expect(out).toContain('src="https://other.test/x.png"')
   })
 
+  it('preserves absolute-path src when no baseUrl is set', () => {
+    // Documents authored without a source URL (boot doc, paste, drop)
+    // commonly reference same-origin assets like `/favicon.png` or
+    // `assets/cover.png`. The URI hook must not strip these — the
+    // previous strict allowlist did, silently breaking welcome-state
+    // logos and any local-image markdown.
+    const out = render('![](/favicon-256.png)\n')
+    expect(out).toContain('src="/favicon-256.png"')
+  })
+
+  it('preserves relative-path src when no baseUrl is set', () => {
+    const out = render('![](assets/cover.png)\n')
+    expect(out).toContain('src="assets/cover.png"')
+  })
+
   it('strips protocol-relative URLs (defence-in-depth)', () => {
     // The renderer's URI allowlist requires explicit https:/http:/
     // mailto:/#/?  — protocol-relative URLs (//host/path) don't match

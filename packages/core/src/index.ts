@@ -130,10 +130,13 @@ const PURIFY_CONFIG = {
 // allowlist. Anything else is left to DOMPurify's tag/attr defaults.
 const URI_ATTRS = new Set(['href', 'src', 'xlink:href'])
 
-// Safe URI schemes: https, http, mailto, fragment-only (#anchor),
-// query-only (?url=…). No data: URIs anywhere — see the hook for the
-// full reasoning.
-const URI_ALLOWED_RE = /^(?:(?:https?|mailto):|[#?])/i
+// Schemes considered safe when explicitly present. URIs with no scheme
+// (relative paths, absolute paths, fragment, query) pass through to
+// DOMPurify's own checks — that lets a markdown doc reference local
+// assets like `/favicon.png` or `assets/cover.png` without being
+// stripped, which the previous strict allowlist was doing.
+const SAFE_SCHEMES = new Set(['http', 'https', 'mailto'])
+const URI_SCHEME_RE = /^([a-z][a-z0-9+.-]*):/i
 
 DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
   const raw = data.attrValue?.trim() ?? ''
@@ -151,10 +154,20 @@ DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
     return
   }
 
-  // For genuinely URI-bearing attrs, enforce our strict scheme
-  // allowlist. Protocol-relative URLs (//host/path) don't match and are
-  // dropped — they hide the resolved scheme and provide phishing aid.
-  if (URI_ATTRS.has(data.attrName) && !URI_ALLOWED_RE.test(raw)) {
+  if (!URI_ATTRS.has(data.attrName)) return
+
+  // Protocol-relative URLs (//host/path) hide their resolved scheme
+  // and are a phishing aid — drop. Rare in real markdown.
+  if (raw.startsWith('//')) {
+    data.keepAttr = false
+    return
+  }
+
+  // If a scheme is present, it must be in the safe list. URIs without
+  // a scheme — relative or absolute paths, #fragment, ?query — are
+  // left to DOMPurify's own handling.
+  const m = lower.match(URI_SCHEME_RE)
+  if (m && !SAFE_SCHEMES.has(m[1]!)) {
     data.keepAttr = false
   }
 })
