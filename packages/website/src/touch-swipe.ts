@@ -2,18 +2,19 @@
 // the gesture is scoped to the doc surface (top chrome and bottom
 // format bar keep their own behaviour).
 //
-// Three filters keep the gesture out of the way:
-//   1. Touches that start inside an editor surface (.ProseMirror or
-//      .cm-editor) are ignored — native text selection wins. Users on
-//      mobile select text by touching it directly; we don't want to
-//      hijack that.
-//   2. Edge deadzone on left/right (24px) — iOS Safari uses edge
+// Two filters keep the gesture out of the way:
+//   1. Edge deadzone on left/right (24px) — iOS Safari uses edge
 //      swipes for back/forward navigation, so any gesture starting
 //      that close to the screen edge is left for the browser.
-//   3. Threshold + vertical cap + time cap — the gesture has to be
-//      clearly horizontal AND fast (under ~500ms) to register. Slow
-//      drags, vertical scrolls, and accidental brushes all fail the
-//      check and pass through to default behaviour.
+//   2. Threshold + vertical cap + time cap — the gesture has to be
+//      clearly horizontal AND fast (≤500ms) to register. Slow drags
+//      (text selection in Tiptap / CodeMirror), vertical scrolls,
+//      and accidental brushes all fail the check and pass through to
+//      default behaviour. iOS doesn't start text selection from a
+//      quick flick anyway, so a fast horizontal swipe inside an
+//      editor surface fires the mode switch without conflicting
+//      with the native selection gesture (which needs a longer hold
+//      or a slower drag).
 
 import type { Harness } from './main'
 
@@ -40,13 +41,6 @@ export function setupTouchSwipe(harness: Harness, host: HTMLElement): void {
         t.clientX < EDGE_DEADZONE_PX ||
         t.clientX > window.innerWidth - EDGE_DEADZONE_PX
       ) {
-        startX = null
-        return
-      }
-      // Don't track gestures that start inside an editor surface —
-      // native text selection / cursor placement should win there.
-      const target = e.target as Element | null
-      if (target?.closest('.ProseMirror, .cm-editor')) {
         startX = null
         return
       }
