@@ -1423,21 +1423,26 @@ html {
   padding: 0;
 }
 
-/* highlight.js fenced-code-block tokens. Single universal palette
-   (atom-one shape) that reads cleanly on both light and dark theme
-   backgrounds — comments use the theme's --muted so they soften into
-   each theme's own gray. Themes that want a tighter colour fit can
-   override individual --code-token-* variables in their own block.
-   Applies across all three rendered modes (read / split preview /
-   wysiwyg surface) so syntax colours follow the doc into Write. */
+/* highlight.js fenced-code-block tokens, derived from each theme's
+   own variables so the syntax colouring reads as part of the theme
+   rather than fighting it. Three emphasis levels:
+   - high  (keyword / function / title) lands on --accent
+   - mid   (string / number / attr / built-in) blends accent and
+           code-fg via color-mix, producing a softened accent shade
+           that still reads as 'a token' without imitating accent
+   - low   (comment / meta) uses --muted so it recedes
+   Themes that want a richer custom palette can override individual
+   --code-token-* variables in their own [data-theme="…"] block.
+   Variables stay declared in :root so the cascade gives every theme
+   reasonable defaults even if it doesn't customise them. */
 :root {
-  --code-token-keyword: #c678dd;
-  --code-token-string: #98c379;
+  --code-token-keyword: var(--accent);
+  --code-token-string: color-mix(in srgb, var(--accent) 35%, var(--code-fg));
   --code-token-comment: var(--muted);
-  --code-token-number: #d19a66;
-  --code-token-function: #61afef;
-  --code-token-attr: #e06c75;
-  --code-token-built-in: #56b6c2;
+  --code-token-number: color-mix(in srgb, var(--accent) 55%, var(--code-fg));
+  --code-token-function: var(--accent);
+  --code-token-attr: color-mix(in srgb, var(--accent) 70%, var(--code-fg));
+  --code-token-built-in: color-mix(in srgb, var(--accent) 50%, var(--code-fg));
   --code-token-meta: var(--muted);
 }
 .hljs-keyword,
