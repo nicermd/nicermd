@@ -372,7 +372,26 @@ const x = 1
   })
 
   it('renders fenced code blocks', () => {
+    // Fenced blocks now carry the .hljs hook class so theme-aware
+    // token CSS can target them, whether or not a language was
+    // specified. Body content (text) is preserved verbatim.
     const out = render('```\nplain text\n```\n')
-    expect(out).toMatch(/<pre><code>plain text/)
+    expect(out).toMatch(/<pre><code class="hljs">plain text/)
+  })
+
+  it('highlights fenced code with a recognised language', () => {
+    // highlight.js wraps tokens in spans with .hljs-* classes; we
+    // assert the keyword span survives the DOMPurify pass and the
+    // language class is preserved for tooling.
+    const out = render('```ts\nconst x = 1\n```\n')
+    expect(out).toContain('class="hljs language-ts"')
+    expect(out).toMatch(/<span class="hljs-keyword">const<\/span>/)
+  })
+
+  it('falls back to plain code for unrecognised languages', () => {
+    // No grammar registered for `wat` — highlight returns the plain
+    // wrapper and the body is just html-escaped text.
+    const out = render('```wat\nfn foo()\n```\n')
+    expect(out).toContain('<pre><code class="hljs">fn foo()')
   })
 })

@@ -1,5 +1,14 @@
 import MarkdownIt from 'markdown-it'
 import DOMPurify from 'dompurify'
+import hljs from 'highlight.js/lib/core'
+import bashLang from 'highlight.js/lib/languages/bash'
+import cssLang from 'highlight.js/lib/languages/css'
+import jsonLang from 'highlight.js/lib/languages/json'
+import jsLang from 'highlight.js/lib/languages/javascript'
+import markdownLang from 'highlight.js/lib/languages/markdown'
+import pythonLang from 'highlight.js/lib/languages/python'
+import tsLang from 'highlight.js/lib/languages/typescript'
+import xmlLang from 'highlight.js/lib/languages/xml'
 import { getTheme, getThemes } from './themes.js'
 import { containsHtml, normalizeHtml } from './normalize-html.js'
 import { parkHtml, unparkHtml } from './park-html.js'
@@ -16,11 +25,67 @@ export interface RenderOptions {
   baseUrl?: string
 }
 
+// Curated language set for fenced code blocks. ~8 grammars covers
+// >90% of real-world README code (TypeScript / JavaScript / Python /
+// Bash / JSON / HTML / CSS / Markdown). Each is registered against
+// its canonical name plus common aliases (ts/js/py/sh/shell) so
+// `​```ts` and `​```typescript` both highlight.
+//
+// Languages outside this set render as plain monospace (no
+// highlighting), same as today — so adding the highlighter is a
+// no-regression upgrade for unrecognised grammars.
+hljs.registerLanguage('typescript', tsLang)
+hljs.registerLanguage('ts', tsLang)
+hljs.registerLanguage('tsx', tsLang)
+hljs.registerLanguage('javascript', jsLang)
+hljs.registerLanguage('js', jsLang)
+hljs.registerLanguage('jsx', jsLang)
+hljs.registerLanguage('python', pythonLang)
+hljs.registerLanguage('py', pythonLang)
+hljs.registerLanguage('bash', bashLang)
+hljs.registerLanguage('sh', bashLang)
+hljs.registerLanguage('shell', bashLang)
+hljs.registerLanguage('json', jsonLang)
+hljs.registerLanguage('html', xmlLang)
+hljs.registerLanguage('xml', xmlLang)
+hljs.registerLanguage('svg', xmlLang)
+hljs.registerLanguage('css', cssLang)
+hljs.registerLanguage('markdown', markdownLang)
+hljs.registerLanguage('md', markdownLang)
+
+// Local escape — defined at module scope (rather than via md.utils
+// inside the highlight callback below) so the callback doesn't form a
+// type-inference cycle with the `md` it's part of. tsup's DTS build
+// otherwise breaks on the implicit `any` chain.
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
 const md = new MarkdownIt({
   html: true,
   linkify: true,
   breaks: false,
   typographer: true,
+  // highlight.js integration. Returns the full <pre><code>…</code></pre>
+  // so markdown-it's default fence wrapper is replaced. .hljs class on
+  // <code> is the hook for our token-color CSS; .language-* preserved
+  // for tooling that inspects the original info string.
+  highlight: (str, lang) => {
+    if (lang && hljs.getLanguage(lang)) {
+      try {
+        const out = hljs.highlight(str, { language: lang, ignoreIllegals: true })
+        return `<pre><code class="hljs language-${lang}">${out.value}</code></pre>`
+      } catch {
+        // fall through to plain
+      }
+    }
+    return `<pre><code class="hljs">${escapeHtml(str)}</code></pre>`
+  },
 })
 
 // Block-level HTML passes through to DOMPurify rather than being elided.

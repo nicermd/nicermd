@@ -17,6 +17,9 @@ importers:
       dompurify:
         specifier: ^3.2.0
         version: 3.4.1
+      highlight.js:
+        specifier: ^11.10.0
+        version: 11.11.1
       markdown-it:
         specifier: ^14.1.0
         version: 14.1.1
@@ -1117,6 +1120,10 @@ packages:
     resolution: {integrity: sha512-5xoDfX+fL7faATnagmWPpbFtwh/R77WmMMqqHGS65C3vvB0YHrgF+B1YmZ3441tMj5n63k0212XNoJwzlhffQw==}
     engines: {node: ^8.16.0 || ^10.6.0 || >=11.0.0}
     os: [darwin]
+
+  highlight.js@11.11.1:
+    resolution: {integrity: sha512-Xwwo44whKBVCYoliBQwaPvtd/2tYFkRQtXDWj1nackaV2JPXx3L0+Jvd8/qCJ2p+ML0/XVkJ2q+Mr+UVdpJK5w==}
+    engines: {node: '>=12.0.0'}
 
   html-encoding-sniffer@6.0.0:
     resolution: {integrity: sha512-CV9TW3Y3f8/wT0BRFc1/KAVQ3TUHiXmaAb6VW9vtiMFf7SLoMd1PdAc4W3KFOFETBJUb90KatHqlsZMWV+R9Gg==}
@@ -2416,6 +2423,8 @@ snapshots:
 
   fsevents@2.3.3:
     optional: true
+
+  highlight.js@11.11.1: {}
 
   html-encoding-sniffer@6.0.0:
     dependencies:
