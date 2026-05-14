@@ -1422,6 +1422,76 @@ html {
   background: transparent;
   padding: 0;
 }
+
+/* highlight.js fenced-code-block tokens. Single universal palette
+   (atom-one shape) that reads cleanly on both light and dark theme
+   backgrounds — comments use the theme's --muted so they soften into
+   each theme's own gray. Themes that want a tighter colour fit can
+   override individual --code-token-* variables in their own block.
+   Applies across all three rendered modes (read / split preview /
+   wysiwyg surface) so syntax colours follow the doc into Write. */
+:root {
+  --code-token-keyword: #c678dd;
+  --code-token-string: #98c379;
+  --code-token-comment: var(--muted);
+  --code-token-number: #d19a66;
+  --code-token-function: #61afef;
+  --code-token-attr: #e06c75;
+  --code-token-built-in: #56b6c2;
+  --code-token-meta: var(--muted);
+}
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-literal,
+.hljs-type,
+.hljs-doctag {
+  color: var(--code-token-keyword);
+}
+.hljs-string,
+.hljs-attr-value,
+.hljs-regexp,
+.hljs-template-tag,
+.hljs-template-variable {
+  color: var(--code-token-string);
+}
+.hljs-comment,
+.hljs-quote {
+  color: var(--code-token-comment);
+  font-style: italic;
+}
+.hljs-number,
+.hljs-symbol,
+.hljs-bullet {
+  color: var(--code-token-number);
+}
+.hljs-title,
+.hljs-title.class_,
+.hljs-title.function_,
+.hljs-section,
+.hljs-name {
+  color: var(--code-token-function);
+}
+.hljs-attr,
+.hljs-attribute,
+.hljs-selector-attr,
+.hljs-selector-class,
+.hljs-selector-id,
+.hljs-variable,
+.hljs-variable.language_ {
+  color: var(--code-token-attr);
+}
+.hljs-built_in,
+.hljs-tag {
+  color: var(--code-token-built-in);
+}
+.hljs-meta,
+.hljs-meta .hljs-keyword,
+.hljs-deletion,
+.hljs-addition {
+  color: var(--code-token-meta);
+}
+.hljs-emphasis { font-style: italic; }
+.hljs-strong { font-weight: bold; }
 .mode-read blockquote {
   border-left: 3px solid var(--border);
   margin-left: 0;
