@@ -1423,27 +1423,36 @@ html {
   padding: 0;
 }
 
-/* highlight.js fenced-code-block tokens, derived from each theme's
-   own variables so the syntax colouring reads as part of the theme
-   rather than fighting it. Three emphasis levels:
-   - high  (keyword / function / title) lands on --accent
-   - mid   (string / number / attr / built-in) blends accent and
-           code-fg via color-mix, producing a softened accent shade
-           that still reads as 'a token' without imitating accent
-   - low   (comment / meta) uses --muted so it recedes
-   Themes that want a richer custom palette can override individual
-   --code-token-* variables in their own [data-theme="…"] block.
-   Variables stay declared in :root so the cascade gives every theme
-   reasonable defaults even if it doesn't customise them. */
+/* highlight.js fenced-code-block tokens, mapped to the same --cm-*
+   variables CodeMirror uses for markdown-source highlighting in
+   Code and Split modes. Each theme has already tuned these
+   variables to look good against monospace content, so the Read-
+   mode fenced blocks now inherit that per-theme palette rather
+   than a derived approximation.
+   The mapping picks variables for their *visual role* in the
+   theme rather than their literal name:
+   - --cm-marker is the 'structural / look at this token' colour
+     (fence markers, bullets, hr) → keywords / built-ins
+   - --cm-monospace is the 'this is code' colour, usually a strong
+     accent (often red/orange) → function names, strings (where
+     the code-y feel is welcome)
+   - --cm-link is a distinct accent (green/blue) used for
+     hyperlinks → attribute names / variables
+   - --cm-heading and --cm-url are additional distinct accents
+     each theme provides → numbers / metadata
+   - --cm-quote is the 'muted but present' colour for blockquotes
+     → comments
+   Themes that want a richer custom palette can still override
+   individual --code-token-* variables. */
 :root {
-  --code-token-keyword: var(--accent);
-  --code-token-string: color-mix(in srgb, var(--accent) 35%, var(--code-fg));
-  --code-token-comment: var(--muted);
-  --code-token-number: color-mix(in srgb, var(--accent) 55%, var(--code-fg));
-  --code-token-function: var(--accent);
-  --code-token-attr: color-mix(in srgb, var(--accent) 70%, var(--code-fg));
-  --code-token-built-in: color-mix(in srgb, var(--accent) 50%, var(--code-fg));
-  --code-token-meta: var(--muted);
+  --code-token-keyword: var(--cm-marker);
+  --code-token-string: var(--cm-monospace);
+  --code-token-comment: var(--cm-quote);
+  --code-token-number: var(--cm-url);
+  --code-token-function: var(--cm-heading);
+  --code-token-attr: var(--cm-link);
+  --code-token-built-in: var(--cm-marker);
+  --code-token-meta: var(--cm-quote);
 }
 .hljs-keyword,
 .hljs-selector-tag,
