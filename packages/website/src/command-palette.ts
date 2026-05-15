@@ -158,8 +158,8 @@ export function setupCommandPalette(harness: Harness): void {
     if (!(e.metaKey || e.ctrlKey)) return
     if (e.shiftKey || e.altKey) return
     // Cmd+K and Cmd+/ both open the palette. Cmd+/ would otherwise be
-    // a no-op in the browser; Cmd+K is the de-facto standard across
-    // modern apps (Linear, Notion, GitHub, Vercel).
+    // a no-op in the browser; Cmd+K is the de-facto command-palette
+    // shortcut across modern apps.
     if (e.code !== 'KeyK' && e.code !== 'Slash') return
     e.preventDefault()
     if (!isOpen) openPaletteImpl(harness)

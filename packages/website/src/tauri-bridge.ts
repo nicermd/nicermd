@@ -5,9 +5,9 @@
 // Menu events emitted by src-tauri/src/lib.rs:
 //   menu:view-mode       (number) — switch to mode 1..4
 //   menu:view-cycle      ()       — cycle modes
-//   menu:view-focus-toggle ()     — focus mode toggle (TODO)
+//   menu:view-focus-toggle ()     — focus mode toggle (not yet wired)
 //   menu:view-reload     ()       — reload the WebView (Cmd+R)
-//   menu:file-new        ()       — TODO
+//   menu:file-new        ()       — new untitled document
 //   menu:file-open       ()       — opens system file dialog
 //   menu:file-save       ()       — writes back to current source, falls
 //                                   through to Save As if anonymous
@@ -37,9 +37,8 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
   })
 
   await listen('menu:view-focus-toggle', () => {
-    // Focus mode wiring lands in the next iteration. Logging for now so
-    // we can confirm the menu event is reaching the web side.
-    console.log('[tauri] menu:view-focus-toggle')
+    // Focus mode wiring lands in a future iteration. Listener is
+    // registered so the menu item doesn't appear dead; intentional no-op.
   })
 
   await listen('menu:file-open', () => {

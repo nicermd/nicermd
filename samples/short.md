@@ -1,40 +1,37 @@
 ---
-title: Quick Start Guide
-date: 2025-06-01
+title: A short Nicer.md sample
+date: 2026-05-15
 ---
 
-# Getting started with Nicer.md
+# A short sample
 
-Nicer.md makes markdown files look beautiful. No setup, no configuration, no fuss.
+Nicer.md is a zero-server markdown reader. Open a `.md` file — it renders beautifully in the same pane, with no backend involved.
 
-## Install
+## What renders
 
-Pick whichever fits your workflow:
+- **Bold** and *italic* text, ~~strikethrough~~, `inline code`, [hyperlinks](https://nicer.md).
+- GFM tables, task lists, footnotes, fenced code blocks with syntax highlighting.
+- Heading anchors, blockquotes, horizontal rules.
 
-- **Browser:** [Chrome Extension →](https://chrome.google.com/webstore)
-- **Editor:** [VS Code Extension →](https://marketplace.visualstudio.com)
-- **Terminal:** `npm install -g nicermd`
+## Code
 
-## Usage
+```ts
+import { render } from 'nicermd-core'
 
-Open any markdown file. That's it.
-
-```bash
-nicermd readme.md
+const html = render(`# Hello, world!\n\nMarkdown in, sanitized HTML out.`)
 ```
 
-## Themes
+## Tables
 
-Nicer.md ships with five themes. Switch anytime with `Cmd+K → theme`.
+| Mode  | What it does                                  |
+|-------|-----------------------------------------------|
+| Read  | Rendered HTML, no editor visible              |
+| Write | WYSIWYG editing in place via Tiptap           |
+| Split | Source on the left, live preview on the right |
+| Code  | Raw markdown with syntax-aware highlighting   |
 
-| Theme | Mode | Vibe |
-|-------|------|------|
-| Default | Light | Clean and modern |
-| Terminal | Dark | Hacker aesthetic |
-| Paper | Light | Book-like warmth |
-| Ink | Light | High contrast, minimal |
-| GitHub | Light | Familiar to devs |
+## Quote
 
-> "The best markdown reader is the one you forget is there."
+> The best markdown reader is the one you forget is there.
 
-Happy reading.
+That's the goal.

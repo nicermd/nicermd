@@ -86,9 +86,9 @@ The picker also auto-opens on first-ever visit (when no theme has been chosen ye
 The four modes:
 
 1. **Read** — rendered HTML via `nicermd-core`, no editor.
-2. **Write** — Tiptap rich-text, markers hidden, Notion/Bear feel. Lazy-loaded on first enter.
+2. **Write** — Tiptap rich-text, markers hidden, modern WYSIWYG feel. Lazy-loaded on first enter.
 3. **Split** — CodeMirror source on the left, live `nicermd-core` preview on the right.
-4. **Code** — CodeMirror with a GitHub-source palette and line numbers. The "purist" mode where bytes are preserved exactly.
+4. **Code** — CodeMirror with a syntax-aware palette and line numbers. The "purist" mode where bytes are preserved exactly.
 
 ## Standard editing (modes 2, 3, 4)
 

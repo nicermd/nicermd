@@ -46,7 +46,7 @@
   --cm-quote: #000000;
 }
 
-/* Atom's signature light + dark. Mature palettes (10+ years), balanced
+/* Signature light + dark. Mature palettes (10+ years), balanced
    contrast for prose, recognisable across most editors. */
 [data-theme='one-light'] {
   --bg: #fafafa;
