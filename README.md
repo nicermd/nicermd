@@ -82,6 +82,7 @@ When the release contains UI / CSS / SW changes, also bump `CACHE_VERSION` in `p
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — how to file bugs and feature requests
 - [LICENSE](./LICENSE) — MIT
 - [THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md) — bundled dependency attributions
+- [PALETTES.md](./PALETTES.md) — color palette attribution for the community-inspired themes
 
 ## License
 

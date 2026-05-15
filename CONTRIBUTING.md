@@ -31,7 +31,7 @@ A few choices that aren't obvious from the code:
 - **Comments explain *why*, not *what*.** Naming carries the *what*. Save comments for hidden constraints, surprising tradeoffs, references to specific bug fixes that aren't obvious from context.
 - **Small commits.** Each commit should be revertable. Bundle related changes; don't bundle unrelated ones. The commit-message body should explain reasoning, not just restate the diff.
 - **Strict TypeScript.** `noUncheckedIndexedAccess` is on. `any` is rare and usually wrong.
-- **No third-party brand names** in user-visible feature / theme / palette names. Community-palette tributes (Solarized, Nord, Catppuccin, etc.) get credited via an `inspiredBy` field in the theme registry, which renders as "Inspired by …" subtitle.
+- **No commercial-product brand names** as user-visible feature / theme / palette names — name things descriptively (Paper, Terminal, Newsprint). The one carve-out is community-palette tributes (Solarized, Nord, Catppuccin, etc.): these are widely-recognised palette names in the editor ecosystem and are kept verbatim, with the original designer credited via an `inspiredBy` field in the theme registry (rendered as "Inspired by …" subtitle) and formally attributed in [PALETTES.md](./PALETTES.md).
 - **Sanitisation invariant.** Untrusted HTML must never reach the DOM unsanitised — see [SECURITY.md](./SECURITY.md) for the three-layer defence.
 
 ## Commit messages
