@@ -1,0 +1,54 @@
+name: Bug report
+description: Something rendered wrong, crashed, or behaved unexpectedly
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug. Please include enough detail for someone else to reproduce.
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened
+      description: A clear description of what went wrong.
+      placeholder: Opening a file with X causes Y instead of Z.
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduction
+    attributes:
+      label: Reproduction steps
+      description: Minimum steps for someone else to hit the same bug. A small markdown sample that triggers it is gold.
+      placeholder: |
+        1. Open nicer.md
+        2. Paste this markdown: ...
+        3. Switch to mode 2
+        4. Observe ...
+    validations:
+      required: true
+
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      description: The build SHA from the corner badge popover, or `git rev-parse --short HEAD` for a self-built copy.
+      placeholder: "e.g. 6641642"
+    validations:
+      required: true
+
+  - type: input
+    id: environment
+    attributes:
+      label: Environment
+      description: Browser / OS / which shell (web, desktop, etc.).
+      placeholder: "e.g. Safari 17 on macOS 15, or Tauri desktop on macOS 14"
+    validations:
+      required: true
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Screenshots, console errors, anything else relevant.

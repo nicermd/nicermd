@@ -1,0 +1,44 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test
+
+      - name: Audit (production)
+        run: pnpm audit --prod
+
+      - name: Verify THIRD-PARTY-LICENSES.md is current
+        run: |
+          pnpm licenses:gen
+          git diff --exit-code THIRD-PARTY-LICENSES.md || {
+            echo "::error::THIRD-PARTY-LICENSES.md is out of date — run 'pnpm licenses:gen' locally and commit the result."
+            exit 1
+          }

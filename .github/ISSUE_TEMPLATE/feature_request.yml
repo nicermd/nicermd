@@ -1,0 +1,36 @@
+name: Feature request
+description: Suggest something that would make Nicer.md better
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Feature requests are welcome. Before filing, please skim [BACKLOG.md](../../blob/main/BACKLOG.md) — it may already be there.
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: The problem
+      description: What are you trying to do that the current behaviour makes hard or impossible?
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: What you'd like to see — a rough sketch is fine.
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: Workarounds you've tried, or other approaches you can think of.
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Examples from other tools, screenshots, links, etc.
