@@ -26,6 +26,12 @@ jobs:
       - name: Install
         run: pnpm install --frozen-lockfile
 
+      - name: Build core
+        # Website typecheck imports `nicermd-core` types from its dist/
+        # output, so the core must be built before any downstream
+        # typecheck or test pass runs.
+        run: pnpm --filter nicermd-core build
+
       - name: Typecheck
         run: pnpm typecheck
 
