@@ -298,7 +298,7 @@ when the feature lands.
 
 ## Disclosure
 
-- **Report:** `security@nicer.md` (Cloudflare Email Routing to maintainer) or a private GitHub Security Advisory.
+- **Report:** Use GitHub's private vulnerability reporting on the repo's [Security tab](https://github.com/isherlock/nicermd/security/advisories/new) — never open a public issue for a vulnerability.
 - **Response time:** acknowledgment within 7 days; patch or mitigation target 30 days for confirmed vulnerabilities.
 - **Credit:** reporters acknowledged in the release notes unless they prefer otherwise.
 
