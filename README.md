@@ -74,15 +74,15 @@ When the release contains UI / CSS / SW changes, also bump `CACHE_VERSION` in `p
 ## Project docs
 
 - [SHORTCUTS.md](./SHORTCUTS.md) — full keyboard reference
-- [ARCHITECTURE.md](./ARCHITECTURE.md) — module boundaries and rationale (placeholder)
+- [ARCHITECTURE.md](./ARCHITECTURE.md) — module boundaries and rationale
 - [SECURITY.md](./SECURITY.md) — threat model, sanitization defaults, coordinated disclosure
 - [BACKLOG.md](./BACKLOG.md) — deferred work and candidates
 - [KNOWN-ISSUES.md](./KNOWN-ISSUES.md) — open bugs and recent fixes
 - [CHANGELOG.md](./CHANGELOG.md) — version history (placeholder)
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — how to file bugs and feature requests
-- [LICENSE.md](./LICENSE.md) — MIT
+- [LICENSE](./LICENSE) — MIT
 - [THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md) — bundled dependency attributions
 
 ## License
 
-[MIT](./LICENSE.md). For bundled third-party libraries, see [THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md).
+[MIT](./LICENSE). For bundled third-party libraries, see [THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md).
