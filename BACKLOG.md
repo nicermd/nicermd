@@ -50,6 +50,13 @@ forgotten.
 
 ## Tauri hardening
 
+- **Install `cargo-audit` and wire into CI.** The Node side has
+  `pnpm audit --prod` in the CI workflow; the Rust side has no
+  parallel check yet. Two Linux-only transitive advisories are
+  currently tolerable on the macOS-only build target (rand 0.7.3
+  in a build-time `phf` chain, glib 0.18.5 in webkit2gtk) — both
+  will need attention when Linux distribution lands. A
+  `cargo-audit` step in CI would surface new ones automatically.
 - **`fs` plugin scope is currently `**` (entire filesystem).** Combined
   with `read-text-file` + `write-text-file` permissions, this means the
   webview has unrestricted file access via IPC — guarded today only by
