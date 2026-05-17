@@ -251,9 +251,6 @@ The following are described in the threat model and the project plan but
 **are not yet implemented**. Each will move into [Defences in force](#defences-in-force)
 when the feature lands.
 
-- **CSP for the website** — set via Cloudflare Pages `_headers` once the
-  Cloudflare deploy lands. Until then the website has no CSP at all.
-  Mirrors the Tauri CSP above.
 - **KaTeX math rendering** — when added, `trust: false` (default) must be
   set so `\href`, `\includegraphics`, etc. are disabled.
 - **Shiki syntax highlighting** — when added, use the CSS-variables output
@@ -304,9 +301,6 @@ when the feature lands.
 
 ## Testing
 
-- **Red-team plan** lives in [`red-team/PLAN.md`](./red-team/PLAN.md) — maps
-  every defence above to concrete test cases. Re-run before each public
-  release.
 - **Renderer hardening pack** in `packages/core/src/render.test.ts` pins
   the URI-scheme allowlist, the tag/attr allowlist (positive and
   negative), event-handler stripping on every permitted tag, and the

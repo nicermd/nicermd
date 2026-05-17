@@ -94,8 +94,8 @@ print(fibonacci(10))
 
 ```bash
 # Shell commands
-npx nicermd ./docs --theme terminal
-curl -s https://example.com/readme.md | npx nicermd --stdin
+ls -la *.md
+git log --oneline | head -5
 ```
 
 A code block with no language specified:

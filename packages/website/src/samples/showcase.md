@@ -6,7 +6,7 @@ A nicer, zero-server markdown reader. The page you're looking at is plain markdo
 
 ## Try these first
 
-- `Cmd+1` to `Cmd+4` to Read / Write / Split / Code (Safari: hold `Ctrl` instead). Mode icons are top-right.
+- `Cmd+1` to `Cmd+4` to Read / Write / Split / Code. Mode icons are top-right. (On Windows / Linux, substitute `Ctrl` for `Cmd`.)
 - `Cmd+2` to enter Write mode, then click anywhere and type.
 - `Cmd+S` saves local files back to where the file came from.
 - `Cmd+O` to **O**pen a local file, or drop a `.md` / `.markdown` / `.mdx` file onto the window.
@@ -70,12 +70,10 @@ Headings go six levels deep. Lists nest cleanly:
 
 Tables align:
 
-| Shell             | Audience              |
-|:------------------|:---------------------:|
-| Website           | Anyone with a browser |
-| Chrome extension  | Everyday browsing     |
-| VS Code extension | Developers            |
-| iOS app           | Mobile reading        |
+| Shell    | Audience              |
+|:---------|:---------------------:|
+| Website  | Anyone with a browser |
+| Desktop  | macOS users (Tauri)   |
 
 Fenced code blocks:
 

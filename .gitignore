@@ -29,6 +29,3 @@ Thumbs.db
 *.log
 npm-debug.log*
 pnpm-debug.log*
-
-# Red-team working notes — uncommitted until findings are triaged
-red-team/findings.md

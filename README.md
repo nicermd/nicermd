@@ -14,7 +14,7 @@ A nicer, zero-server markdown reader. Read, write, and save markdown — beautif
 
 One rendering core, multiple thin shells. Everything runs on the user's device — no backend, no database, no telemetry.
 
-- **Read** — GFM tables, task lists, fenced code, strikethrough, GitHub-style heading anchors. Strict sanitization (DOMPurify allow-list, no inline HTML).
+- **Read** — GFM tables, task lists, fenced code, strikethrough, GitHub-style heading anchors. Strict sanitisation (DOMPurify allowlist, no inline HTML).
 - **Write** — click anywhere, type. WYSIWYG editing in the same pane via Tiptap; markers vanish but the underlying markdown stays intact.
 - **Split / Code** — source + live preview, or raw markdown with byte-level fidelity.
 - **Save** — File System Access API in browsers, native dialogs in the desktop shell, drag-drop in both.
@@ -75,7 +75,7 @@ When the release contains UI / CSS / SW changes, also bump `CACHE_VERSION` in `p
 
 - [SHORTCUTS.md](./SHORTCUTS.md) — full keyboard reference
 - [ARCHITECTURE.md](./ARCHITECTURE.md) — module boundaries and rationale
-- [SECURITY.md](./SECURITY.md) — threat model, sanitization defaults, coordinated disclosure
+- [SECURITY.md](./SECURITY.md) — threat model, sanitisation defaults, coordinated disclosure
 - [BACKLOG.md](./BACKLOG.md) — deferred work and candidates
 - [KNOWN-ISSUES.md](./KNOWN-ISSUES.md) — open bugs and recent fixes
 - [CHANGELOG.md](./CHANGELOG.md) — version history

@@ -4,7 +4,7 @@ Nicer.md is **one rendering core surrounded by thin shells**. The core (`nicermd
 
 This shape exists for a few reasons:
 
-- **One place where security lives.** Rendering untrusted markdown is the project's primary attack surface. Concentrating sanitisation in `nicermd-core` means every shell inherits the same defences without having to re-implement them. See [SECURITY.md](./SECURITY.md) for the threat model and the three-layer defence (block-HTML elision, inline-tag allowlist, DOMPurify final pass).
+- **One place where security lives.** Rendering untrusted markdown is the project's primary attack surface. Concentrating sanitisation in `nicermd-core` means every shell inherits the same defences without having to re-implement them. See [SECURITY.md](./SECURITY.md) for the threat model and the layered defence (inline-tag allowlist plus DOMPurify final pass with strict tag/attribute/URI allowlists).
 - **No platform lock-in.** Markdown rendering is the product. The shells are distribution vehicles. If a platform's UI conventions or APIs change, only that shell adapts; the core is untouched.
 - **Bundle size is honest.** The core is tiny (~6KB ESM + DOMPurify + markdown-it + plugins). Most of any shell's bundle is editor / UI code — none of which a pure reader needs.
 
@@ -33,11 +33,10 @@ render(markdown: string, options?: RenderOptions): string
 **Inside:**
 
 1. `markdown-it` parses with `html: true`, `linkify: true`, `typographer: true`. The `html: true` is intentional — the lexer needs to recognise HTML constructs so we can intercept them at the renderer rather than letting them escape through as encoded text.
-2. **Block HTML is elided** to a `<div class="nicermd-html-elided">⋯</div>` placeholder. README files often embed `<div align="center">` scaffolding and other HTML that reads weirdly outside GitHub's renderer; the elision is honest about what got skipped.
-3. **Inline HTML is filtered** through a static allowlist (`br | kbd | sub | sup | mark`). Anything else is dropped silently.
-4. **DOMPurify final pass** with an explicit tag allowlist, attribute allowlist, URI scheme allowlist (`https | http | mailto | # | ?` only — no `data:` anywhere; an `uponSanitizeAttribute` hook closes a DOMPurify v3 internal allow for data: URIs on `<img>`).
-5. **Heading anchors** generated GitHub-style (slugify with collision suffixes) so in-doc TOCs work.
-6. **Relative URL rewriting** when a `baseUrl` is provided (URL-loaded docs resolve `images/logo.png` against the source URL).
+2. **Inline HTML is filtered** through a static allowlist (`br | kbd | sub | sup | mark`). Anything else is dropped silently.
+3. **DOMPurify final pass** with an explicit tag allowlist, attribute allowlist, URI scheme allowlist (`https | http | mailto | # | ?` only — no `data:` anywhere; an `uponSanitizeAttribute` hook closes a DOMPurify v3 internal allow for data: URIs on `<img>`). Block-level HTML (`<div>`, `<details>`, etc.) flows through to this pass and is constrained to the allowed shapes.
+4. **Heading anchors** generated GitHub-style (slugify with collision suffixes) so in-doc TOCs work.
+5. **Relative URL rewriting** when a `baseUrl` is provided (URL-loaded docs resolve `images/logo.png` against the source URL).
 
 Two runtime deps total: `markdown-it` + `dompurify`. Adding a third gets a code-review bar (see SECURITY.md "Supply chain posture").
 

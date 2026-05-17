@@ -47,7 +47,7 @@ Zoom range is 50%–300% in 10% steps; the level persists in `localStorage` and 
 - `github.com/<u>/<r>` — fetches `README.md` from `main`, falling back to `master`.
 - `gist.github.com/<u>/<id>` — fetches the gist's first file via `/raw` (which 302s to the latest revision). For multi-file gists, paste the direct `gist.githubusercontent.com/<u>/<id>/raw/<sha>/<file>` URL to pick a specific file.
 
-Explicit blob/raw paths must end in `.md`, `.markdown`, or `.mdx` — anything else is rejected as not-markdown so we don't accidentally render binaries or HTML. Source is recorded as anonymous so a subsequent `Cmd+S` falls through to Save-As (we can't write back to GitHub). Non-GitHub hosts are rejected; gists, private repos, and `?url=` boot params are deliberately out of scope. The fetcher caps responses at 5 MiB and refuses cross-host redirects.
+Explicit blob/raw paths must end in `.md`, `.markdown`, or `.mdx` — anything else is rejected as not-markdown so we don't accidentally render binaries or HTML. Source is recorded as anonymous so a subsequent `Cmd+S` falls through to Save-As (we can't write back to GitHub). Non-GitHub hosts and private repos are rejected. The fetcher caps responses at 5 MiB and refuses cross-host redirects.
 
 The picker prefills from the clipboard if the most recently copied text is a recognisable GitHub URL, and shows a live preview of the raw URL it would fetch as you type. Successfully loaded URLs accumulate in a 5-deep `Recent` list inside the modal — name on the left, dim URL on the right; arrow-key navigable; Enter loads the highlighted row.
 

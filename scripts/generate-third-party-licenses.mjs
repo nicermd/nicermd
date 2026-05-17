@@ -92,7 +92,7 @@ function render(packages) {
   lines.push('')
   lines.push('Verbatim attribution for every package whose code is redistributed in')
   lines.push('the shipped Nicer.md artifacts (the website bundle deployed to')
-  lines.push('nicermd.com, the Tauri desktop shell, and `nicermd-core` on npm).')
+  lines.push('nicer.md, the Tauri desktop shell, and `nicermd-core` on npm).')
   lines.push('Build-only tooling (Vite, tsup, TypeScript, the Tauri CLI) is not')
   lines.push('redistributed and is excluded.')
   lines.push('')

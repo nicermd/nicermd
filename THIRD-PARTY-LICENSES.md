@@ -2,7 +2,7 @@
 
 Verbatim attribution for every package whose code is redistributed in
 the shipped Nicer.md artifacts (the website bundle deployed to
-nicermd.com, the Tauri desktop shell, and `nicermd-core` on npm).
+nicer.md, the Tauri desktop shell, and `nicermd-core` on npm).
 Build-only tooling (Vite, tsup, TypeScript, the Tauri CLI) is not
 redistributed and is excluded.
 

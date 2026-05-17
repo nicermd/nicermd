@@ -1,9 +1,8 @@
 # Backlog
 
-Living log of deferred work. Bugs go in `KNOWN-ISSUES.md`; future-roadmap
-items go in user memory (`project_direction.md`). This file tracks
-mid-grain follow-ups that aren't worth a fresh issue but shouldn't be
-forgotten.
+Living log of deferred work. Bugs go in `KNOWN-ISSUES.md`. This file
+tracks mid-grain follow-ups that aren't worth a fresh issue but
+shouldn't be forgotten.
 
 ## Open URL
 
@@ -104,16 +103,11 @@ forgotten.
   falls back to system fonts. Bundling the catalogue increases install
   size; revisit when Tauri/iOS distribution actually ships.
 
-## Public-repo polish
-
-Reviewed 2026-05-01, mostly shipped 2026-05-15 late. Remaining items
-are optional, not flip-blocking.
+## Documentation polish
 
 - **README screenshot or short screencap.** A "what does this look
-  like" image at the top of the README — currently the repo lands
-  visitors on a wall of text. One screenshot of the showcase doc in
-  the One Light theme would carry most of the visual weight. Consider
-  a 5–10s screencap of mode switching once the workflow's settled.
-- **CHANGELOG.md entries.** File is currently a stub linked from
-  README. Populate v0.1.0 → v0.1.3 from `git log` summary points so
-  there's a real history page when contributors land.
+  like" image at the top of the README would carry visual weight.
+  One screenshot of the showcase doc in a clean theme is enough; a
+  5–10s screencap of mode switching is a stretch goal.
+- **CHANGELOG.md entries.** File is currently a stub. Populate from
+  `git log` summary points so there's a real history page.
