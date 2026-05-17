@@ -17,7 +17,7 @@ forgotten.
   try `main` then fall back to `master`. Correct in 99% of public repos,
   wrong for `develop` / `trunk` / project-specific defaults. Adds a CSP
   entry (`api.github.com`) and an extra round-trip; current heuristic
-  is the right trade for a spike.
+  is the right trade for now.
   _packages/website/src/url-open.ts resolveCandidates 'repo' case_
 
 ## Rendering / HTML

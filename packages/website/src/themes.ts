@@ -135,7 +135,7 @@ export function toggleRecentTheme(): Theme | null {
 
 // Initialise on boot. Restore from localStorage if present, else use the
 // configured default. (prefers-color-scheme integration is deferred to a
-// later iteration — for the spike a hardcoded default keeps the surface
+// later iteration — for now a hardcoded default keeps the surface
 // area small.)
 export function initTheme(): Theme {
   return applyTheme(readStored() ?? DEFAULT_SLUG, false)

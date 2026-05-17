@@ -51,7 +51,7 @@ Explicit blob/raw paths must end in `.md`, `.markdown`, or `.mdx` — anything e
 
 The picker prefills from the clipboard if the most recently copied text is a recognisable GitHub URL, and shows a live preview of the raw URL it would fetch as you type. Successfully loaded URLs accumulate in a 5-deep `Recent` list inside the modal — name on the left, dim URL on the right; arrow-key navigable; Enter loads the highlighted row.
 
-**Share links** — append `?url=<github-url>` to a Nicer.md address (e.g. `nicer.md/?url=https://github.com/anthropics/anthropic-cookbook`) and the recipient sees a confirmation modal: "A link is asking Nicer.md to load this markdown file: [preview]". Default action is **Cancel** — markdown content can mimic login pages or carry misleading instructions, so the gate is intentional. The `?url=` param is stripped from the address bar before the modal appears, so a refresh boots cleanly without re-prompting.
+**Share links** — append `?url=<github-url>` to a Nicer.md address (e.g. `nicer.md/?url=https://github.com/sindresorhus/awesome`) and the recipient sees a confirmation modal: "A link is asking Nicer.md to load this markdown file: [preview]". Default action is **Cancel** — markdown content can mimic login pages or carry misleading instructions, so the gate is intentional. The `?url=` param is stripped from the address bar before the modal appears, so a refresh boots cleanly without re-prompting.
 
 The active filename appears in the Tauri title strip (centered, between the traffic lights and the right edge) and in the browser tab title (`document.title`). A leading `•` indicates unsaved changes. The title strip hides automatically in macOS-native fullscreen.
 
@@ -114,13 +114,21 @@ Undo history is per-mode — switching modes does not preserve undo state across
 
 Table column drag-resize is supported visually but does not survive a markdown round-trip — markdown's table grammar has no column-width concept.
 
+## Command palette
+
+| Shortcut              | Action                                            |
+|-----------------------|---------------------------------------------------|
+| `Cmd` + `K`           | Open command palette                              |
+| `Cmd` + `/`           | Open command palette (alternate binding)          |
+
+The fastest way to find a command, theme, or shortcut. Type to filter, arrow keys to navigate, Enter to run.
+
 ## Planned
 
 Reserved bindings that haven't landed yet. Subject to change before they ship.
 
 | Shortcut              | Action                                    | Status        |
 |-----------------------|-------------------------------------------|---------------|
-| `Cmd` + `/`           | Open command palette                      | Not yet wired |
 | `Cmd` + `.`           | Toggle focus mode (Tauri only)            | Not yet wired |
 | `Esc`                 | Priority chain: close palette → exit modal → exit focus | Not yet wired |
 

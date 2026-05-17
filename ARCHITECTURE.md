@@ -17,7 +17,6 @@ nicermd/
 │   └── website/    # the SPA at nicer.md, also wraps as Tauri 2 desktop
 │       └── src-tauri/   # Rust + Tauri config for the macOS bundle
 ├── scripts/        # release helpers (bump-version, release-tauri)
-├── public/         # workspace-level docs (README, SECURITY, etc.)
 └── samples/        # markdown test fixtures
 ```
 
@@ -122,7 +121,7 @@ Both shells run a strict CSP. Highlights:
 - `RunEvent::Opened` handler forwards OS-level file-open events (Open With, double-click, Dock drag-drop) as `menu:file-open-path` events with the file path.
 - `WindowEvent::CloseRequested` calls `app_handle.exit(0)` — the red traffic light fully quits, since this is a single-window app and macOS's "keep running with no windows" convention surprises users here.
 
-`fs:scope` is currently `**` (entire filesystem) — defended in depth by upstream rendering sanitisation. Tightening to runtime scope authorisation tied to dialog-returned paths is in [BACKLOG.md](./BACKLOG.md) (H-1).
+`fs:scope` is currently `**` (entire filesystem) — defended in depth by upstream rendering sanitisation. Tightening to runtime scope authorisation tied to dialog-returned paths is in [BACKLOG.md](./BACKLOG.md) under Tauri hardening.
 
 The bundle uses `titleBarStyle: "Overlay"` + `hiddenTitle: true` so our `.window-title` strip becomes the title bar. `dragDropEnabled: false` disables OS-level drag-drop in favour of the web-shell HTML5 drag-drop, so dropped files go through the same `doc-source` path as native open.
 

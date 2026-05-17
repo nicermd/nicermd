@@ -4,6 +4,13 @@
   "private": true,
   "description": "The Nicer.md website — live demo and distribution hub at nicer.md.",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/isherlock/nicermd.git",
+    "directory": "packages/website"
+  },
+  "homepage": "https://nicer.md",
+  "bugs": "https://github.com/isherlock/nicermd/issues",
   "type": "module",
   "scripts": {
     "dev": "vite",

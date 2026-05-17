@@ -1,4 +1,4 @@
-// Open a markdown file by URL. Spike scope: GitHub-hosted files only.
+// Open a markdown file by URL. Scope: GitHub-hosted files only.
 // Anything outside the GitHub family of hosts is rejected up front, so
 // the prod CSP `connect-src` allowlist stays narrow.
 //

@@ -1,4 +1,4 @@
-// Hybrid-engine spike — five-mode harness with hot-swapped editors.
+// Hybrid-engine harness with hot-swapped editors across four modes.
 //
 // Mode order (nicest → least nice):
 //   1 Read              nicermd-core HTML, no editor

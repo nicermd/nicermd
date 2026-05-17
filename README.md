@@ -78,7 +78,7 @@ When the release contains UI / CSS / SW changes, also bump `CACHE_VERSION` in `p
 - [SECURITY.md](./SECURITY.md) — threat model, sanitization defaults, coordinated disclosure
 - [BACKLOG.md](./BACKLOG.md) — deferred work and candidates
 - [KNOWN-ISSUES.md](./KNOWN-ISSUES.md) — open bugs and recent fixes
-- [CHANGELOG.md](./CHANGELOG.md) — version history (placeholder)
+- [CHANGELOG.md](./CHANGELOG.md) — version history
 - [CONTRIBUTING.md](./CONTRIBUTING.md) — how to file bugs and feature requests
 - [LICENSE](./LICENSE) — MIT
 - [THIRD-PARTY-LICENSES.md](./THIRD-PARTY-LICENSES.md) — bundled dependency attributions

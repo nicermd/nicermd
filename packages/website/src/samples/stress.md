@@ -1,12 +1,12 @@
 ---
 title: "Stress test"
 date: 2026-04-26
-tags: [markdown, round-trip, hybrid-spike]
+tags: [markdown, round-trip]
 ---
 
 # Markdown stress test
 
-This document exists to surface round-trip differences between the four modes in the spike. Switch through Cmd+1..4 (or Cmd+Shift+M to cycle). Open a `?freeze=1` tab next to a live tab to compare before/after.
+This document exists to surface round-trip differences between the four modes. Switch through Cmd+1..4 (or Cmd+Shift+M to cycle). Open a `?freeze=1` tab next to a live tab to compare before/after.
 
 ## Headings
 
@@ -34,14 +34,14 @@ Escape sequences: \*literal asterisks\*, \_literal underscores\_, \\backslash, \
 
 ## Links
 
-Inline: [Anthropic](https://anthropic.com).
-With title: [Anthropic](https://anthropic.com "AI safety lab").
-Autolink: <https://anthropic.com>.
-Reference-style: [Anthropic][anth].
-Bare URL via linkify: https://anthropic.com.
+Inline: [Example](https://example.com).
+With title: [Example](https://example.com "example domain").
+Autolink: <https://example.com>.
+Reference-style: [Example][ref].
+Bare URL via linkify: https://example.com.
 Email: <hello@example.com>.
 
-[anth]: https://anthropic.com "Reference link"
+[ref]: https://example.com "Reference link"
 
 ## Images
 
@@ -190,7 +190,7 @@ Cells with formatting:
 | Feature   | Inline                          | Notes                          |
 |-----------|---------------------------------|--------------------------------|
 | **Bold**  | `code`                          | *italics OK*                   |
-| Link      | [Anthropic](https://anthropic.com) | autolink: <https://example.com> |
+| Link      | [Example](https://example.com)  | autolink: <https://example.com> |
 | ~~Strike~~ | superscript via HTML: <sup>2</sup> | tasks below |
 
 ## HTML inline and block
@@ -246,4 +246,4 @@ Term 2
 
 ## Closing
 
-End of stress test. If a feature above survived all four modes, it round-trips cleanly. If not, that's data for the spike decision.
+End of stress test. If a feature above survived all four modes, it round-trips cleanly. If not, that's a candidate to fix or document as a known limitation.

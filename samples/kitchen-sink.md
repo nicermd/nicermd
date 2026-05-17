@@ -140,7 +140,7 @@ This file doesn't have frontmatter, but the renderer should handle files that st
 ```yaml
 ---
 title: My Document
-date: 2025-01-15
+date: 2026-05-17
 author: Someone
 tags: [markdown, testing]
 ---
@@ -150,17 +150,21 @@ tags: [markdown, testing]
 
 The following paragraphs test scrolling behaviour and reading experience with substantial content.
 
-Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.
+Markdown is the thinnest layer between writing and publishing. It started as a way to write HTML without writing HTML, and it has outlived most of the frameworks that grew up around it. The reason is structural: markdown is barely there. There is almost nothing to learn, almost nothing to misuse, and almost nothing for a future tool to break. Most documents you read on the web today began as a markdown file in someone's editor — README files, design docs, blog posts, technical specifications, meeting notes.
 
-Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum. Sed ut perspiciatis unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo.
+A good markdown reader makes that thinness visible. It does not insist on a chrome of toolbars or sidebars or panels. It does not ask you to log in or import or sync. It takes a file, reads it, and renders it — with typography that respects the words and spacing that respects the eye. Everything else is in the way.
 
-Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem sequi nesciunt. Neque porro quisquam est, qui dolorem ipsum quia dolor sit amet, consectetur, adipisci velit.
+This is what Nicer.md is trying to be: a place where the document is the interface. Read it. Edit it if you want. Save it back to where it came from. Close the tab. The document goes with you; nothing stayed behind.
 
 ## Edge cases
 
 ### Empty sections
 
+A section heading with no body below it — renderers should still emit a valid heading without merging it into the next section.
+
 ### Consecutive headings
+
+Headings can follow each other with no body in between.
 
 #### Like this
 
