@@ -1,6 +1,6 @@
 # Security
 
-Nicer.md renders untrusted markdown in the user's browser. Markdown renderers have a long history of XSS bugs via sanitization gaps — this document names the threats we defend against, the ones we don't, and the specific defaults that enforce the policy.
+Nicer.md renders untrusted markdown in the user's browser. Markdown renderers have a long history of XSS bugs via sanitisation gaps — this document names the threats we defend against, the ones we don't, and the specific defaults that enforce the policy.
 
 This file is kept honest about **what ships today vs what's planned**: the
 defences below are split between [Defences in force](#defences-in-force) (what
@@ -48,7 +48,7 @@ them slip through as escaped text. The defence is two-layer:
 1. **Inline HTML is filtered through a static allowlist regex** that permits
    only `br|kbd|sub|sup|mark`. Anything else is dropped silently at the
    renderer level, before sanitisation.
-2. **DOMPurify runs as a final-pass sanitizer** on the entire output with a
+2. **DOMPurify runs as a final-pass sanitiser** on the entire output with a
    strict tag/attribute/URI allowlist (see below). Block HTML flows into
    this pass and is constrained to a fixed set of structural and
    presentational tags. Tags outside the allowlist are dropped (children

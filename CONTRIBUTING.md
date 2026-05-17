@@ -32,7 +32,7 @@ A few choices that aren't obvious from the code:
 - **Small commits.** Each commit should be revertable. Bundle related changes; don't bundle unrelated ones. The commit-message body should explain reasoning, not just restate the diff.
 - **Strict TypeScript.** `noUncheckedIndexedAccess` is on. `any` is rare and usually wrong.
 - **No commercial-product brand names** as user-visible feature / theme / palette names — name things descriptively (Paper, Terminal, Newsprint). The one carve-out is community-palette tributes (Solarized, Nord, Catppuccin, etc.): these are widely-recognised palette names in the editor ecosystem and are kept verbatim, with the original designer credited via an `inspiredBy` field in the theme registry (rendered as "Inspired by …" subtitle) and formally attributed in [PALETTES.md](./PALETTES.md).
-- **Sanitisation invariant.** Untrusted HTML must never reach the DOM unsanitised — see [SECURITY.md](./SECURITY.md) for the three-layer defence.
+- **Sanitisation invariant.** Untrusted HTML must never reach the DOM unsanitised — see [SECURITY.md](./SECURITY.md) for the layered defence (inline-tag allowlist plus DOMPurify final pass).
 
 ## Commit messages
 
@@ -42,7 +42,7 @@ Lowercase imperative subjects, prefixed with type:
 add: <something new>
 fix: <bug>
 remove: <something dropped>
-refactor: <internal restructuring, no behavior change>
+refactor: <internal restructuring, no behaviour change>
 chore: <tooling, deps>
 docs: <docs-only>
 release: <version bump>
@@ -55,7 +55,7 @@ Body explains the *why* — the diff already shows the *what*. For non-trivial c
 - Branch from `main`, push to a `try/<topic>` or `feat/<topic>` branch (CF auto-deploys non-main branches to a preview URL — useful for visual changes).
 - Link the issue the PR addresses.
 - Tests pass (`pnpm test`), typecheck clean (`pnpm typecheck`), no new ESLint warnings if/when ESLint lands.
-- For visible changes, include a before/after screenshot or short Loom in the PR description.
+- For visible changes, include a before/after screenshot or short screen recording in the PR description.
 - Squash-merge via the GitHub UI; the squashed commit message follows the conventions above.
 
 ## Releases

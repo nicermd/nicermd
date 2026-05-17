@@ -59,8 +59,8 @@ shouldn't be forgotten.
 - **`fs` plugin scope is currently `**` (entire filesystem).** Combined
   with `read-text-file` + `write-text-file` permissions, this means the
   webview has unrestricted file access via IPC — guarded today only by
-  upstream rendering defences (DOMPurify allowlist + html_block elision +
-  inline-tag allowlist). Defence-in-depth fix: switch to Tauri 2's
+  upstream rendering defences (DOMPurify allowlist + inline-tag
+  allowlist). Defence-in-depth fix: switch to Tauri 2's
   runtime scope authorisation pattern — paths returned by the dialog
   plugin get added to the runtime fs scope, and `read-text-file` /
   `write-text-file` reject anything outside it. Requires a small Rust

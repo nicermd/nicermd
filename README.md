@@ -22,7 +22,7 @@ One rendering core, multiple thin shells. Everything runs on the user's device �
 
 ## Packages
 
-- **`packages/core`** — `nicermd-core`. The rendering engine. Markdown string in, sanitized HTML out. No framework dependency, no DOM assumption, no network calls.
+- **`packages/core`** — `nicermd-core`. The rendering engine. Markdown string in, sanitised HTML out. No framework dependency, no DOM assumption, no network calls.
 - **`packages/website`** — Vite + TypeScript + CodeMirror 6 + Tiptap. Also wraps as a Tauri 2 desktop app via `packages/website/src-tauri`.
 
 ## Development

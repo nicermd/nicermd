@@ -50,7 +50,7 @@ The project's own docs, all rendered in this very app:
 - **One file.** What you see is what's in the document. No hidden state.
 - **One pane.** Read and edit in the same place. No preview toggle.
 
-> "The best markdown reader is the one you forget is there."
+> The best markdown reader is the one you forget is there.
 
 ## Formatting at a glance
 

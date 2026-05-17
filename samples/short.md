@@ -18,7 +18,7 @@ Nicer.md is a zero-server markdown reader. Open a `.md` file — it renders beau
 ```ts
 import { render } from 'nicermd-core'
 
-const html = render(`# Hello, world!\n\nMarkdown in, sanitized HTML out.`)
+const html = render(`# Hello, world!\n\nMarkdown in, sanitised HTML out.`)
 ```
 
 ## Tables

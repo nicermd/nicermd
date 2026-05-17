@@ -108,13 +108,13 @@ It should still look distinct from regular text.
 
 ## Tables
 
-| Feature | Chrome Ext | VS Code | CLI | Website | iOS |
-|---------|-----------|---------|-----|---------|-----|
-| Render markdown | ✓ | ✓ | ✓ | ✓ | ✓ |
-| Theme switching | ✓ | ✓ | ✓ | ✓ | ✓ |
-| File browsing | ✗ | ✓ | ✓ | ✗ | ✓ |
-| URL sharing | ✗ | ✗ | ✗ | ✓ | ✗ |
-| Offline | ✓ | ✓ | ✓ | ✓ | ✓ |
+| Feature         | Website | Desktop |
+|-----------------|---------|---------|
+| Render markdown | ✓       | ✓       |
+| Theme switching | ✓       | ✓       |
+| File browsing   | ✗       | ✓       |
+| URL sharing     | ✓       | ✗       |
+| Offline         | ✓       | ✓       |
 
 ## Math (KaTeX)
 
@@ -160,11 +160,7 @@ This is what Nicer.md is trying to be: a place where the document is the interfa
 
 ### Empty sections
 
-A section heading with no body below it — renderers should still emit a valid heading without merging it into the next section.
-
 ### Consecutive headings
-
-Headings can follow each other with no body in between.
 
 #### Like this
 

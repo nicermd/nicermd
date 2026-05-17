@@ -2,7 +2,7 @@
   "name": "nicermd-core",
   "version": "0.0.0",
   "private": true,
-  "description": "The Nicer.md rendering core. Markdown in, sanitized and themed HTML out.",
+  "description": "The Nicer.md rendering core. Markdown in, sanitised and themed HTML out.",
   "license": "MIT",
   "repository": {
     "type": "git",

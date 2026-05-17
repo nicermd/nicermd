@@ -2,10 +2,10 @@ import MarkdownIt from 'markdown-it'
 
 // Pre-render pass that converts a small set of common HTML idioms back
 // into their markdown equivalents. Runs before the main render pipeline
-// (and before the Tiptap mount in shells that have one) so block HTML
-// that was previously elided now renders as real markdown — and so the
-// Tiptap round-trip is identity-stable when the user toggles in and out
-// of Write mode without editing.
+// (and before the Tiptap mount in shells that have one) so common block
+// HTML renders as real markdown — and so the Tiptap round-trip is
+// identity-stable when the user toggles in and out of Write mode without
+// editing.
 //
 // The set of transforms is intentionally narrow:
 //
@@ -15,10 +15,11 @@ import MarkdownIt from 'markdown-it'
 //   <center>…</center>                 → unwrap; recurse on inner
 //   <br>, <br/>, <br />                → blank line
 //
-// Anything else is returned unchanged — the existing block-HTML elision
-// in the renderer still catches it. This is deliberate: arbitrary HTML
-// is the project's primary attack surface, and we'd rather elide than
-// hand-parse a long tail of constructs.
+// Anything else is returned unchanged and flows through to the DOMPurify
+// final pass, which constrains it to the strict tag/attribute/URI
+// allowlist. This is deliberate: arbitrary HTML is the project's primary
+// attack surface, and we'd rather rely on DOMPurify than hand-parse a
+// long tail of constructs.
 //
 // Why use markdown-it for tokenisation rather than scanning the source
 // directly: HTML inside fenced code blocks, indented code, or inline
@@ -156,11 +157,10 @@ function escapeMdTitle(s: string): string {
 
 // Cheap "does this document have HTML the round-trip might mangle?"
 // check. Used by the website shell to decide whether to surface the
-// "switching to Write may convert HTML" banner. We say yes only when
-// the source actually contains a block-HTML token that the existing
-// elision would have handled — running normalizeHtml and comparing is
-// the most accurate test, since it captures exactly the set of inputs
-// where Write-mode round-trip behaviour changes.
+// "switching to Write may convert HTML" banner. Returns true when
+// markdown-it tokenises any html_block or html_inline — these are
+// the cases where the Write-mode round-trip via Tiptap can change
+// the source representation.
 export function containsHtml(markdown: string): boolean {
   if (!markdown.includes('<')) return false
   const tokens = tokenizer.parse(markdown, {})
