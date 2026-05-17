@@ -7,7 +7,7 @@ A nicer, zero-server markdown reader. Read, write, and save markdown — beautif
 ## Download
 
 - **Web** — [nicer.md](https://nicer.md). Installable as a PWA (click the install icon in your browser's address bar).
-- **macOS** — [latest release on GitHub](https://github.com/isherlock/nicermd/releases?q=tauri). Universal binary (Apple Silicon + Intel). The build is currently unsigned — on first launch macOS will show a Gatekeeper warning; right-click the app → **Open** → **Open** in the dialog to bypass it. Subsequent launches work normally.
+- **macOS** — [latest release on GitHub](https://github.com/nicermd/nicermd/releases?q=tauri). Universal binary (Apple Silicon + Intel). The build is currently unsigned — on first launch macOS will show a Gatekeeper warning; right-click the app → **Open** → **Open** in the dialog to bypass it. Subsequent launches work normally.
 - **Windows / Linux** — not yet built. Open an issue if you want one.
 
 ## What it does

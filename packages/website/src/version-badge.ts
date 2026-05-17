@@ -10,8 +10,8 @@
 
 import { APP_NAME, APP_VERSION, BUILD_SHA, BUILT_AT, IS_ALPHA } from './version'
 
-const ISSUES_URL = 'https://github.com/isherlock/nicermd/issues'
-const COMMIT_BASE_URL = 'https://github.com/isherlock/nicermd/commit/'
+const ISSUES_URL = 'https://github.com/nicermd/nicermd/issues'
+const COMMIT_BASE_URL = 'https://github.com/nicermd/nicermd/commit/'
 
 // Format a build's ISO timestamp into a compact human form for the
 // popover meta line. Returns empty for empty input (dev / no build

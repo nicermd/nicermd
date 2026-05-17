@@ -6,11 +6,11 @@
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/isherlock/nicermd.git",
+    "url": "https://github.com/nicermd/nicermd.git",
     "directory": "packages/website"
   },
   "homepage": "https://nicer.md",
-  "bugs": "https://github.com/isherlock/nicermd/issues",
+  "bugs": "https://github.com/nicermd/nicermd/issues",
   "type": "module",
   "scripts": {
     "dev": "vite",

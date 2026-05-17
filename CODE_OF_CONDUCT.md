@@ -36,7 +36,7 @@ This Code of Conduct applies in all community spaces and when an individual is o
 
 ## Reporting
 
-Report instances of unacceptable behaviour by opening a private discussion with the maintainer via a [GitHub direct message](https://github.com/isherlock) or, for security-adjacent concerns, via the [private vulnerability reporting](https://github.com/isherlock/nicermd/security/advisories/new) channel. All complaints will be reviewed and investigated promptly and fairly.
+Report instances of unacceptable behaviour by opening a private discussion with the maintainer via a [GitHub direct message](https://github.com/isherlock) or, for security-adjacent concerns, via the [private vulnerability reporting](https://github.com/nicermd/nicermd/security/advisories/new) channel. All complaints will be reviewed and investigated promptly and fairly.
 
 ## Attribution
 
