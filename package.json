@@ -14,7 +14,8 @@
     "test": "pnpm -r test",
     "licenses:gen": "node scripts/generate-third-party-licenses.mjs",
     "version:bump": "node scripts/bump-version.mjs",
-    "release:tauri": "node scripts/release-tauri.mjs"
+    "release:tauri": "node scripts/release-tauri.mjs",
+    "package:chrome-ext": "node scripts/package-chrome-ext.mjs"
   },
   "devDependencies": {
     "typescript": "^5.6.3"

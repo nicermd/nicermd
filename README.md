@@ -29,15 +29,16 @@ One rendering core, multiple thin shells. Everything runs on the user's device �
 
 Two ways to send any GitHub markdown URL to Nicer.md without leaving the page you're on. Both have the same outcome — pick whichever fits your browser.
 
-### Chrome extension (right-click, toolbar, or shortcut)
+### Chrome extension (toolbar, right-click, or keyboard shortcut)
 
-Adds three invocation paths to Chrome (or any Chromium-based browser — Edge, Brave, Arc, Vivaldi): a toolbar icon, an *Open in Nicer.md* item in the right-click menu (on links and pages), and an optional user-assignable keyboard shortcut. Permissions are minimal: `contextMenus` + `activeTab` only; no host permissions, no content script, no DOM access.
+Three invocation paths in Chrome (or any Chromium-based browser — Edge, Brave, Arc, Vivaldi): a toolbar icon, an *Open in Nicer.md* item in the right-click menu (on links and pages), and the keyboard shortcut **`Alt+Shift+N`** (Option+Shift+N on macOS). Permissions are minimal: `contextMenus` + `activeTab` only; no host permissions, no content script, no DOM access.
 
 **Install (unpacked, until the Web Store version lands):**
 
-1. Clone or download this repo.
-2. Visit `chrome://extensions` and turn on **Developer mode** (toggle, top-right).
-3. Click **Load unpacked** and pick `packages/chrome-ext/` from your clone.
+1. Download [`nicermd-chrome-ext.zip`](https://github.com/nicermd/nicermd/releases/latest/download/nicermd-chrome-ext.zip) from the latest GitHub release.
+2. Unzip it.
+3. Visit `chrome://extensions` and turn on **Developer mode** (toggle, top-right).
+4. Click **Load unpacked** and pick the unzipped folder.
 
 See [`packages/chrome-ext/README.md`](./packages/chrome-ext/README.md) for the full extension details.
 

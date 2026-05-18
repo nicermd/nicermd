@@ -5,11 +5,11 @@
 //   1. Toolbar icon (action) — click sends the current page URL.
 //   2. Right-click menu — "Open in Nicer.md" on links or anywhere
 //      on the page; sends the link URL or the page URL respectively.
-//   3. Keyboard shortcut — unassigned by default to avoid colliding
-//      with the user's existing bindings. Assign at
-//      chrome://extensions/shortcuts (the entry is "Open this page
-//      in Nicer.md"). Once set, the shortcut fires the toolbar
-//      action — same outcome as a click.
+//   3. Keyboard shortcut — Alt+Shift+N (Option+Shift+N on macOS) by
+//      default; rebind at chrome://extensions/shortcuts under
+//      "Open this page in Nicer.md" if your hands prefer a
+//      different chord. Fires the toolbar action — same outcome
+//      as a click.
 //
 // Permissions:
 //   - contextMenus: required to register the right-click items.

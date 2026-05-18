@@ -23,7 +23,10 @@
   },
   "commands": {
     "_execute_action": {
-      "description": "Open this page in Nicer.md"
+      "description": "Open this page in Nicer.md",
+      "suggested_key": {
+        "default": "Alt+Shift+N"
+      }
     }
   }
 }

@@ -9,9 +9,10 @@ leaving the page you're on. Three invocation paths, one tiny extension.
   current page opens in a new Nicer.md tab.
 - **Right-click menu** — *Open in Nicer.md* appears on links (sends
   the link URL) and on empty page area (sends the current page URL).
-- **Keyboard shortcut** — unassigned by default; bind one at
-  `chrome://extensions/shortcuts` (entry: *Open this page in
-  Nicer.md*) if you want a keystroke alternative.
+- **Keyboard shortcut** — `Alt+Shift+N` (Option+Shift+N on macOS)
+  fires the toolbar action from any tab. Rebind at
+  `chrome://extensions/shortcuts` under *Open this page in
+  Nicer.md* if you'd prefer a different chord.
 
 All three paths open a new tab at `https://nicer.md/?url=<encoded-url>`.
 Nicer.md validates the URL (GitHub family only —
@@ -21,15 +22,17 @@ confirmation, then renders the markdown.
 
 ## Install (unpacked)
 
-Until the Web Store version lands, the extension can be loaded
-unpacked from a local clone of the repo:
+Until the Web Store version lands, the extension installs unpacked
+from a downloaded `.zip` (no `git clone` needed):
 
-1. `git clone https://github.com/nicermd/nicermd.git`
-2. Visit `chrome://extensions` in Chrome (also works in Chromium-
+1. Download
+   [`nicermd-chrome-ext.zip`](https://github.com/nicermd/nicermd/releases/latest/download/nicermd-chrome-ext.zip)
+   from the latest GitHub release.
+2. Unzip it (Finder / Explorer / Files default unzip is fine).
+3. Visit `chrome://extensions` in Chrome (also works in Chromium-
    based browsers: Edge, Brave, Arc, Vivaldi).
-3. Turn on **Developer mode** (toggle in the top-right corner).
-4. Click **Load unpacked** and select `packages/chrome-ext/` from
-   your clone.
+4. Turn on **Developer mode** (toggle in the top-right corner).
+5. Click **Load unpacked** and select the unzipped folder.
 
 ## Permissions
 
