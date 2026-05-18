@@ -4,6 +4,8 @@ A nicer, zero-server markdown reader. Read, write, and save markdown — beautif
 
 **Status:** v0.1 alpha. Live at [nicer.md](https://nicer.md).
 
+![Nicer.md rendering a markdown document in the macOS desktop app](docs/images/reader.png)
+
 ## Download
 
 - **Web** — [nicer.md](https://nicer.md). Installable as a PWA (click the install icon in your browser's address bar).
@@ -19,6 +21,9 @@ One rendering core, multiple thin shells. Everything runs on the user's device �
 - **Split / Code** — source + live preview, or raw markdown with byte-level fidelity.
 - **Save** — File System Access API in browsers, native dialogs in the desktop shell, drag-drop in both.
 - **Open URL** — load markdown from raw GitHub, gists, or `github.com/user/repo` for the README, with a phishing-gate confirmation.
+- **Themes** — 16 built-in light/dark themes; community-palette tributes (Solarized, Nord, Catppuccin, Dracula, Gruvbox, Everforest, Ayu, Rosé Pine, One Light/Dark) credited in [PALETTES.md](./PALETTES.md). `Cmd+Alt+T` opens the picker.
+
+![Theme picker showing all 16 built-in themes side by side](docs/images/themes.png)
 
 ## Packages
 
