@@ -16,14 +16,21 @@
 //                                   double-click, Dock drop) carrying
 //                                   the chosen file path.
 //
-// Plus the app-level deep-link event from tauri-plugin-deep-link:
-//   app:deep-link        (string) — incoming `nicermd://…` URL from
-//                                   the OS (browser-initiated, share
-//                                   sheet, etc.). Parsed for `?url=…`
-//                                   and routed to loadFromUrl with no
-//                                   phishing gate — the OS already
-//                                   surfaced an "Open Nicer.md?"
-//                                   prompt before launching us.
+// Plus deep-link handling via `@tauri-apps/plugin-deep-link`:
+//   onOpenUrl(urls)             — fires for warm-state `nicermd://…`
+//                                 arrivals (browser click while app
+//                                 already running).
+//   getCurrent()                — returns the cold-start URL(s), i.e.
+//                                 the deep-link that LAUNCHED the
+//                                 app. Doing this from JS, after the
+//                                 frontend is ready, avoids the race
+//                                 where a Rust-side on_open_url would
+//                                 fire before the WebView has any
+//                                 listeners. Parsed for `?url=…` and
+//                                 routed to loadFromUrl with no
+//                                 phishing gate — the OS already
+//                                 surfaced an "Open Nicer.md?"
+//                                 prompt before launching us.
 
 import type { Harness } from './main'
 import { openFile, saveFile, newFile, openFromTauriPath } from './doc-source'
@@ -71,11 +78,25 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
   })
 
   // Deep-link arrivals from `nicermd://` clicks (e.g. Chrome extension's
-  // "Open in Nicer.md desktop"). Payload is the full `nicermd://?url=…`
-  // URL; we parse the `?url=` param and route to loadFromUrl.
-  await listen<string>('app:deep-link', (event) => {
-    void handleDeepLink(harness, event.payload)
+  // "Open in Nicer.md desktop").
+  const deepLink = await import('@tauri-apps/plugin-deep-link')
+
+  // Warm state: app already running, browser fires a deep-link.
+  await deepLink.onOpenUrl((urls) => {
+    for (const url of urls) {
+      void handleDeepLink(harness, url)
+    }
   })
+
+  // Cold start: the deep-link click is what launched the app. The
+  // plugin stashes those URLs during boot; we pull them out now that
+  // the frontend (and the harness) is ready to consume them.
+  const cold = await deepLink.getCurrent()
+  if (cold && cold.length > 0) {
+    for (const url of cold) {
+      void handleDeepLink(harness, url)
+    }
+  }
 }
 
 async function handleDeepLink(harness: Harness, deepLinkUrl: string): Promise<void> {
