@@ -6,6 +6,28 @@ shouldn't be forgotten.
 
 ## Open URL
 
+- **Chain markdown-to-markdown links inside the reader.** Today a
+  click on a markdown link inside a rendered doc navigates to the
+  target URL directly (browser default) — the raw GitHub page, not a
+  re-render in Nicer.md. UX cliff: polished render → raw text on
+  github.com. The fix is to rewrite eligible link `href`s at render
+  time so they re-enter the reader. Design questions to answer before
+  building:
+  - **Eligibility.** Only the URL shapes the loader already accepts
+    (raw / blob+`.md` / gist), or anything ending `.md`, or any
+    GitHub URL (so README links to repos also chain)? Too permissive
+    triggers the phishing modal on every click.
+  - **Phishing gate.** `?url=` boot params currently fire a confirm
+    modal. Skip the gate for internal clicks (user already trusts the
+    source) or keep it (security model unchanged but friction-heavy)?
+  - **Same tab vs new.** Same-tab feels right but needs `pushState` so
+    Back works. New tab is less invasive but breaks the "I'm following
+    a thread" mental model.
+  - **Where to rewrite.** `nicermd-core`'s `rewriteRelativeUrls` is
+    the natural place (every shell inherits) vs post-render in the
+    website shell (core stays pure).
+  Not a regression; framed as a feature on 2026-05-17.
+  _packages/website/src/main.ts render output; packages/core/src/index.ts rewriteRelativeUrls_
 - **Streaming size guard.** The 5 MiB cap currently buffers the whole
   response before checking — an attacker-controlled server could ship
   the first 4.99 MiB then keep writing. Replace with a streaming reader
@@ -49,13 +71,6 @@ shouldn't be forgotten.
 
 ## Tauri hardening
 
-- **Install `cargo-audit` and wire into CI.** The Node side has
-  `pnpm audit --prod` in the CI workflow; the Rust side has no
-  parallel check yet. Two Linux-only transitive advisories are
-  currently tolerable on the macOS-only build target (rand 0.7.3
-  in a build-time `phf` chain, glib 0.18.5 in webkit2gtk) — both
-  will need attention when Linux distribution lands. A
-  `cargo-audit` step in CI would surface new ones automatically.
 - **`fs` plugin scope is currently `**` (entire filesystem).** Combined
   with `read-text-file` + `write-text-file` permissions, this means the
   webview has unrestricted file access via IPC — guarded today only by
@@ -71,6 +86,58 @@ shouldn't be forgotten.
   inject inline styles. Audit each source and either move to
   bundled-class styling or use a CSP nonce, then drop `'unsafe-inline'`.
   _packages/website/src-tauri/tauri.conf.json security.csp_
+
+## Desktop features
+
+- **Multiple windows.** Today the Tauri shell is single-window: one
+  document, one editor surface, and `WindowEvent::CloseRequested`
+  calls `app_handle.exit(0)` so the red traffic light fully quits.
+  Multi-window would let the user read or edit several files
+  side-by-side. Implementation touches several layers:
+  - Drop the "exit on last-window close" behaviour and restore
+    macOS's normal "app keeps running with no windows" convention —
+    or keep "quit when the last window closes" but stop exiting on
+    every close. Decision shapes how the menu/dock feels.
+  - `File → New Window` menu item; `Cmd+N` either opens a new empty
+    window or stays as "new doc in current window" (decide).
+  - Each window owns its own doc-source state. The current
+    `doc-source.ts` abstraction is per-shell; need to scope it
+    per-window (likely a window-id keyed map on the Rust side, or
+    have each window manage its own state in JS with no shared
+    store).
+  - OS-level file open (`RunEvent::Opened`, Open With) should open
+    in a new window if any window already has an unsaved doc, else
+    reuse the focused window. Worth deciding the rule before coding.
+  - Autosave `localStorage` slot is currently single-slot; needs to
+    become per-window or use a different storage scheme.
+  - Drag-drop, fullscreen, zoom — all need to be window-scoped.
+  Real architectural shift; not a flip-of-a-switch. Worth scoping a
+  spike first to see how invasive the per-window state-isolation is.
+  _packages/website/src-tauri/src/lib.rs WindowEvent + RunEvent;
+  packages/website/src/doc-source.ts; packages/website/src/main.ts_
+
+## Browser integration
+
+- **"Open in Nicer.md" from Chrome.** Today a user has to copy a
+  GitHub markdown URL and paste it into nicer.md's open-URL prompt
+  (or hand-craft a `?url=` share link). Two flavours, in increasing
+  build cost:
+  - **Bookmarklet** — single line of JS the user drags to their
+    bookmarks bar; click it on any GitHub or raw page to redirect
+    to `nicer.md/?url=<current>`. Zero install ceremony, no Chrome
+    Web Store, no Manifest V3. Caveat: bookmarklets are awkward on
+    mobile and feel old-school. Could ship today as a README
+    "Install" step.
+  - **Tiny Chrome extension** — Manifest V3, just a context-menu
+    item ("Open in Nicer.md") on links and on the current page.
+    Few lines of code; Web Store review is the slow part. Better
+    UX than the bookmarklet, still nothing like the full extension.
+  - **Full Chrome extension** (already in the original four-shell
+    plan in the README) — auto-detects `.md` URLs / `text/markdown`
+    content-type and renders inline. Biggest lift; biggest reach.
+  Start with the bookmarklet to validate demand, then decide
+  whether to invest in the extension lane.
+  _new package: packages/chrome-ext or just a snippet in README_
 
 ## Distribution
 

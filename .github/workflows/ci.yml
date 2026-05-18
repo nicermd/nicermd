@@ -41,6 +41,20 @@ jobs:
       - name: Audit (production)
         run: pnpm audit --prod
 
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@v2
+        with:
+          tool: cargo-audit
+
+      - name: Audit Rust dependencies
+        working-directory: packages/website/src-tauri
+        # `--deny warnings` escalates unmaintained / unsound /
+        # yanked findings to errors. Known-acceptable advisories
+        # are ignored via packages/website/src-tauri/.cargo/audit.toml
+        # so any NEW warning fails the build until it is either
+        # fixed or added to that file with rationale.
+        run: cargo audit --deny warnings
+
       - name: Verify THIRD-PARTY-LICENSES.md is current
         run: |
           pnpm licenses:gen

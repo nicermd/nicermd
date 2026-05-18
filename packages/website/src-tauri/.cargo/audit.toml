@@ -1,0 +1,52 @@
+# cargo-audit configuration.
+#
+# Used by `cargo audit` (run from this directory) and by the
+# `Audit Rust dependencies` step in `.github/workflows/ci.yml`.
+#
+# All 19 ignores below are `unmaintained` or `unsound` warnings on
+# transitive dependencies we don't control. None are real CVEs. They
+# fall into three buckets:
+#
+#   1. Linux-only build chain (gtk-rs / webkit2gtk). We ship a
+#      macOS-only desktop binary today; these crates are only pulled
+#      in when targeting Linux. Will need attention before Linux
+#      distribution lands (see BACKLOG.md → Distribution).
+#
+#   2. Build-time only (proc-macro, phf code-generation). Not in the
+#      runtime closure; the produced binary does not contain them.
+#
+#   3. Unmaintained Unicode/data crates pulled in transitively via
+#      Tauri. Replacement is upstream's job; we'd rebase when Tauri
+#      cycles to non-deprecated alternatives.
+#
+# The CI step runs `cargo audit --deny warnings` so that any NEW
+# unmaintained or unsound warning fails the build until it is
+# evaluated and either fixed or added to this list with rationale.
+
+[advisories]
+ignore = [
+  # Bucket 1 — Linux-only build chain (gtk-rs GTK3 bindings, glib)
+  "RUSTSEC-2024-0411", # gdkwayland-sys
+  "RUSTSEC-2024-0412", # gdk
+  "RUSTSEC-2024-0413", # atk
+  "RUSTSEC-2024-0414", # gdkx11-sys
+  "RUSTSEC-2024-0415", # gtk
+  "RUSTSEC-2024-0416", # atk-sys
+  "RUSTSEC-2024-0417", # gdkx11
+  "RUSTSEC-2024-0418", # gdk-sys
+  "RUSTSEC-2024-0419", # gtk3-macros
+  "RUSTSEC-2024-0420", # gtk-sys
+  "RUSTSEC-2024-0429", # glib (Iterator::nth() unsoundness on Linux)
+
+  # Bucket 2 — Build-time only
+  "RUSTSEC-2024-0370", # proc-macro-error — build-time, not in runtime closure
+  "RUSTSEC-2026-0097", # rand 0.7.3 — build-time via phf_generator chain
+
+  # Bucket 3 — Unmaintained Unicode / data crates pulled in by Tauri
+  "RUSTSEC-2025-0057", # fxhash
+  "RUSTSEC-2025-0075", # unic-char-range
+  "RUSTSEC-2025-0080", # unic-common
+  "RUSTSEC-2025-0081", # unic-char-property
+  "RUSTSEC-2025-0098", # unic-ucd-version
+  "RUSTSEC-2025-0100", # unic-ucd-ident
+]
