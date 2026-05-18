@@ -27,7 +27,23 @@ One rendering core, multiple thin shells. Everything runs on the user's device �
 
 ## Open any GitHub page in Nicer.md
 
-A one-line browser bookmarklet — paste it into your bookmarks bar and clicking it on any GitHub markdown page (README, blob, raw, gist, tree URL, or a bare `github.com/user/repo`) re-opens that page rendered in Nicer.md.
+Two ways to send any GitHub markdown URL to Nicer.md without leaving the page you're on. Both have the same outcome — pick whichever fits your browser.
+
+### Chrome extension (right-click, toolbar, or shortcut)
+
+Adds three invocation paths to Chrome (or any Chromium-based browser — Edge, Brave, Arc, Vivaldi): a toolbar icon, an *Open in Nicer.md* item in the right-click menu (on links and pages), and an optional user-assignable keyboard shortcut. Permissions are minimal: `contextMenus` + `activeTab` only; no host permissions, no content script, no DOM access.
+
+**Install (unpacked, until the Web Store version lands):**
+
+1. Clone or download this repo.
+2. Visit `chrome://extensions` and turn on **Developer mode** (toggle, top-right).
+3. Click **Load unpacked** and pick `packages/chrome-ext/` from your clone.
+
+See [`packages/chrome-ext/README.md`](./packages/chrome-ext/README.md) for the full extension details.
+
+### Bookmarklet (any browser, including Safari / Firefox)
+
+A one-line bookmarklet — paste it into a new browser bookmark and click it on any GitHub markdown page (README, blob, raw, gist, tree URL, or a bare `github.com/user/repo`) to re-open that page rendered in Nicer.md.
 
 ```text
 javascript:location.href='https://nicer.md/?url='+encodeURIComponent(location.href)
@@ -41,7 +57,7 @@ javascript:location.href='https://nicer.md/?url='+encodeURIComponent(location.hr
 4. Paste the line above into the URL field.
 5. Save.
 
-Now clicking the bookmark on any GitHub markdown page renders it in Nicer.md. The first time you arrive from an outside source you'll see a brief confirmation modal — that's the phishing gate; safe to confirm for pages you arrived at intentionally.
+The first time you arrive from an outside source you'll see a brief confirmation modal — that's the phishing gate; safe to confirm for pages you arrived at intentionally.
 
 ## Packages
 

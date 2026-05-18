@@ -120,19 +120,18 @@ shouldn't be forgotten.
 
 ## Browser integration
 
-- **"Open in Nicer.md" Chrome extension.** Bookmarklet shipped in
-  the README on 2026-05-18 (single-line JS, copy-paste install).
-  Remaining lanes are higher-touch Chrome integrations:
-  - **Tiny Chrome extension** — Manifest V3, just a context-menu
-    item ("Open in Nicer.md") on links and on the current page.
-    Better UX than the bookmarklet (no manual install ceremony,
-    works inside `file://` contexts, mobile-friendly via mobile
-    Chrome extensions). Few lines of code; Web Store review is
-    the slow part.
-  - **Full Chrome extension** (already in the original four-shell
-    plan in the README) — auto-detects `.md` URLs / `text/markdown`
-    content-type and renders inline. Biggest lift; biggest reach.
-  _new package: packages/chrome-ext_
+- **Full Chrome extension** (the auto-render flavour). Bookmarklet
+  shipped in the README on 2026-05-18 (single-line JS). Tiny MV3
+  extension shipped at `packages/chrome-ext/` on 2026-05-18 with
+  three invocation paths (toolbar icon, right-click menu, optional
+  user-assigned keyboard shortcut); `contextMenus` + `activeTab`
+  permissions only. Remaining: the originally-roadmapped Chrome
+  extension that **auto-detects** GitHub `.md` URLs / `text/markdown`
+  content-type and renders them inline in the same tab (no nicer.md
+  round-trip). Requires host permissions on the GitHub family of
+  domains plus a content script that replaces the DOM. Biggest
+  lift; biggest reach. Worth doing once the lightweight extension
+  has real usage signal.
 
 ## Distribution
 
