@@ -437,32 +437,57 @@ export async function loadFromUrl(harness: Harness, input: string): Promise<void
   throw lastError ?? new Error('Unknown fetch error')
 }
 
-// --- Boot-time ?url= handler --------------------------------------------
-// Invoked from main.ts during boot. If the inbound URL carries a ?url=
-// param that parses as a GitHub URL, show a confirmation modal before
-// fetching — defends against social-engineered links that point at
-// attacker-controlled markdown (e.g. brand-impersonation content). The
-// param is stripped from the address bar immediately so a refresh
-// doesn't re-trigger the gate or leak the source URL into history /
-// share menus.
+// --- Boot-time ?url= and ?ext-pickup handler ----------------------------
+// Invoked from main.ts during boot. Three inbound paths to handle:
 //
-// Default action is Cancel, focused on open. The user has to click Open
-// or tab+Enter to actually load — single-key dismissal stays safe.
+//   1. ?ext-pickup=<token> — Chrome extension opened this tab. The
+//      target URL isn't in the address bar; we message the extension
+//      with the token and it tells us what URL to load. Forgery-proof
+//      because the token is a fresh random UUID held only in the
+//      extension's service-worker memory. No gate.
+//
+//   2. ?url=<github-url> with an internal-nav trust signal
+//      (history.state.chainKind === 'chain' OR a same-origin
+//      window.opener) — same-tab chain click or new-tab from a
+//      modifier-click inside the reader. No gate.
+//
+//   3. ?url=<github-url> from any other source (share link, paste,
+//      external site embedding the URL) — show the phishing gate. The
+//      gate is what defends against share-link arrivals that point at
+//      attacker-controlled markdown (brand-impersonation content,
+//      misleading login mockups, etc.).
+//
+// Default gate action is Cancel, focused on open. The user has to
+// click Open or tab+Enter to actually load — single-key dismissal
+// stays safe.
 export function processBootUrlParam(harness: Harness): void {
+  void processBootUrlParamAsync(harness)
+}
+
+async function processBootUrlParamAsync(harness: Harness): Promise<void> {
   const params = new URLSearchParams(window.location.search)
+
+  // Path 1: extension pickup. Token in URL, target URL retrieved via
+  // messaging.
+  const pickupToken = params.get('ext-pickup')
+  if (pickupToken) {
+    await processExtensionPickup(harness, pickupToken, params)
+    return
+  }
+
   const urlParam = params.get('url')
   if (!urlParam) return
 
-  // Two trust signals identify an internal (no-gate) navigation:
+  // Path 2: internal nav (chained click, opener-trusted new tab). Two
+  // trust signals identify an internal navigation:
   //
-  //   1. history.state.chainKind === 'chain' — a chained link click
-  //      pushed this URL via pushState; preserved across refresh per
-  //      the HTML5 spec.
-  //
-  //   2. Same-origin window.opener — this tab was opened from another
-  //      Nicer.md tab via window.open (Cmd / Ctrl / Shift-click on a
-  //      rendered link). Cross-origin opener access throws; an
-  //      attacker on attacker.com can't fake this signal.
+  //   - history.state.chainKind === 'chain' — a chained link click
+  //     pushed this URL via pushState; preserved across refresh per
+  //     the HTML5 spec.
+  //   - Same-origin window.opener — this tab was opened from another
+  //     Nicer.md tab via window.open (Cmd / Ctrl / Shift-click on a
+  //     rendered link). Cross-origin opener access throws; an
+  //     attacker on attacker.com can't fake this signal.
   //
   // Either signal means the user chose the link from a trusted
   // rendered doc; skip the gate and keep the `?url=…` in the address
@@ -473,9 +498,6 @@ export function processBootUrlParam(harness: Harness): void {
   if (fromChainState || fromTrustedOpener) {
     const result = parseGithubUrl(urlParam)
     if (!result.ok) return
-    // Mark history.state so a future refresh in this tab keeps
-    // skipping the gate even if the opener tab has since been
-    // closed (which would invalidate the opener signal alone).
     if (!fromChainState) {
       window.history.replaceState({ chainKind: 'chain', url: urlParam }, '', window.location.href)
     }
@@ -485,11 +507,10 @@ export function processBootUrlParam(harness: Harness): void {
     return
   }
 
-  // External arrival (share link, paste into URL bar, fresh visit
-  // from outside Nicer.md). Strip the param so refresh is a clean
-  // re-boot (no re-prompt loop) and the user's address bar shows
-  // the canonical app URL even if they glance up before deciding.
-  // Then show the gate.
+  // Path 3: external arrival. Strip the param so refresh is a clean
+  // re-boot (no re-prompt loop) and the user's address bar shows the
+  // canonical app URL even if they glance up before deciding. Then
+  // show the gate.
   params.delete('url')
   const remaining = params.toString()
   const newUrl = window.location.pathname + (remaining ? `?${remaining}` : '') + window.location.hash
@@ -502,6 +523,111 @@ export function processBootUrlParam(harness: Harness): void {
   if (!result.ok) return
 
   showBootConfirmation(harness, urlParam, result.parsed)
+}
+
+// --- Chrome extension pickup --------------------------------------------
+// `?ext-pickup=<token>` is the arrival shape used by the Nicer.md
+// Chrome extension. The target URL isn't in the address bar — we ask
+// the extension what it wanted us to load via runtime.sendMessage.
+// Restricted at both ends: only nicer.md can talk to the extension
+// (externally_connectable.matches in the manifest), and only the
+// specific extension ID below is trusted by the page. Tokens are
+// random UUIDs held in the extension's service-worker memory; they
+// can't be forged, predicted, or replayed.
+
+const NICERMD_EXTENSION_ID = 'mkflkihbecjppfpnjiokofphjcmdbghc'
+
+interface ChromeRuntimeShim {
+  runtime?: {
+    sendMessage?: (
+      extensionId: string,
+      message: unknown,
+      callback: (response: unknown) => void,
+    ) => void
+    lastError?: { message?: string }
+  }
+}
+
+async function processExtensionPickup(
+  harness: Harness,
+  token: string,
+  params: URLSearchParams,
+): Promise<void> {
+  // Strip the pickup token from the URL bar regardless of outcome — a
+  // refresh on `?ext-pickup=…` would otherwise re-attempt a now-
+  // invalid pickup and visibly do nothing.
+  params.delete('ext-pickup')
+  const remaining = params.toString()
+  const newUrl = window.location.pathname + (remaining ? `?${remaining}` : '') + window.location.hash
+  window.history.replaceState({}, '', newUrl)
+
+  const pickedUrl = await askExtensionForPickup(token)
+  if (!pickedUrl) return
+
+  const parsed = parseGithubUrl(pickedUrl)
+  if (!parsed.ok) return
+
+  // Rewrite the address bar to the canonical `?url=<picked>` shape
+  // and mark it as chained so a refresh stays gate-free. Effectively
+  // this turns "I came from the extension" into "I'm a chained nav,"
+  // which is the right mental model: both are user-initiated, both
+  // are trusted, and the page now reads as a copyable share link.
+  const dest = new URL(window.location.href)
+  dest.searchParams.set('url', pickedUrl)
+  dest.hash = ''
+  window.history.replaceState(
+    { chainKind: 'chain', url: pickedUrl },
+    '',
+    dest.toString(),
+  )
+
+  try {
+    await loadFromUrl(harness, pickedUrl)
+  } catch (err) {
+    console.error('[ext-pickup] load failed:', err)
+  }
+}
+
+function askExtensionForPickup(token: string): Promise<string | null> {
+  const chromeShim = (globalThis as unknown as { chrome?: ChromeRuntimeShim }).chrome
+  const sendMessage = chromeShim?.runtime?.sendMessage
+  if (!sendMessage) return Promise.resolve(null)
+  return new Promise<string | null>((resolve) => {
+    let settled = false
+    const finish = (val: string | null): void => {
+      if (settled) return
+      settled = true
+      resolve(val)
+    }
+    try {
+      sendMessage(
+        NICERMD_EXTENSION_ID,
+        { type: 'pickup-load', token },
+        (response: unknown) => {
+          // The runtime can populate `lastError` when the extension
+          // isn't installed or isn't responding — read it to silence
+          // Chrome's "unchecked lastError" warning, then resolve null.
+          const _err = chromeShim?.runtime?.lastError
+          if (_err) return finish(null)
+          if (
+            typeof response === 'object' &&
+            response !== null &&
+            'url' in response &&
+            typeof (response as { url: unknown }).url === 'string'
+          ) {
+            finish((response as { url: string }).url)
+          } else {
+            finish(null)
+          }
+        },
+      )
+      // Defensive timeout in case the callback never fires (extension
+      // not installed but the messaging API doesn't error cleanly).
+      setTimeout(() => finish(null), 1500)
+    } catch {
+      finish(null)
+    }
+  })
 }
 
 function isSameOriginOpener(): boolean {

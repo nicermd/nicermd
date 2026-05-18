@@ -50,16 +50,46 @@ from a downloaded `.zip` (no `git clone` needed):
 
 ## Permissions
 
-Only two, both narrow:
+Two narrow extension permissions, plus a one-way messaging channel
+with `nicer.md`:
 
 - **`contextMenus`** — required to register the right-click items.
 - **`activeTab`** — granted *only* when you click the toolbar icon
   or fire the keyboard shortcut, and only for that single
   invocation. Lets the extension read the active tab's URL at the
   moment you ask for it.
+- **`externally_connectable: https://nicer.md/*`** — the *only*
+  origin that can talk to this extension. Used so the page can ask
+  for the URL behind a one-time pickup token (see below); the
+  extension responds with that URL and nothing else.
 
 No host permissions. No content script. No page DOM access. No
 storage. No telemetry.
+
+## How the gate-skip works (web flow)
+
+Without messaging, a click on the extension's toolbar / right-click
+item would arrive at `nicer.md` looking identical to a share-link
+arrival, so the page would show its phishing-gate modal — friction
+on every click. To avoid that, the web flow uses a one-time pickup
+token:
+
+1. Click the toolbar / right-click item.
+2. The extension generates a random UUID, stashes
+   `token → <your URL>` in service-worker memory, opens
+   `nicer.md/?ext-pickup=<token>`.
+3. Nicer.md sees the token, sends a `runtime.sendMessage` to this
+   extension's specific ID asking *"what URL do you have for this
+   token?"*.
+4. Extension consumes the token (one-time use) and replies with the
+   URL.
+5. Nicer.md loads that URL directly — no gate.
+
+A forged or copy-pasted token matches nothing in the extension's
+memory; nicer.md silently falls back to its default boot doc. Only
+nicer.md can ask the extension this question (cross-origin pages
+are blocked by `externally_connectable`). Tokens expire after 30
+seconds even if unused.
 
 ## Bookmarklet alternative
 

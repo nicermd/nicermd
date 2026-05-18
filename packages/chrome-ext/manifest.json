@@ -1,9 +1,10 @@
 {
   "manifest_version": 3,
   "name": "Nicer.md",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Open any GitHub markdown URL in Nicer.md — toolbar icon, right-click menu (web or desktop), or keyboard shortcut.",
   "homepage_url": "https://nicer.md",
+  "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvyHXj3WwsOKktLew92kGWJ0rR+jlRiVuhgFgiJHdV2dTmwPSZo8WLgjYALMRDmuYgVWUla1PsC37IqekfrXzTCUdkgYYgqDUfLR83BYDHq1ASVl6KBFokmBggyWHDulmDAEoeTSqZdWNKPkueZ7AXwAMspR+Lc+jhD8FK85Q6NalqekG2u7GUGNJjW9xb3MPBCqIKVJOSmVRlOuOKAC+baiFeUtQcFv8A3fuDc7aQPSs2zsQyqboaR5cHZyBopgMULYtBGvfsno+c3EBm3UX1xpVytJleEFxxVAu4BOE8LAdPxcZk3NdtGbQ+vzQz0BiVK5NMJRu9UawO/NyxWTvxQIDAQAB",
   "icons": {
     "16": "icons/icon-16.png",
     "48": "icons/icon-48.png",
@@ -17,6 +18,9 @@
     }
   },
   "permissions": ["contextMenus", "activeTab"],
+  "externally_connectable": {
+    "matches": ["https://nicer.md/*"]
+  },
   "background": {
     "service_worker": "background.js",
     "type": "module"

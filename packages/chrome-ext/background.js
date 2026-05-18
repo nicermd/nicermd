@@ -26,18 +26,43 @@
 //     URL just then. We never read URLs unprompted; no host
 //     permissions, no content scripts, no storage, no telemetry.
 //
-// Web flows open a new tab at nicer.md/?url=<encoded-target>; the
-// page handles validation (GitHub family only), the phishing-gate
-// confirmation on first arrival, and rendering. Desktop flows go
-// through the `nicermd://` URL scheme — the Tauri app's deep-link
-// handler does the same routing.
+// Web flows use a one-time "pickup" token (random UUID per click)
+// rather than putting the GitHub URL straight in the address bar.
+// The new tab opens at `https://nicer.md/?ext-pickup=<token>`; the
+// page then messages this background worker to retrieve the URL by
+// token. Effect: nicer.md can recognise extension-originated loads
+// and skip its phishing gate (which exists to defend against share-
+// link arrivals), while a forged or pasted token simply matches no
+// pending request and falls through to the normal boot doc.
+//
+// The page → extension message channel is restricted by
+// `externally_connectable.matches` to `https://nicer.md/*`; tokens
+// expire after 30 seconds; each token is consumed on first
+// successful retrieval.
+//
+// Desktop flows go through the `nicermd://` URL scheme directly —
+// the Tauri app's deep-link handler does the routing, no token
+// needed (the OS already shows its own "Open Nicer.md?" prompt).
 
-const NICER_WEB_BASE = 'https://nicer.md/?url='
+const NICER_WEB_BASE = 'https://nicer.md/?ext-pickup='
 const NICER_DESKTOP_BASE = 'nicermd://?url='
+const PICKUP_TTL_MS = 30_000
+
+const pendingByToken = new Map() // token -> { url, expiresAt }
+
+function gcExpired() {
+  const now = Date.now()
+  for (const [token, { expiresAt }] of pendingByToken) {
+    if (expiresAt <= now) pendingByToken.delete(token)
+  }
+}
 
 function openWeb(url) {
   if (!url) return
-  chrome.tabs.create({ url: NICER_WEB_BASE + encodeURIComponent(url) })
+  const token = crypto.randomUUID()
+  pendingByToken.set(token, { url, expiresAt: Date.now() + PICKUP_TTL_MS })
+  gcExpired()
+  chrome.tabs.create({ url: NICER_WEB_BASE + encodeURIComponent(token) })
 }
 
 function openDesktop(url) {
@@ -97,4 +122,28 @@ chrome.contextMenus.onClicked.addListener((info) => {
 // desktop is opt-in via the explicit right-click item.
 chrome.action.onClicked.addListener((tab) => {
   openWeb(tab.url)
+})
+
+// Pickup channel — the only thing nicer.md can ever ask this
+// extension to do. Restricted to nicer.md by externally_connectable
+// in the manifest; defence-in-depth re-check on sender.url. Tokens
+// are one-time: once retrieved, immediately removed from the map.
+chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
+  if (!sender?.url?.startsWith('https://nicer.md/')) {
+    sendResponse({ url: null, error: 'forbidden' })
+    return false
+  }
+  if (message?.type !== 'pickup-load' || typeof message.token !== 'string') {
+    sendResponse({ url: null, error: 'bad-request' })
+    return false
+  }
+  gcExpired()
+  const entry = pendingByToken.get(message.token)
+  if (!entry) {
+    sendResponse({ url: null })
+    return false
+  }
+  pendingByToken.delete(message.token)
+  sendResponse({ url: entry.url })
+  return false
 })
