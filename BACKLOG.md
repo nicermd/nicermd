@@ -149,26 +149,19 @@ shouldn't be forgotten.
 
 ## Browser integration
 
-- **"Open in Nicer.md" from Chrome.** Today a user has to copy a
-  GitHub markdown URL and paste it into nicer.md's open-URL prompt
-  (or hand-craft a `?url=` share link). Two flavours, in increasing
-  build cost:
-  - **Bookmarklet** — single line of JS the user drags to their
-    bookmarks bar; click it on any GitHub or raw page to redirect
-    to `nicer.md/?url=<current>`. Zero install ceremony, no Chrome
-    Web Store, no Manifest V3. Caveat: bookmarklets are awkward on
-    mobile and feel old-school. Could ship today as a README
-    "Install" step.
+- **"Open in Nicer.md" Chrome extension.** Bookmarklet shipped in
+  the README on 2026-05-18 (single-line JS, copy-paste install).
+  Remaining lanes are higher-touch Chrome integrations:
   - **Tiny Chrome extension** — Manifest V3, just a context-menu
     item ("Open in Nicer.md") on links and on the current page.
-    Few lines of code; Web Store review is the slow part. Better
-    UX than the bookmarklet, still nothing like the full extension.
+    Better UX than the bookmarklet (no manual install ceremony,
+    works inside `file://` contexts, mobile-friendly via mobile
+    Chrome extensions). Few lines of code; Web Store review is
+    the slow part.
   - **Full Chrome extension** (already in the original four-shell
     plan in the README) — auto-detects `.md` URLs / `text/markdown`
     content-type and renders inline. Biggest lift; biggest reach.
-  Start with the bookmarklet to validate demand, then decide
-  whether to invest in the extension lane.
-  _new package: packages/chrome-ext or just a snippet in README_
+  _new package: packages/chrome-ext_
 
 ## Distribution
 

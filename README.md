@@ -25,6 +25,24 @@ One rendering core, multiple thin shells. Everything runs on the user's device �
 
 ![Theme picker showing all 16 built-in themes side by side](docs/images/themes.png)
 
+## Open any GitHub page in Nicer.md
+
+A one-line browser bookmarklet — paste it into your bookmarks bar and clicking it on any GitHub markdown page (README, blob, raw, gist, tree URL, or a bare `github.com/user/repo`) re-opens that page rendered in Nicer.md.
+
+```text
+javascript:location.href='https://nicer.md/?url='+encodeURIComponent(location.href)
+```
+
+**Install:**
+
+1. Make sure your bookmarks bar is visible (in Chrome / Safari: `Cmd+Shift+B` on macOS, `Ctrl+Shift+B` on Windows / Linux).
+2. Right-click the bookmarks bar → **Add page** (or **Add bookmark**).
+3. Name it whatever you like (e.g. *Open in Nicer.md*).
+4. Paste the line above into the URL field.
+5. Save.
+
+Now clicking the bookmark on any GitHub markdown page renders it in Nicer.md. The first time you arrive from an outside source you'll see a brief confirmation modal — that's the phishing gate; safe to confirm for pages you arrived at intentionally.
+
 ## Packages
 
 - **`packages/core`** — `nicermd-core`. The rendering engine. Markdown string in, sanitised HTML out. No framework dependency, no DOM assumption, no network calls.
