@@ -215,28 +215,37 @@ function resolveCandidates(p: Parsed): string[] {
   }
 }
 
-// Ask api.github.com for the repo's actual default branch. Returns null
-// on any failure (network, rate-limit, 404, JSON shape mismatch) so the
-// caller can fall through to the main → master heuristic. We trust the
-// response only structurally; the value is used as a path segment, so we
-// also defensively check that the returned branch name doesn't contain
-// path-separators or other shenanigans.
-async function fetchDefaultBranch(user: string, repo: string): Promise<string | null> {
+// Ask api.github.com for the repo's actual README. The `/readme`
+// endpoint returns whichever file GitHub considers the README,
+// regardless of filename case (`README.md`, `readme.md`,
+// `Readme.markdown`, etc.) and regardless of which branch hosts it.
+// Returns the `download_url` (a raw.githubusercontent.com URL) on
+// success, null on any failure so the caller can fall through to
+// the main / master `README.md` heuristic.
+//
+// We accept download URLs only on the raw host the CSP allows, and
+// only when the filename ends in a markdown extension — the API can
+// return `README.rst` etc. for non-markdown READMEs, and we have
+// nothing useful to do with those today.
+async function fetchReadmeDownloadUrl(user: string, repo: string): Promise<string | null> {
   try {
-    const resp = await fetch(`https://${API_HOST}/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}`, {
+    const resp = await fetch(`https://${API_HOST}/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}/readme`, {
       headers: { Accept: 'application/vnd.github+json' },
       redirect: 'error',
     })
     if (!resp.ok) return null
-    const data = (await resp.json()) as { default_branch?: unknown }
-    const branch = data.default_branch
-    if (typeof branch !== 'string' || !branch) return null
-    // Refuse path-traversal-shaped or otherwise dangerous values. Real
-    // GitHub branch names match a much narrower charset; this filter is
-    // intentionally generous (just rejects the things that would matter
-    // for URL construction).
-    if (/[\\/\s]/.test(branch) || branch.includes('..')) return null
-    return branch
+    const data = (await resp.json()) as { name?: unknown; download_url?: unknown }
+    if (typeof data.name !== 'string' || !isMarkdownPath(data.name)) return null
+    if (typeof data.download_url !== 'string' || !data.download_url) return null
+    let parsed: URL
+    try {
+      parsed = new URL(data.download_url)
+    } catch {
+      return null
+    }
+    if (parsed.protocol !== 'https:') return null
+    if (parsed.hostname !== RAW_HOST) return null
+    return parsed.toString()
   } catch {
     return null
   }
@@ -379,18 +388,17 @@ export async function loadFromUrl(harness: Harness, input: string): Promise<void
   if (!result.ok) throw new Error(result.reason)
   let candidates = resolveCandidates(result.parsed)
 
-  // For bare-repo URLs, ask the GitHub API for the real default branch
-  // and try that first. main → master remain in the candidate list as
-  // defensive fallbacks for when the API call fails (rate-limit, offline,
-  // private repo, etc.) — those cases used to be the only path and still
-  // need to keep working.
+  // For bare-repo URLs, ask the GitHub API for the actual README's
+  // raw URL. The `/readme` endpoint handles case-sensitive filenames
+  // (`readme.md` vs `README.md`), non-main default branches
+  // (`develop`, `trunk`, etc.), and `readme.markdown` / `readme.mdx`
+  // — all in one call. The `main/README.md` and `master/README.md`
+  // candidates stay as defensive fallbacks for when the API fails
+  // (rate-limit, offline, private repo, …).
   if (result.parsed.kind === 'repo') {
-    const apiBranch = await fetchDefaultBranch(result.parsed.user, result.parsed.repo)
-    if (apiBranch && apiBranch !== 'main' && apiBranch !== 'master') {
-      candidates = [
-        `https://${RAW_HOST}/${result.parsed.user}/${result.parsed.repo}/${apiBranch}/README.md`,
-        ...candidates,
-      ]
+    const apiReadmeUrl = await fetchReadmeDownloadUrl(result.parsed.user, result.parsed.repo)
+    if (apiReadmeUrl) {
+      candidates = [apiReadmeUrl, ...candidates]
     }
   }
 
@@ -427,12 +435,14 @@ export async function loadFromUrl(harness: Harness, input: string): Promise<void
       // URL) → silently try master next.
     }
   }
-  // For bare-repo URLs that 404'd on every branch we tried, give a more
+  // For bare-repo URLs that 404'd on every candidate, give a more
   // useful message than the raw HTTP error. We tried the API-resolved
-  // branch (if available) plus main and master; the most likely cause
-  // now is that the repo has no README at the root.
+  // README URL (which handles arbitrary case + branch) plus the
+  // `main/README.md` / `master/README.md` fallbacks; the most likely
+  // remaining cause is that the repo has no README at all (or it's a
+  // non-markdown file like README.rst that we filter out).
   if (result.parsed.kind === 'repo' && lastError instanceof HttpError && lastError.status === 404) {
-    throw new Error('README.md not found at the repo root — paste a /blob/<branch>/<path> URL for non-root docs')
+    throw new Error('No markdown README found at the repo root — paste a /blob/<branch>/<path> URL for non-root docs')
   }
   throw lastError ?? new Error('Unknown fetch error')
 }
