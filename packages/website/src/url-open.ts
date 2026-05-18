@@ -52,9 +52,6 @@
 //   - Private repos / auth tokens.
 //   - URL share param on boot (`?url=…`) — would unlock sharing but
 //     wants more thought on phishing risk first.
-//   - Default-branch lookup via api.github.com — would expand the CSP
-//     and add an extra hop. The main→master fallback covers ~all
-//     public repos in the wild without a separate API call.
 
 import type { Harness } from './main'
 import { setDocState } from './doc-source'
@@ -62,6 +59,7 @@ import { setDocState } from './doc-source'
 const RAW_HOST = 'raw.githubusercontent.com'
 const GIST_PAGE_HOST = 'gist.github.com'
 const GIST_RAW_HOST = 'gist.githubusercontent.com'
+const API_HOST = 'api.github.com'
 const MAX_BYTES = 5 * 1024 * 1024 // 5 MiB; markdown is never this big.
 const MD_EXT_RE = /\.(md|markdown|mdx)$/i
 
@@ -188,9 +186,11 @@ function previewUrl(p: Parsed): string {
   }
 }
 
-// Candidates to try in priority order. `repo` produces two — main first
-// (modern default), master as fallback for pre-2020 / legacy repos —
-// without an api.github.com call.
+// Candidates to try in priority order. For `repo` we always include
+// main + master as fallbacks; `loadFromUrl` prepends the API-derived
+// default branch when it can. main + master cover ~all public repos
+// at no extra latency cost when the API succeeds, and act as the
+// belt-and-braces when the API fails (rate-limited, offline, etc.).
 function resolveCandidates(p: Parsed): string[] {
   switch (p.kind) {
     case 'direct':
@@ -212,6 +212,33 @@ function resolveCandidates(p: Parsed): string[] {
       // before reaching the destination (curl works because curl
       // doesn't enforce CORS).
       return [`https://${GIST_RAW_HOST}/${p.user}/${p.id}/raw`]
+  }
+}
+
+// Ask api.github.com for the repo's actual default branch. Returns null
+// on any failure (network, rate-limit, 404, JSON shape mismatch) so the
+// caller can fall through to the main → master heuristic. We trust the
+// response only structurally; the value is used as a path segment, so we
+// also defensively check that the returned branch name doesn't contain
+// path-separators or other shenanigans.
+async function fetchDefaultBranch(user: string, repo: string): Promise<string | null> {
+  try {
+    const resp = await fetch(`https://${API_HOST}/repos/${encodeURIComponent(user)}/${encodeURIComponent(repo)}`, {
+      headers: { Accept: 'application/vnd.github+json' },
+      redirect: 'error',
+    })
+    if (!resp.ok) return null
+    const data = (await resp.json()) as { default_branch?: unknown }
+    const branch = data.default_branch
+    if (typeof branch !== 'string' || !branch) return null
+    // Refuse path-traversal-shaped or otherwise dangerous values. Real
+    // GitHub branch names match a much narrower charset; this filter is
+    // intentionally generous (just rejects the things that would matter
+    // for URL construction).
+    if (/[\\/\s]/.test(branch) || branch.includes('..')) return null
+    return branch
+  } catch {
+    return null
   }
 }
 
@@ -350,12 +377,27 @@ async function fetchMarkdown(rawUrl: string): Promise<string> {
 export async function loadFromUrl(harness: Harness, input: string): Promise<void> {
   const result = parseGithubUrl(input)
   if (!result.ok) throw new Error(result.reason)
-  const candidates = resolveCandidates(result.parsed)
+  let candidates = resolveCandidates(result.parsed)
 
-  // Try candidates in order; 404 falls through to the next one (only
-  // happens for bare-repo URLs trying main → master). Any other HTTP
-  // status or network error aborts immediately — those aren't recoverable
-  // by switching branches.
+  // For bare-repo URLs, ask the GitHub API for the real default branch
+  // and try that first. main → master remain in the candidate list as
+  // defensive fallbacks for when the API call fails (rate-limit, offline,
+  // private repo, etc.) — those cases used to be the only path and still
+  // need to keep working.
+  if (result.parsed.kind === 'repo') {
+    const apiBranch = await fetchDefaultBranch(result.parsed.user, result.parsed.repo)
+    if (apiBranch && apiBranch !== 'main' && apiBranch !== 'master') {
+      candidates = [
+        `https://${RAW_HOST}/${result.parsed.user}/${result.parsed.repo}/${apiBranch}/README.md`,
+        ...candidates,
+      ]
+    }
+  }
+
+  // Try candidates in order; 404 falls through to the next one (happens
+  // for bare-repo URLs working through the default-branch / main /
+  // master candidates). Any other HTTP status or network error aborts
+  // immediately — those aren't recoverable by switching branches.
   let lastError: Error | null = null
   for (let i = 0; i < candidates.length; i++) {
     const url = candidates[i]!
@@ -386,9 +428,11 @@ export async function loadFromUrl(harness: Harness, input: string): Promise<void
     }
   }
   // For bare-repo URLs that 404'd on every branch we tried, give a more
-  // useful message than the raw HTTP error.
+  // useful message than the raw HTTP error. We tried the API-resolved
+  // branch (if available) plus main and master; the most likely cause
+  // now is that the repo has no README at the root.
   if (result.parsed.kind === 'repo' && lastError instanceof HttpError && lastError.status === 404) {
-    throw new Error('README.md not found on main or master — paste a /blob/<branch> URL for non-standard branches')
+    throw new Error('README.md not found at the repo root — paste a /blob/<branch>/<path> URL for non-root docs')
   }
   throw lastError ?? new Error('Unknown fetch error')
 }

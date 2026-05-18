@@ -6,41 +6,12 @@ shouldn't be forgotten.
 
 ## Open URL
 
-- **Chain markdown-to-markdown links inside the reader.** Today a
-  click on a markdown link inside a rendered doc navigates to the
-  target URL directly (browser default) — the raw GitHub page, not a
-  re-render in Nicer.md. UX cliff: polished render → raw text on
-  github.com. The fix is to rewrite eligible link `href`s at render
-  time so they re-enter the reader. Design questions to answer before
-  building:
-  - **Eligibility.** Only the URL shapes the loader already accepts
-    (raw / blob+`.md` / gist), or anything ending `.md`, or any
-    GitHub URL (so README links to repos also chain)? Too permissive
-    triggers the phishing modal on every click.
-  - **Phishing gate.** `?url=` boot params currently fire a confirm
-    modal. Skip the gate for internal clicks (user already trusts the
-    source) or keep it (security model unchanged but friction-heavy)?
-  - **Same tab vs new.** Same-tab feels right but needs `pushState` so
-    Back works. New tab is less invasive but breaks the "I'm following
-    a thread" mental model.
-  - **Where to rewrite.** `nicermd-core`'s `rewriteRelativeUrls` is
-    the natural place (every shell inherits) vs post-render in the
-    website shell (core stays pure).
-  Not a regression; framed as a feature on 2026-05-17.
-  _packages/website/src/main.ts render output; packages/core/src/index.ts rewriteRelativeUrls_
 - **Streaming size guard.** The 5 MiB cap currently buffers the whole
   response before checking — an attacker-controlled server could ship
   the first 4.99 MiB then keep writing. Replace with a streaming reader
   that aborts as soon as bytes-read exceeds the cap. Defensive only;
   current cap is enough in practice.
   _packages/website/src/url-open.ts fetchMarkdown_
-- **Default-branch lookup via api.github.com.** Bare-repo URLs currently
-  try `main` then fall back to `master`. Correct in 99% of public repos,
-  wrong for `develop` / `trunk` / project-specific defaults. Adds a CSP
-  entry (`api.github.com`) and an extra round-trip; current heuristic
-  is the right trade for now.
-  _packages/website/src/url-open.ts resolveCandidates 'repo' case_
-
 ## Plain text in the reader
 
 - **Render non-markdown text in Nicer.md theme typography.** A
