@@ -38,6 +38,7 @@ import { initTheme, toggleRecentTheme, showThemeToast } from './themes'
 import { initFonts } from './fonts'
 import { openFontPicker } from './font-picker'
 import { openUrlPrompt, processBootUrlParam } from './url-open'
+import { setupLinkChaining } from './link-chain'
 import { openThemePicker } from './theme-picker'
 import { registerServiceWorker } from './sw-register'
 import { setupScrollStrip, showStrip } from './scroll-strip'
@@ -643,6 +644,12 @@ async function boot(): Promise<void> {
   // filename + active mode whenever the editing context shifts.
   harness.onModeChange(() => showStrip())
   setupAutosave(harness)
+  // Link chaining: intercept clicks on markdown-targeting links in
+  // rendered docs so they load inside the reader instead of navigating
+  // to raw GitHub. Must run BEFORE processBootUrlParam so the chain-
+  // state marker is on the initial history entry by the time the boot
+  // handler reads it. See link-chain.ts.
+  setupLinkChaining(harness, host)
   // Boot-time ?url=… handler. Sits between autosave wiring and recovery
   // banner so a link-driven open prompt sits on top of (and supersedes)
   // any recovery banner — if the user clicked a share link, that's

@@ -409,10 +409,26 @@ export function processBootUrlParam(harness: Harness): void {
   const urlParam = params.get('url')
   if (!urlParam) return
 
-  // Strip the param from the URL bar before showing the modal, so the
-  // user's address bar shows the canonical app URL even if they
-  // glance up before deciding. Also makes refresh a clean re-boot
-  // (without re-prompting) rather than a re-prompt loop.
+  // Internal navigation — a chained link click pushed this URL via
+  // pushState. The user already chose the link from a rendered doc;
+  // skip the phishing gate and keep the `?url=…` in the address bar
+  // so the page remains a copyable share link. See link-chain.ts.
+  // A page refresh on a chained URL preserves history.state per the
+  // HTML5 spec, so this branch keeps working across reloads.
+  const state = window.history.state as { chainKind?: string; url?: string } | null
+  if (state?.chainKind === 'chain' && state.url === urlParam) {
+    const result = parseGithubUrl(urlParam)
+    if (!result.ok) return
+    void loadFromUrl(harness, urlParam).catch((err) => {
+      console.error('[boot] chained-state load failed:', err)
+    })
+    return
+  }
+
+  // External arrival (share link, paste into URL bar, fresh visit).
+  // Strip the param so refresh is a clean re-boot (no re-prompt
+  // loop) and the user's address bar shows the canonical app URL
+  // even if they glance up before deciding. Then show the gate.
   params.delete('url')
   const remaining = params.toString()
   const newUrl = window.location.pathname + (remaining ? `?${remaining}` : '') + window.location.hash
