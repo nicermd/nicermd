@@ -5,20 +5,34 @@ leaving the page you're on. Three invocation paths, one tiny extension.
 
 ## Use
 
-- **Toolbar icon** — click the Nicer.md icon in the toolbar; the
-  current page opens in a new Nicer.md tab.
-- **Right-click menu** — *Open in Nicer.md* appears on links (sends
-  the link URL) and on empty page area (sends the current page URL).
+**Open in the web app** (`https://nicer.md`):
+
+- **Toolbar icon** — click the Nicer.md icon; the current page
+  opens in a new Nicer.md tab.
+- **Right-click menu** — *Open in Nicer.md* appears on links
+  (sends the link URL) and on empty page area (sends the current
+  page URL).
 - **Keyboard shortcut** — `Alt+Shift+N` (Option+Shift+N on macOS)
   fires the toolbar action from any tab. Rebind at
   `chrome://extensions/shortcuts` under *Open this page in
   Nicer.md* if you'd prefer a different chord.
 
-All three paths open a new tab at `https://nicer.md/?url=<encoded-url>`.
+These paths open a new tab at `https://nicer.md/?url=<encoded-url>`.
 Nicer.md validates the URL (GitHub family only —
 `github.com`, `raw.githubusercontent.com`, `gist.github.com`,
 `gist.githubusercontent.com`), shows a one-time phishing-gate
 confirmation, then renders the markdown.
+
+**Open in the desktop app** (requires Nicer.md macOS app
+installed):
+
+- **Right-click menu** — *Open in Nicer.md desktop* on links and
+  pages. Navigates the browser to a `nicermd://` URL; the OS
+  routes that to the installed app, which loads the markdown in
+  its own window. The browser shows a one-time "Open Nicer.md?"
+  confirmation the first time per origin (standard custom-
+  protocol behaviour); subsequent invocations on the same origin
+  can be remembered ("always allow").
 
 ## Install (unpacked)
 

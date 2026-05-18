@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
   "name": "Nicer.md",
-  "version": "0.1.0",
-  "description": "Open any GitHub markdown URL in Nicer.md — toolbar icon, right-click menu, or keyboard shortcut.",
+  "version": "0.2.0",
+  "description": "Open any GitHub markdown URL in Nicer.md — toolbar icon, right-click menu (web or desktop), or keyboard shortcut.",
   "homepage_url": "https://nicer.md",
   "icons": {
     "16": "icons/icon-16.png",
