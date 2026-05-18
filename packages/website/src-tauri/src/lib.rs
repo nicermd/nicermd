@@ -11,6 +11,7 @@ pub fn run() {
     let app = tauri::Builder::default()
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_deep_link::init())
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -22,6 +23,38 @@ pub fn run() {
             let menu = build_menu(app.handle())?;
             app.set_menu(menu)?;
             app.on_menu_event(handle_menu_event);
+
+            // Forward incoming `nicermd://` URLs to the frontend. Cold
+            // start (app launches because of a deep-link click) and
+            // warm start (user clicks while app is already running)
+            // both flow through this handler. The frontend
+            // (tauri-bridge.ts) parses the URL's `?url=…` param and
+            // calls loadFromUrl — no phishing gate, because the OS /
+            // browser already showed the "Open Nicer.md?" confirmation
+            // before launching us.
+            //
+            // Linux + dev-on-Windows need explicit scheme registration
+            // at runtime (the bundler doesn't run in dev). On macOS the
+            // scheme registers via the bundled Info.plist; in `tauri
+            // dev` the dev binary may or may not be a registered
+            // handler, so the deep-link only round-trips reliably with
+            // a packaged build.
+            #[cfg(any(target_os = "linux", all(debug_assertions, windows)))]
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                let _ = app.deep_link().register_all();
+            }
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                let handle = app.handle().clone();
+                app.deep_link().on_open_url(move |event| {
+                    for url in event.urls() {
+                        if let Err(err) = handle.emit("app:deep-link", url.to_string()) {
+                            log::error!("failed to emit app:deep-link: {err}");
+                        }
+                    }
+                });
+            }
             Ok(())
         })
         .build(tauri::generate_context!())

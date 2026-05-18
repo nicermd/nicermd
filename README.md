@@ -31,7 +31,14 @@ Two ways to send any GitHub markdown URL to Nicer.md without leaving the page yo
 
 ### Chrome extension (toolbar, right-click, or keyboard shortcut)
 
-Three invocation paths in Chrome (or any Chromium-based browser — Edge, Brave, Arc, Vivaldi): a toolbar icon, an *Open in Nicer.md* item in the right-click menu (on links and pages), and the keyboard shortcut **`Alt+Shift+N`** (Option+Shift+N on macOS). Permissions are minimal: `contextMenus` + `activeTab` only; no host permissions, no content script, no DOM access.
+Several ways to send a URL to Nicer.md from any tab in Chrome (or any Chromium-based browser — Edge, Brave, Arc, Vivaldi):
+
+- A toolbar icon (click sends the current page to the **web app**).
+- *Open in Nicer.md* in the right-click menu, on links and pages — also for the web app.
+- *Open in Nicer.md desktop* in the right-click menu — opens the link or page in the **desktop app** instead, via the `nicermd://` URL scheme (requires the desktop app installed).
+- Keyboard shortcut **`Alt+Shift+N`** (Option+Shift+N on macOS) — fires the toolbar action.
+
+Permissions are minimal: `contextMenus` + `activeTab` only; no host permissions, no content script, no DOM access.
 
 **Install (unpacked, until the Web Store version lands):**
 
