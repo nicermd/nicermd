@@ -2177,6 +2177,53 @@ html {
   background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
+/* --- Chain-load error banner --- */
+/* Shown when a chained markdown-link click fails to load. Same
+   visual shape as the autosave recovery banner; a faint left-edge
+   stripe in --warn distinguishes the failure intent. Auto-dismisses
+   after 8s; Dismiss button removes immediately. */
+.chain-error-banner {
+  position: fixed;
+  top: 1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 200;
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 8px 12px 8px 12px;
+  font-size: 13px;
+  color: var(--fg);
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--warn, var(--accent));
+  border-radius: 8px;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
+  font-family: var(--font-body);
+  max-width: 90vw;
+}
+[data-tauri='1'] .chain-error-banner {
+  top: calc(28px + 0.5rem);
+}
+.chain-error-banner__text {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.chain-error-banner__btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--fg);
+  border-radius: 5px;
+  padding: 3px 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  cursor: pointer;
+}
+.chain-error-banner__btn:hover {
+  background: var(--surface);
+}
+
 /* --- File drop overlay --- */
 .file-drop-overlay {
   position: fixed;

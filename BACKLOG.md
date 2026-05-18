@@ -41,6 +41,37 @@ shouldn't be forgotten.
   is the right trade for now.
   _packages/website/src/url-open.ts resolveCandidates 'repo' case_
 
+## Plain text in the reader
+
+- **Render non-markdown text in Nicer.md theme typography.** A
+  visitor reading a README via the URL loader often wants to click
+  through to `LICENSE`, `CHANGELOG` (without `.md`), `.txt` notes,
+  or even source files in the same repo — and right now those
+  links navigate away to raw GitHub. Rendering them inside Nicer.md
+  with the active theme's typography keeps the reading experience
+  consistent. Surfaced 2026-05-18.
+  Design questions before building:
+  - **Scope.** Just LICENSE-shaped files (no extension, plain text
+    obvious from path)? `.txt` too? `.markdown`, `.mdx`, `.rst`?
+    Source files (`.py`, `.ts`, `.go`) with syntax highlighting via
+    the existing highlight.js integration? Each step widens what
+    counts as "a Nicer.md document".
+  - **Rendering path.** Wrap in `<pre>` so whitespace is preserved
+    and characters are literal (no accidental bold from `**` in a
+    LICENSE), or run markdown-it anyway because most plain-text
+    files happen to parse harmlessly? Pre-with-theme is safer.
+  - **Loader filter.** `parseGithubUrl` currently rejects non-
+    markdown paths via `MD_EXT_RE`. Relax to an allowlist of safe
+    extensions (`.md`, `.markdown`, `.mdx`, `.txt`, no extension)?
+    Or content-type sniff after fetch?
+  - **Link-chain eligibility.** Once the loader accepts more shapes,
+    chain-clicks automatically pick them up (chaining is gated by
+    `parseGithubUrl`). Bonus: makes "click through README → LICENSE"
+    work as a single fluid read.
+  - **Interaction with edit modes.** Plain-text files probably
+    shouldn't get Write-mode (Tiptap WYSIWYG would mangle them);
+    consider gating Mode 2 off when the doc-source is non-markdown.
+
 ## Rendering / HTML
 
 - **`<picture>` support for dark-mode-aware images.** Many modern READMEs

@@ -1,44 +1,39 @@
 // Link chaining inside the reader.
 //
-// When a rendered markdown doc contains an `<a href>` that points at
-// another markdown file the URL loader already accepts, an unmodified
-// left-click on that link stays inside Nicer.md rather than navigating
-// away to raw GitHub. We:
+// A click on a rendered <a href> that points at a markdown URL the
+// loader already accepts (raw / blob+.md / tree / bare-repo / gist)
+// stays inside Nicer.md instead of navigating away. Modifier-key
+// clicks (Cmd / Ctrl / Shift) open the chained doc in a new Nicer.md
+// tab; plain clicks chain in the current tab. Alt+click and right /
+// middle clicks defer to the browser default.
 //
-//   1. Intercept the click before the browser's default navigation.
-//   2. Push a `?url=<encoded-href>` entry into `history` so Back
-//      restores the previous doc and the address bar reflects the
-//      currently-displayed file (copyable as a share link).
-//   3. Call `loadFromUrl` directly — no phishing gate, because the
-//      user *chose* this link from a rendered doc whose source they
-//      already trust.
+// History model:
 //
-// Out of scope (deliberately):
+//   - Plain click       → pushState({chainKind: 'chain', url}, '?url=X')
+//                         and call loadFromUrl directly (no gate). Back
+//                         restores the prior doc.
+//   - Modifier click    → window.open('?url=X', '_blank'). The new tab
+//                         boots with window.opener pointing back at us;
+//                         processBootUrlParam treats a same-origin
+//                         opener as the trust signal and skips the
+//                         gate. Refresh in the new tab keeps working
+//                         because the boot handler upgrades the entry
+//                         to history.state.chainKind === 'chain' on
+//                         first load.
 //
-//   - Anchor links (`#heading`) — defer to default in-doc scroll.
-//   - Modifier-key clicks (Cmd/Ctrl/Shift/Alt) — defer to the browser
-//     default so Cmd+click still opens in a new tab.
-//   - Right-click / middle-click — different event paths; defer.
-//   - Non-GitHub URLs — let the browser navigate normally; we have no
-//     opinion about external links.
-//   - Tiptap editor surface (Write mode) — Tiptap captures clicks for
-//     its own link UX; the rendered HTML there isn't ours to chain.
-//   - Code mode — there's no rendered link surface, just CodeMirror
-//     showing raw markdown.
-//
-// Chained navigations DON'T strip the `?url=` from the address bar,
-// because exposing the source URL is the whole point of "the URL
-// makes the current file clear." Refresh behaviour: the boot handler
-// (`processBootUrlParam`) reads `history.state.chainKind`, recognises
-// this as an internal navigation, and skips the gate that would
-// otherwise re-confirm.
+// Safety: the `?url=` phishing gate only fires for "external arrivals"
+// (no trusted opener, no chain-state in history). External share
+// links from third-party sites still see the gate — they have a
+// different-origin opener or no opener at all.
 
 import { parseGithubUrl, loadFromUrl } from './url-open'
+import { confirmDiscard, isDirty } from './doc-source'
 import type { Harness } from './main'
 
-// Mode 1 (Read) and Mode 3 (Split preview) both render via
-// `nicermd-core` into innerHTML. Those are the only surfaces where
-// chaining makes sense.
+// Mode 1 (Read) and Mode 3 (Split preview) render via `nicermd-core`
+// into innerHTML. Those are the only surfaces where chaining makes
+// sense — Tiptap (Mode 2) handles links itself, Code (Mode 4) shows
+// raw markdown without rendered links.
 const RENDER_CONTAINERS = '.mode-read, .mode-split__preview'
 
 export interface ChainState {
@@ -48,25 +43,21 @@ export interface ChainState {
 
 export function setupLinkChaining(harness: Harness, host: HTMLElement): void {
   // Snapshot the boot doc so Back from a chain restores what was
-  // showing on first load — without re-running the whole boot path
-  // (which would re-trigger autosave-recovery banners, theme picker
-  // first-launch flow, etc.).
+  // showing on first load — avoids re-running the whole boot path
+  // (autosave-recovery banner, theme-picker first-launch flow, etc.).
   const bootDoc = harness.getMarkdown()
 
   // Mark the boot history entry so popstate can tell "we're back to
-  // landing" apart from "we're at another chained URL". If the user
-  // arrived via an external `?url=` share-link the boot handler
-  // already ran replaceState to strip the param, leaving state = {}.
-  // Either way, putting our own marker on the boot entry is safe.
+  // landing" apart from "we're at another chained URL". The boot
+  // handler may have already replaced state to strip a `?url=` param,
+  // leaving state = {}; either way, our marker is what popstate reads.
   const initialState = window.history.state as ChainState | null
   if (!initialState || initialState.chainKind !== 'chain') {
     window.history.replaceState({ chainKind: 'boot' } satisfies ChainState, '', window.location.href)
   }
 
   host.addEventListener('click', (e) => {
-    // Modifier-key clicks: defer to browser default (new tab, save
-    // link as, etc.). Same for non-primary buttons.
-    if (e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return
+    // Right / middle clicks: different event paths; defer.
     if (e.button !== 0) return
 
     if (!(e.target instanceof Element)) return
@@ -82,35 +73,39 @@ export function setupLinkChaining(harness: Harness, host: HTMLElement): void {
     // In-doc anchors stay default (browser scrolls to the heading).
     if (href.startsWith('#')) return
 
+    // Alt+click = "save link as" in browsers; defer so the user can
+    // still download a markdown file if they want the raw bytes.
+    if (e.altKey) return
+
     // Eligibility = exactly the URL shapes the loader accepts. Anything
-    // else (external sites, raw non-markdown paths) navigates normally.
+    // else navigates normally.
     const parseResult = parseGithubUrl(href)
     if (!parseResult.ok) return
 
     e.preventDefault()
 
-    // Build the `?url=<encoded>` address-bar form. We preserve the
-    // raw href as the param so a share-link round-trip resolves
-    // identically to the click.
+    // Build the `?url=<encoded>` form of the chained address. Same shape
+    // as the share-link URL — copy-paste round-trips identically.
     const dest = new URL(window.location.href)
     dest.search = ''
     dest.searchParams.set('url', href)
     dest.hash = ''
+    const destStr = dest.toString()
 
-    window.history.pushState(
-      { chainKind: 'chain', url: href } satisfies ChainState,
-      '',
-      dest.toString(),
-    )
+    // Modifier keys (Cmd, Ctrl, Shift) → open in a new Nicer.md tab.
+    // We intentionally DON'T pass 'noopener' so the new tab's
+    // window.opener points back at us; processBootUrlParam there
+    // treats that as the trust signal to skip the phishing gate.
+    // Both tabs are same-origin so the cross-tab reference is safe.
+    if (e.metaKey || e.ctrlKey || e.shiftKey) {
+      window.open(destStr, '_blank')
+      return
+    }
 
-    void loadFromUrl(harness, href).catch((err) => {
-      // The pushState already landed; user can hit Back to undo. We
-      // don't roll the history entry back automatically — a failed
-      // load is something the user might want to see in the URL bar
-      // and retry (refresh would re-attempt without the gate since
-      // state.chainKind === 'chain').
-      console.error('[link-chain] load failed:', err)
-    })
+    // Plain click → same-tab chain. Dirty-edit guard if there are
+    // unsaved changes in Write / Split / Code — same prompt as
+    // File → New uses.
+    void chainSameTab(harness, href, destStr)
   })
 
   window.addEventListener('popstate', (e) => {
@@ -118,15 +113,80 @@ export function setupLinkChaining(harness: Harness, host: HTMLElement): void {
 
     if (state?.chainKind === 'chain' && state.url) {
       void loadFromUrl(harness, state.url).catch((err) => {
-        console.error('[link-chain] popstate load failed:', err)
+        showChainError(err, state.url ?? '(unknown)')
       })
       return
     }
 
-    // Boot entry — restore the snapshotted boot doc rather than
-    // re-running the whole init flow.
+    // Boot entry — restore the snapshotted doc rather than re-running
+    // init. Keeps autosave-recovery / theme-picker first-launch flows
+    // from re-triggering on every Back.
     if (state?.chainKind === 'boot') {
       harness.replaceDoc(bootDoc)
     }
   })
+}
+
+async function chainSameTab(harness: Harness, href: string, destStr: string): Promise<void> {
+  if (isDirty()) {
+    const confirmed = await confirmDiscard()
+    if (!confirmed) return
+  }
+
+  window.history.pushState(
+    { chainKind: 'chain', url: href } satisfies ChainState,
+    '',
+    destStr,
+  )
+
+  try {
+    await loadFromUrl(harness, href)
+  } catch (err) {
+    // History entry already landed; user can hit Back. Surface the
+    // failure so it isn't silent in DevTools-only.
+    showChainError(err, href)
+  }
+}
+
+// --- Failure banner ------------------------------------------------------
+// Surface chain-load failures as a dismissible banner (matching the
+// recovery-banner pattern). Auto-removes after 8s; clicking Dismiss
+// removes immediately. Only one banner visible at a time — a second
+// failure replaces the first.
+
+let activeBanner: HTMLElement | null = null
+
+function showChainError(err: unknown, attemptedUrl: string): void {
+  const message = err instanceof Error ? err.message : String(err)
+  console.error('[link-chain] load failed:', attemptedUrl, err)
+
+  if (activeBanner) {
+    activeBanner.remove()
+    activeBanner = null
+  }
+
+  const banner = document.createElement('div')
+  banner.className = 'chain-error-banner'
+  banner.setAttribute('role', 'alert')
+
+  const text = document.createElement('span')
+  text.className = 'chain-error-banner__text'
+  text.textContent = `Couldn't load: ${message}`
+
+  const dismissBtn = document.createElement('button')
+  dismissBtn.type = 'button'
+  dismissBtn.className = 'chain-error-banner__btn'
+  dismissBtn.textContent = 'Dismiss'
+
+  const dismiss = (): void => {
+    if (activeBanner === banner) activeBanner = null
+    banner.remove()
+  }
+  dismissBtn.addEventListener('click', dismiss)
+
+  banner.append(text, dismissBtn)
+  document.body.appendChild(banner)
+  activeBanner = banner
+
+  window.setTimeout(dismiss, 8000)
 }

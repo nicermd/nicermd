@@ -409,26 +409,43 @@ export function processBootUrlParam(harness: Harness): void {
   const urlParam = params.get('url')
   if (!urlParam) return
 
-  // Internal navigation — a chained link click pushed this URL via
-  // pushState. The user already chose the link from a rendered doc;
-  // skip the phishing gate and keep the `?url=…` in the address bar
-  // so the page remains a copyable share link. See link-chain.ts.
-  // A page refresh on a chained URL preserves history.state per the
-  // HTML5 spec, so this branch keeps working across reloads.
+  // Two trust signals identify an internal (no-gate) navigation:
+  //
+  //   1. history.state.chainKind === 'chain' — a chained link click
+  //      pushed this URL via pushState; preserved across refresh per
+  //      the HTML5 spec.
+  //
+  //   2. Same-origin window.opener — this tab was opened from another
+  //      Nicer.md tab via window.open (Cmd / Ctrl / Shift-click on a
+  //      rendered link). Cross-origin opener access throws; an
+  //      attacker on attacker.com can't fake this signal.
+  //
+  // Either signal means the user chose the link from a trusted
+  // rendered doc; skip the gate and keep the `?url=…` in the address
+  // bar so the page stays a copyable share link.
   const state = window.history.state as { chainKind?: string; url?: string } | null
-  if (state?.chainKind === 'chain' && state.url === urlParam) {
+  const fromChainState = state?.chainKind === 'chain' && state.url === urlParam
+  const fromTrustedOpener = isSameOriginOpener()
+  if (fromChainState || fromTrustedOpener) {
     const result = parseGithubUrl(urlParam)
     if (!result.ok) return
+    // Mark history.state so a future refresh in this tab keeps
+    // skipping the gate even if the opener tab has since been
+    // closed (which would invalidate the opener signal alone).
+    if (!fromChainState) {
+      window.history.replaceState({ chainKind: 'chain', url: urlParam }, '', window.location.href)
+    }
     void loadFromUrl(harness, urlParam).catch((err) => {
       console.error('[boot] chained-state load failed:', err)
     })
     return
   }
 
-  // External arrival (share link, paste into URL bar, fresh visit).
-  // Strip the param so refresh is a clean re-boot (no re-prompt
-  // loop) and the user's address bar shows the canonical app URL
-  // even if they glance up before deciding. Then show the gate.
+  // External arrival (share link, paste into URL bar, fresh visit
+  // from outside Nicer.md). Strip the param so refresh is a clean
+  // re-boot (no re-prompt loop) and the user's address bar shows
+  // the canonical app URL even if they glance up before deciding.
+  // Then show the gate.
   params.delete('url')
   const remaining = params.toString()
   const newUrl = window.location.pathname + (remaining ? `?${remaining}` : '') + window.location.hash
@@ -441,6 +458,18 @@ export function processBootUrlParam(harness: Harness): void {
   if (!result.ok) return
 
   showBootConfirmation(harness, urlParam, result.parsed)
+}
+
+function isSameOriginOpener(): boolean {
+  try {
+    const opener = window.opener as Window | null
+    if (!opener || opener.closed) return false
+    return opener.location.origin === window.location.origin
+  } catch {
+    // SecurityError on cross-origin access — that's exactly the
+    // case we want to reject (opener is some other site).
+    return false
+  }
 }
 
 let bootConfirmOpen = false

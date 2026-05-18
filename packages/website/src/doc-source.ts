@@ -275,7 +275,7 @@ export async function newFile(harness: Harness, defaultText: string = ''): Promi
   harness.replaceDoc(defaultText)
 }
 
-async function confirmDiscard(): Promise<boolean> {
+export async function confirmDiscard(): Promise<boolean> {
   if (isTauri()) {
     const { ask } = await import('@tauri-apps/plugin-dialog')
     return ask('Discard unsaved changes?', { title: 'Nicer.md', kind: 'warning' })
