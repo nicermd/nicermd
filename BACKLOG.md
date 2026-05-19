@@ -172,3 +172,32 @@ shouldn't be forgotten.
   5–10s screencap of mode switching is a stretch goal.
 - **CHANGELOG.md entries.** File is currently a stub. Populate from
   `git log` summary points so there's a real history page.
+
+## Editor layout
+
+- **Content-aware shrink-to-fit width for source.** Read (Mode 1) and
+  Code (Mode 4) currently use a fixed 900px cap for source files. For
+  short-line files (most Python / config files) that's still wider
+  than the actual content, leaving large empty side margins. Measure
+  the widest rendered line at mount and clamp the container to that
+  width + comfortable padding, floored at reading-width and ceilinged
+  at e.g. 1100px so very long lines still wrap. Mode 4 needs a
+  re-measure on every edit; Mode 1 is one-shot. Architectural memory
+  forbids user-facing width controls, so this stays auto-tuned.
+  Surfaced 2026-05-19.
+
+## Distribution / hosting
+
+- **Cloudflare cost mitigation for viral spikes.** Today every byte
+  served to nicer.md comes off Cloudflare Pages free tier (which has
+  generous-but-finite request and bandwidth quotas). If a launch /
+  HN post / Twitter share hits hard we want headroom without paying.
+  Explore: (a) Loading large vendored libs from public CDNs
+  (markdown-it, hljs, KaTeX) with SRI hashes so they're cached
+  globally and don't count against our requests; (b) Aggressive
+  immutable cache-control on hashed assets so most return visits
+  are 304s; (c) jsDelivr/unpkg as a fallback origin for static
+  releases tagged on GitHub. Trade-off vs the current bundle-it-all
+  approach: bundle-it-all is faster first-paint (no extra DNS), CDN-
+  loaded is cheaper at scale. Worth scoping when site usage warrants
+  it. Surfaced 2026-05-19.

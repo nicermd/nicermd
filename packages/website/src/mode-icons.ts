@@ -86,18 +86,23 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
     }
   }
 
-  // Write mode (key=2) routes through Tiptap, whose markdown serialiser
-  // would round-trip plain text or source files through markdown-shaped
-  // output on save — surprising and lossy. Hide the button when the
-  // loaded doc isn't markdown; Read + Split (preview is rendered, editor
-  // is CodeMirror) + Code stay available. If the user happens to be in
-  // Write mode when a non-markdown doc loads, kick them back to Read.
+  // Modes 2 (Write/Tiptap) and 3 (Split: editor + live preview) are
+  // markdown-only. Write because Tiptap's markdown serialiser would
+  // mangle non-markdown text on save. Split because the preview side
+  // is the same hljs render as Read mode — for code, editor + preview
+  // are essentially the same content twice, adding friction without
+  // adding signal. Read + Code stay available for every kind. If the
+  // user happens to be in a hidden mode when a non-markdown doc loads,
+  // kick them back to Read.
   const updateVisibility = (): void => {
     const isMarkdown = getContentKind().kind === 'markdown'
     const writeBtn = buttons.get(2)
+    const splitBtn = buttons.get(3)
     if (writeBtn) writeBtn.hidden = !isMarkdown
-    if (!isMarkdown && harness.getCurrentMode().key === 2) {
-      harness.switchTo(1)
+    if (splitBtn) splitBtn.hidden = !isMarkdown
+    if (!isMarkdown) {
+      const current = harness.getCurrentMode().key
+      if (current === 2 || current === 3) harness.switchTo(1)
     }
   }
 

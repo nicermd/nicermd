@@ -1384,6 +1384,15 @@ html {
   width: 100%;
 }
 
+/* Source files get a wider container so long code lines breathe.
+   Markdown + plain text (LICENSE, CHANGELOG, .txt) stay at the
+   prose reading-width — those are read line-by-line and the narrow
+   column is the right ergonomic. min() clamps so very narrow
+   viewports still fit without horizontal scroll. */
+.mode-read[data-content-kind='source'] {
+  max-width: min(900px, calc(100% - 2rem));
+}
+
 .mode-read h1,
 .mode-read h2,
 .mode-read h3 {
@@ -1755,9 +1764,16 @@ html {
 }
 
 /* --- Mode 4 — raw code. Body scrolls (matches mode 1); CodeMirror's
-   editor grows to its content height instead of scrolling internally. --- */
+   editor grows to its content height instead of scrolling internally.
+   Constrained-but-comfortable max-width mirrors the source-code
+   variant of Mode 1 (.mode-read[data-content-kind='source']) so
+   the editor doesn't sprawl flush-left on wide monitors. Markdown
+   sources can be long too (tables, URLs), so the constraint applies
+   regardless of content kind. --- */
 .mode-raw {
   width: 100%;
+  max-width: min(900px, calc(100% - 2rem));
+  margin: 0 auto;
 }
 .mode-raw .cm-editor { height: auto; }
 .mode-raw .cm-content { padding: 1rem 1rem 4rem; }

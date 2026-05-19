@@ -14,7 +14,7 @@
 // (anonymous), so a subsequent Save falls through to Save-As.
 
 import type { Harness } from './main'
-import type { ContentKind } from './url-open'
+import { classifyPath, SOURCE_EXT_TO_LANG, type ContentKind } from './url-open'
 
 type DocSource =
   | { kind: 'tauri-path'; path: string }
@@ -99,14 +99,99 @@ export function getCurrentSourceUrl(): string | null {
   return currentSource?.kind === 'url' ? currentSource.url : null
 }
 
-const ACCEPT_FILTERS = {
-  description: 'Markdown',
-  accept: { 'text/markdown': ['.md', '.markdown', '.mdx'] },
-} as const
+// Reverse lookup language → primary extension. Lazy because
+// doc-source ↔ url-open is a cycle (url-open imports Harness from
+// main, main imports doc-source); evaluating SOURCE_EXT_TO_LANG at
+// module-init time hits the cycle before the binding is ready and
+// throws under Vitest's strict ESM eval. Computing on first use lets
+// both modules finish loading before we touch the table.
+let _langToPrimaryExt: Record<string, string> | null = null
+function langToPrimaryExt(): Record<string, string> {
+  if (_langToPrimaryExt) return _langToPrimaryExt
+  const out: Record<string, string> = {}
+  for (const [ext, lang] of Object.entries(SOURCE_EXT_TO_LANG)) {
+    if (!(lang in out)) out[lang] = ext
+  }
+  _langToPrimaryExt = out
+  return out
+}
 
-const TAURI_FILE_FILTERS = [
-  { name: 'Markdown', extensions: ['md', 'markdown', 'mdx'] },
-]
+const MARKDOWN_EXTS = ['md', 'markdown', 'mdx']
+const PLAIN_EXTS = ['txt']
+
+// FSA picker accept entries. The picker shows each entry as a row in the
+// "Save as type" dropdown — narrower entries first so the active kind is
+// selected by default. For save we surface ONLY the current kind so the
+// chosen extension matches; for open we surface ALL supported types so
+// the user can pick any file we know how to render.
+type FsaAccept = { description: string; accept: Record<string, string[]> }
+
+function fsaAcceptForKind(kind: ContentKind): FsaAccept {
+  if (kind.kind === 'markdown') {
+    return { description: 'Markdown', accept: { 'text/markdown': ['.md', '.markdown', '.mdx'] } }
+  }
+  if (kind.kind === 'plain') {
+    return { description: 'Plain text', accept: { 'text/plain': ['.txt'] } }
+  }
+  const ext = langToPrimaryExt()[kind.language] ?? 'txt'
+  return { description: `${kind.language} source`, accept: { 'text/plain': [`.${ext}`] } }
+}
+
+function fsaAcceptOpen(): FsaAccept[] {
+  const allSourceExts = Object.keys(SOURCE_EXT_TO_LANG).map((e) => `.${e}`)
+  return [
+    { description: 'Markdown', accept: { 'text/markdown': MARKDOWN_EXTS.map((e) => `.${e}`) } },
+    { description: 'Plain text', accept: { 'text/plain': PLAIN_EXTS.map((e) => `.${e}`) } },
+    { description: 'Source code', accept: { 'text/plain': allSourceExts } },
+  ]
+}
+
+type TauriFilter = { name: string; extensions: string[] }
+
+function tauriFilterForKind(kind: ContentKind): TauriFilter[] {
+  if (kind.kind === 'markdown') return [{ name: 'Markdown', extensions: ['md', 'markdown', 'mdx'] }]
+  if (kind.kind === 'plain') return [{ name: 'Plain text', extensions: ['txt'] }]
+  const ext = langToPrimaryExt()[kind.language] ?? 'txt'
+  return [{ name: `${kind.language} source`, extensions: [ext] }]
+}
+
+function tauriFilterOpen(): TauriFilter[] {
+  return [
+    { name: 'Markdown', extensions: ['md', 'markdown', 'mdx'] },
+    { name: 'Plain text', extensions: ['txt'] },
+    { name: 'Source code', extensions: Object.keys(SOURCE_EXT_TO_LANG) },
+  ]
+}
+
+// MIME type for the download-fallback Blob. Browsers use this to hint
+// the OS file association on save; the extension on the download name
+// is the stronger signal, so we keep MIME conservative (text/plain for
+// everything non-markdown) rather than mapping every language to its
+// IANA media type.
+function mimeForKind(kind: ContentKind): string {
+  return kind.kind === 'markdown' ? 'text/markdown' : 'text/plain'
+}
+
+// Suggested filename for a Save-As when we don't already have one. The
+// extension reflects the active content kind so a python file edited
+// from a URL with no name lands as `untitled.py`, not `untitled.md`.
+function defaultSaveName(kind: ContentKind): string {
+  if (kind.kind === 'markdown') return 'untitled.md'
+  if (kind.kind === 'plain') return 'untitled.txt'
+  const ext = langToPrimaryExt()[kind.language] ?? 'txt'
+  return `untitled.${ext}`
+}
+
+// Classify a local filename through the same path-classifier the URL
+// loader uses. Falls back to markdown for shapes the classifier returns
+// null on (e.g. an extensionless basename that isn't a known plain-text
+// doc) — that lets weird names still open as editable markdown rather
+// than failing the open entirely. The save filter will then suggest
+// `.md` for those, which is a reasonable default given we couldn't
+// identify them.
+export function kindForFilename(name: string): ContentKind {
+  return classifyPath(name) ?? { kind: 'markdown' }
+}
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
@@ -140,7 +225,8 @@ export async function openFile(harness: Harness): Promise<void> {
 export async function openFromTauriPath(harness: Harness, path: string): Promise<void> {
   const { readTextFile } = await import('@tauri-apps/plugin-fs')
   const text = await readTextFile(path)
-  setDocState(text, basename(path), { kind: 'tauri-path', path })
+  const name = basename(path)
+  setDocState(text, name, { kind: 'tauri-path', path }, kindForFilename(name))
   harness.replaceDoc(text)
 }
 
@@ -149,7 +235,7 @@ async function openViaTauri(harness: Harness): Promise<void> {
   const result = await open({
     multiple: false,
     directory: false,
-    filters: TAURI_FILE_FILTERS,
+    filters: tauriFilterOpen(),
   })
   if (typeof result !== 'string') return
   await openFromTauriPath(harness, result)
@@ -161,7 +247,7 @@ async function openViaFsa(
 ): Promise<void> {
   let handle: FileSystemFileHandle
   try {
-    const handles = await show({ multiple: false, types: [ACCEPT_FILTERS] })
+    const handles = await show({ multiple: false, types: fsaAcceptOpen() })
     handle = handles[0]!
   } catch (err) {
     if ((err as { name?: string }).name === 'AbortError') return
@@ -169,15 +255,23 @@ async function openViaFsa(
   }
   const file = await handle.getFile()
   const text = await file.text()
-  setDocState(text, file.name, { kind: 'fsa', handle })
+  setDocState(text, file.name, { kind: 'fsa', handle }, kindForFilename(file.name))
   harness.replaceDoc(text)
 }
 
 async function openViaInputFallback(harness: Harness): Promise<void> {
   const input = document.createElement('input')
   input.type = 'file'
+  // Widened to every extension the renderer understands. The
+  // fsaAcceptOpen() / tauriFilterOpen() tables are the authoritative
+  // list; we just flatten them to a comma-separated accept string here.
+  const allExts = [
+    ...MARKDOWN_EXTS,
+    ...PLAIN_EXTS,
+    ...Object.keys(SOURCE_EXT_TO_LANG),
+  ]
   input.name = 'file-open'
-  input.accept = '.md,.markdown,.mdx,text/markdown'
+  input.accept = [...allExts.map((e) => `.${e}`), 'text/markdown', 'text/plain'].join(',')
   input.style.display = 'none'
   document.body.appendChild(input)
   await new Promise<void>((resolve) => {
@@ -186,7 +280,7 @@ async function openViaInputFallback(harness: Harness): Promise<void> {
       if (file) {
         const text = await file.text()
         // No save-back path in this fallback — record name only.
-        setDocState(text, file.name, null)
+        setDocState(text, file.name, null, kindForFilename(file.name))
         harness.replaceDoc(text)
       }
       input.remove()
@@ -239,24 +333,29 @@ async function saveAsFile(harness: Harness, text: string): Promise<void> {
 async function saveAsViaTauri(text: string): Promise<void> {
   const { save } = await import('@tauri-apps/plugin-dialog')
   const { writeTextFile } = await import('@tauri-apps/plugin-fs')
+  const kind = currentContentKind
   const path = await save({
-    defaultPath: currentSource && currentSource.kind === 'tauri-path' ? currentSource.path : (currentName ?? 'untitled.md'),
-    filters: TAURI_FILE_FILTERS,
+    defaultPath: currentSource && currentSource.kind === 'tauri-path'
+      ? currentSource.path
+      : (currentName ?? defaultSaveName(kind)),
+    filters: tauriFilterForKind(kind),
   })
   if (typeof path !== 'string') return
   await writeTextFile(path, text)
-  setDocState(text, basename(path), { kind: 'tauri-path', path })
+  const name = basename(path)
+  setDocState(text, name, { kind: 'tauri-path', path }, kindForFilename(name))
 }
 
 async function saveAsViaFsa(
   text: string,
   show: (options?: SaveFilePickerOptions) => Promise<FileSystemFileHandle>,
 ): Promise<void> {
+  const kind = currentContentKind
   let handle: FileSystemFileHandle
   try {
     handle = await show({
-      suggestedName: currentName ?? 'untitled.md',
-      types: [ACCEPT_FILTERS],
+      suggestedName: currentName ?? defaultSaveName(kind),
+      types: [fsaAcceptForKind(kind)],
     })
   } catch (err) {
     if ((err as { name?: string }).name === 'AbortError') return
@@ -266,15 +365,16 @@ async function saveAsViaFsa(
   await writable.write(text)
   await writable.close()
   const file = await handle.getFile()
-  setDocState(text, file.name, { kind: 'fsa', handle })
+  setDocState(text, file.name, { kind: 'fsa', handle }, kindForFilename(file.name))
 }
 
 function saveAsViaDownload(text: string): void {
-  const blob = new Blob([text], { type: 'text/markdown' })
+  const kind = currentContentKind
+  const blob = new Blob([text], { type: mimeForKind(kind) })
   const url = URL.createObjectURL(blob)
   const a = document.createElement('a')
   a.href = url
-  a.download = currentName ?? 'untitled.md'
+  a.download = currentName ?? defaultSaveName(kind)
   document.body.appendChild(a)
   a.click()
   document.body.removeChild(a)

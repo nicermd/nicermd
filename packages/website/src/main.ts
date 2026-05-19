@@ -15,7 +15,7 @@
 // and only when `import.meta.env.DEV && ?dev=1` — production builds
 // tree-shake the entire dev module out.
 
-import { EditorState } from '@codemirror/state'
+import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import { EditorView, keymap, drawSelection, lineNumbers } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
 import { markdown } from '@codemirror/lang-markdown'
@@ -38,7 +38,7 @@ import { initTheme, toggleRecentTheme, showThemeToast } from './themes'
 import { initFonts } from './fonts'
 import { openFontPicker } from './font-picker'
 import { openUrlPrompt, processBootUrlParam } from './url-open'
-import { setupLinkChaining } from './link-chain'
+import { setupLinkChaining, showNoticeBanner } from './link-chain'
 import { openThemePicker } from './theme-picker'
 import { registerServiceWorker } from './sw-register'
 import { setupScrollStrip, showStrip } from './scroll-strip'
@@ -106,6 +106,17 @@ const editorTheme = EditorView.theme({
     lineHeight: '1.55',
   },
   '.cm-content': {
+    // Pin colour explicitly rather than relying on inheritance from
+    // `&` (.cm-editor). Why: WebKit's `-webkit-user-modify:
+    // read-write-plaintext-only` (which CodeMirror's base styles
+    // apply to .cm-content[contenteditable=true]) strips inherited
+    // colour from the editable region. With a syntaxHighlighting
+    // extension active (markdown mode), every visible token is
+    // wrapped in its own span, so inheritance gets reasserted per-
+    // token and the bug stays invisible. For non-markdown content
+    // we removed the highlighter, exposing the bug. Explicit colour
+    // here fixes both paths and survives future highlighter changes.
+    color: 'var(--cm-fg)',
     caretColor: 'var(--cm-caret)',
   },
   '.cm-cursor': {
@@ -135,25 +146,129 @@ const editorTheme = EditorView.theme({
   },
 })
 
-// Per-content-kind CodeMirror extensions. Markdown gets the markdown
-// language parser + token-color highlighting; plain text and source
-// files skip those so Python's `# comment` lines don't get parsed as
-// H1 headings and rendered in --cm-heading colour (which was the
-// most visible "themes broken" symptom in modes 3/4). Source files
-// fall through to plain CodeMirror today — adding per-language
-// parsers (lang-python, lang-typescript, …) would re-introduce
-// syntax-aware editing but at non-trivial bundle cost; deferred.
-function codeMirrorExtensions() {
+// Source-code highlight palette — reuses the same --cm-* vars the
+// markdown highlighter uses so a theme tunes ONE palette and every
+// language picks up the same per-token colours. Tag picks follow the
+// hljs mapping in main.css (which Read mode already uses), so the
+// editor side of mode 3 and mode 4 match the preview side's colouring:
+//   keyword / bool / atom / null → --cm-marker  (structural accent)
+//   string / regexp              → --cm-monospace (the "code" accent)
+//   comment / docComment         → --cm-quote   (muted, italic)
+//   number                       → --cm-url     (distinct accent)
+//   function name / definition   → --cm-heading (prominent accent)
+//   className / typeName         → --cm-marker  (treated like keywords)
+//   variableName.special (self)  → --cm-link    (theme link colour)
+const sourceHighlight = HighlightStyle.define([
+  { tag: t.keyword, color: 'var(--cm-marker)' },
+  { tag: t.atom, color: 'var(--cm-marker)' },
+  { tag: t.bool, color: 'var(--cm-marker)' },
+  { tag: t.null, color: 'var(--cm-marker)' },
+  { tag: t.self, color: 'var(--cm-link)' },
+  { tag: t.string, color: 'var(--cm-monospace)' },
+  { tag: t.special(t.string), color: 'var(--cm-monospace)' },
+  { tag: t.regexp, color: 'var(--cm-monospace)' },
+  { tag: t.comment, color: 'var(--cm-quote)', fontStyle: 'italic' },
+  { tag: t.docComment, color: 'var(--cm-quote)', fontStyle: 'italic' },
+  { tag: t.number, color: 'var(--cm-url)' },
+  { tag: t.function(t.variableName), color: 'var(--cm-heading)' },
+  { tag: t.function(t.definition(t.variableName)), color: 'var(--cm-heading)' },
+  { tag: t.definition(t.function(t.variableName)), color: 'var(--cm-heading)' },
+  { tag: t.className, color: 'var(--cm-marker)' },
+  { tag: t.typeName, color: 'var(--cm-marker)' },
+  { tag: t.propertyName, color: 'var(--cm-link)' },
+])
+
+// Lazy language loader. Returns the dynamic-import promise for a given
+// content kind, or null when no per-language extension is available
+// (plain text, shell, or unknown). The caller injects the resolved
+// extensions through the editor's language Compartment so the editor
+// mounts immediately and upgrades to syntax-aware highlighting when
+// the chunk lands. Code-split this way each lang pack only ships to
+// users who open a file of that kind.
+function loadLanguageExtensionsFor(kind: ContentKindLocal): Promise<Extension[]> | null {
+  if (kind.kind !== 'source') return null
+  const withHighlight = (ext: Extension): Extension[] => [ext, syntaxHighlighting(sourceHighlight)]
+  // Each branch dynamically imports its lang pack so users only pay
+  // the per-language download when they actually open a file of that
+  // kind. lang-javascript handles JS/TS/JSX/TSX through dialect flags;
+  // lang-html covers htm via the same parser; lang-xml covers svg.
+  switch (kind.language) {
+    case 'python':
+      return import('@codemirror/lang-python').then(({ python }) => withHighlight(python()))
+    case 'javascript':
+      return import('@codemirror/lang-javascript').then(({ javascript }) => withHighlight(javascript()))
+    case 'jsx':
+      return import('@codemirror/lang-javascript').then(({ javascript }) => withHighlight(javascript({ jsx: true })))
+    case 'typescript':
+      return import('@codemirror/lang-javascript').then(({ javascript }) => withHighlight(javascript({ typescript: true })))
+    case 'tsx':
+      return import('@codemirror/lang-javascript').then(({ javascript }) => withHighlight(javascript({ typescript: true, jsx: true })))
+    case 'json':
+      return import('@codemirror/lang-json').then(({ json }) => withHighlight(json()))
+    case 'css':
+      return import('@codemirror/lang-css').then(({ css }) => withHighlight(css()))
+    case 'html':
+      return import('@codemirror/lang-html').then(({ html }) => withHighlight(html()))
+    case 'xml':
+    case 'svg':
+      return import('@codemirror/lang-xml').then(({ xml }) => withHighlight(xml()))
+    default:
+      // bash/sh: no first-party CodeMirror lang pack. Falls through to
+      // plain editing with the global token-colour CSS not applying.
+      // Same path for any future language we don't have a pack for.
+      return null
+  }
+}
+
+// Local mirror — getContentKind()'s return type is ContentKind from
+// url-open; redeclare narrowly here to avoid an extra import surface
+// while still typing the helper above.
+type ContentKindLocal =
+  | { kind: 'markdown' }
+  | { kind: 'plain' }
+  | { kind: 'source'; language: string }
+
+// Per-content-kind CodeMirror extensions. Markdown gets its language
+// parser + the markdown highlight palette synchronously (it's needed
+// by mode 2's hidden wrapper too). Source files start with an empty
+// language slot via the Compartment; loadLanguageExtensionsFor() then
+// reconfigures the slot with the per-language extension once its
+// dynamic-import chunk arrives. Plain text stays in the empty slot.
+function codeMirrorExtensions(languageCompartment: Compartment): Extension[] {
   const isMarkdown = getContentKind().kind === 'markdown'
   return [
     history(),
     drawSelection(),
     lineNumbers(),
     EditorView.lineWrapping,
-    ...(isMarkdown ? [markdown({ extensions: [GFM] }), syntaxHighlighting(mdHighlight)] : []),
+    languageCompartment.of(
+      isMarkdown
+        ? [markdown({ extensions: [GFM] }), syntaxHighlighting(mdHighlight)]
+        : [],
+    ),
     editorTheme,
     keymap.of([...defaultKeymap, ...historyKeymap]),
   ]
+}
+
+// After an editor view mounts with an empty language slot, kick off
+// the per-language load and inject the result via the Compartment so
+// the active view reconfigures live. Safe to call regardless of kind —
+// non-source kinds resolve to null and we just leave the slot empty.
+function applySourceLanguage(view: EditorView, languageCompartment: Compartment): void {
+  const kind = getContentKind() as ContentKindLocal
+  const loader = loadLanguageExtensionsFor(kind)
+  if (!loader) return
+  void loader
+    .then((exts) => {
+      // View may have been destroyed mid-load if the user switched
+      // modes; dispatch on a dead view throws.
+      if ((view as unknown as { destroyed?: boolean }).destroyed) return
+      view.dispatch({ effects: languageCompartment.reconfigure(exts) })
+    })
+    .catch((err: unknown) => {
+      console.warn('[cm] language load failed:', err)
+    })
 }
 
 // Render the current document with the renderer matching its content
@@ -171,6 +286,11 @@ function renderForCurrentKind(text: string): string {
 function mountRead(parent: HTMLElement, markdown: string): ModeHandle {
   const div = document.createElement('div')
   div.className = 'mode-read'
+  // Tag the read container with its content kind so main.css can
+  // widen the column for `source` (long code lines breathe) while
+  // keeping prose-shaped content — markdown AND plain text, both
+  // typically wrapped at ~80 cols — at the reading-width default.
+  div.dataset.contentKind = getContentKind().kind
   let current = markdown
   // baseUrl resolves relative href/src in URL-loaded docs (e.g. a README's
   // `images/logo.png`) against the source URL; null/undefined for local
@@ -291,11 +411,12 @@ function mountCodePlusPreview(
   }
   renderTo(markdown)
 
+  const languageCompartment = new Compartment()
   const view = new EditorView({
     state: EditorState.create({
       doc: markdown,
       extensions: [
-        ...codeMirrorExtensions(),
+        ...codeMirrorExtensions(languageCompartment),
         EditorView.updateListener.of((update) => {
           if (!update.docChanged) return
           const md = update.state.doc.toString()
@@ -306,6 +427,7 @@ function mountCodePlusPreview(
     }),
     parent: editorPane,
   })
+  applySourceLanguage(view, languageCompartment)
 
   return {
     destroy: () => {
@@ -324,11 +446,12 @@ function mountRawCode(
   const wrap = document.createElement('div')
   wrap.className = 'mode-raw'
   parent.appendChild(wrap)
+  const languageCompartment = new Compartment()
   const view = new EditorView({
     state: EditorState.create({
       doc: markdown,
       extensions: [
-        ...codeMirrorExtensions(),
+        ...codeMirrorExtensions(languageCompartment),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) onChange?.(update.state.doc.toString())
         }),
@@ -336,6 +459,7 @@ function mountRawCode(
     }),
     parent: wrap,
   })
+  applySourceLanguage(view, languageCompartment)
   return {
     destroy: () => {
       view.destroy()
@@ -453,10 +577,22 @@ export class Harness {
   ): void {
     if (key === this.currentMode && this.currentHandle) return
     // Defence in depth — Write mode is hidden for non-markdown docs, but
-    // also block the Cmd+2 shortcut, cycle-mode keystrokes, and the
-    // command palette from landing on it. Silent no-op so cycle callers
-    // skip to the next mode instead of stalling.
-    if (key === 2 && getContentKind().kind !== 'markdown') return
+    // also block the Cmd+2 shortcut, command palette, and direct clicks
+    // from landing on it. Cycle paths route through nextAllowedMode so
+    // they never reach this branch — meaning every caller that does is
+    // a deliberate user action (Cmd+2, palette, click on hidden icon)
+    // and deserves a discreet notice rather than a silent no-op.
+    // Modes 2 (Write/Tiptap) and 3 (Split: editor + live preview) are
+    // markdown-only. Tiptap's serialiser would mangle non-markdown text,
+    // and the Split preview has nothing transformative to show for code
+    // (it's the same hljs render as Read mode, just narrower) — the
+    // editor and preview show effectively the same content, so the
+    // split adds friction without adding value. Read (1) and Code (4)
+    // stay available; the notice points the user at those.
+    if ((key === 2 || key === 3) && getContentKind().kind !== 'markdown') {
+      showNoticeBanner('Markdown-only mode. Use mode 1 to read or mode 4 to edit.')
+      return
+    }
     const dir = direction ?? (key > this.currentMode ? 'forward' : 'backward')
     const reducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
@@ -528,14 +664,15 @@ export class Harness {
   }
 
   // Step forward/backward through modes, skipping ones that switchTo
-  // would refuse (Write/key=2 when the doc isn't markdown). Without
-  // the skip, cycling past Write on a plain-text doc would stall on
-  // the current mode because switchTo would silently no-op.
+  // would refuse (Write/key=2 and Split/key=3 when the doc isn't
+  // markdown). Without the skip, cycling past those modes on a non-
+  // markdown doc would stall on the current mode because switchTo
+  // would silently no-op + show a notice the cycle didn't intend.
   private nextAllowedMode(from: number, step: 1 | -1): number {
     let candidate = from
     for (let i = 0; i < MODES.length; i++) {
       candidate = ((candidate - 1 + step + MODES.length) % MODES.length) + 1
-      if (candidate === 2 && getContentKind().kind !== 'markdown') continue
+      if ((candidate === 2 || candidate === 3) && getContentKind().kind !== 'markdown') continue
       return candidate
     }
     return from
