@@ -27,11 +27,29 @@ shouldn't be forgotten.
   `src-tauri/src/lib.rs` that calls `tauri_plugin_fs::FsExt::scope()`
   on dialog responses.
   _packages/website/src-tauri/capabilities/default.json fs:scope_
-- **`style-src 'unsafe-inline'` in Tauri CSP.** Currently permitted
-  because Tauri's overlay title-bar chrome and Tiptap's editor may
-  inject inline styles. Audit each source and either move to
-  bundled-class styling or use a CSP nonce, then drop `'unsafe-inline'`.
-  _packages/website/src-tauri/tauri.conf.json security.csp_
+- **`style-src 'unsafe-inline'` — defense-in-depth hygiene, not
+  urgent.** Audited 2026-05-19. Threat model: this only matters *if*
+  an attacker can inject HTML into the rendered page. DOMPurify
+  already strips `<style>` elements (not in `ALLOWED_TAGS`) and
+  `style=""` attributes (not in `ALLOWED_ATTR`), so attacker-
+  controlled markdown can't carry inline styles regardless of CSP.
+  CSP is the second layer. Dropping `'unsafe-inline'` is real work
+  spanning both runtimes:
+  - **Tauri:** Tauri 2 auto-injects nonces for static `<style>` blocks
+    via the `__TAURI_STYLE_NONCE__` token replacement. CodeMirror's
+    runtime `<style>` injection (via `style-mod`) is the holdout —
+    needs `EditorView.cspNonce` facet wired to a JS-readable nonce.
+    Tauri's per-occurrence nonce generation means we'd need a shim
+    `<script>` in index.html carrying its own nonce token, then read
+    it from `window.*` at boot. Tiptap nonce status unverified.
+  - **Web (CF Pages):** per-request nonces require a Pages Function
+    (server-side), not just a static `_headers` file. Meaningful
+    infra add.
+  Worth doing eventually for hardening hygiene, but not a priority
+  vs feature work. Original BACKLOG entry framed this as "audit and
+  drop" — the audit happened; the actual fix is a nonce architecture
+  across two runtimes.
+  _packages/website/src-tauri/tauri.conf.json + packages/website/public/_headers_
 
 ## Desktop features
 
@@ -114,8 +132,6 @@ shouldn't be forgotten.
   already in the README. A 5–10s screencap showing Read → Write →
   Split → Code on a single doc would carry the mode-switching
   ergonomic better than prose. Stretch goal, not blocking.
-- **CHANGELOG.md entries.** File is currently a stub. Populate from
-  `git log` summary points so there's a real history page.
 
 ## Distribution / hosting
 
