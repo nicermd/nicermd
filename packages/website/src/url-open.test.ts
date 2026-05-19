@@ -71,22 +71,46 @@ describe('Host allowlist', () => {
 // --- Path / extension filter ---------------------------------------------
 
 describe('Path extension filter', () => {
-  it('rejects .html under blob/raw URLs', () => {
-    reject('https://github.com/u/r/blob/main/x.html')
-    reject('https://github.com/u/r/raw/main/page.htm')
-  })
-  it('rejects no-extension under blob/raw URLs', () => {
-    reject('https://github.com/u/r/blob/main/LICENSE')
-    reject('https://github.com/u/r/blob/main/README')
-  })
-  it('rejects .html on raw.githubusercontent.com', () => {
-    reject('https://raw.githubusercontent.com/u/r/main/x.html')
-  })
   it('accepts .md, .markdown, .mdx (case-insensitive)', () => {
-    accept('https://raw.githubusercontent.com/u/r/main/x.md')
+    const md = accept('https://raw.githubusercontent.com/u/r/main/x.md')
+    expect(md.parsed).toMatchObject({ kind: 'direct', content: { kind: 'markdown' } })
     accept('https://raw.githubusercontent.com/u/r/main/x.MD')
     accept('https://raw.githubusercontent.com/u/r/main/x.markdown')
     accept('https://raw.githubusercontent.com/u/r/main/x.mdx')
+  })
+  it('accepts plain-text doc basenames without extension', () => {
+    const lic = accept('https://github.com/u/r/blob/main/LICENSE')
+    expect(lic.parsed).toMatchObject({ kind: 'direct', content: { kind: 'plain' } })
+    accept('https://github.com/u/r/blob/main/COPYING')
+    accept('https://github.com/u/r/blob/main/CHANGELOG')
+    accept('https://github.com/u/r/blob/main/README')
+    accept('https://github.com/u/r/blob/main/AUTHORS')
+    accept('https://github.com/u/r/blob/main/NOTICE')
+  })
+  it('accepts .txt as plain text', () => {
+    const r = accept('https://raw.githubusercontent.com/u/r/main/notes.txt')
+    expect(r.parsed).toMatchObject({ kind: 'direct', content: { kind: 'plain' } })
+  })
+  it('accepts source files with the right hljs language', () => {
+    const ts = accept('https://raw.githubusercontent.com/u/r/main/src/main.ts')
+    expect(ts.parsed).toMatchObject({ kind: 'direct', content: { kind: 'source', language: 'typescript' } })
+    const py = accept('https://github.com/u/r/blob/main/run.py')
+    expect(py.parsed).toMatchObject({ kind: 'direct', content: { kind: 'source', language: 'python' } })
+    const html = accept('https://raw.githubusercontent.com/u/r/main/index.html')
+    expect(html.parsed).toMatchObject({ kind: 'direct', content: { kind: 'source', language: 'html' } })
+    accept('https://raw.githubusercontent.com/u/r/main/style.css')
+    accept('https://raw.githubusercontent.com/u/r/main/data.json')
+    accept('https://raw.githubusercontent.com/u/r/main/run.sh')
+  })
+  it('rejects unsupported file types', () => {
+    reject('https://github.com/u/r/blob/main/photo.png')
+    reject('https://github.com/u/r/blob/main/archive.zip')
+    reject('https://github.com/u/r/blob/main/binary.exe')
+    reject('https://raw.githubusercontent.com/u/r/main/movie.mp4')
+  })
+  it('rejects extensionless basenames that are not known plain-text docs', () => {
+    reject('https://github.com/u/r/blob/main/Makefile')
+    reject('https://github.com/u/r/blob/main/.gitignore')
   })
   it('strips query/fragment before checking extension', () => {
     accept('https://raw.githubusercontent.com/u/r/main/x.md?token=abc')

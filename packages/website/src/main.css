@@ -1423,6 +1423,25 @@ html {
   padding: 0;
 }
 
+/* Plain-text docs (LICENSE, CHANGELOG, *.txt) — the renderer wraps
+   them in <pre class="nicermd-plain"> so they read as flowing prose
+   in the theme's body font rather than as a code block. white-space:
+   pre-wrap keeps line breaks AND wraps long lines, so a LICENSE with
+   80-column hard-wraps doesn't horizontal-scroll. The Code mode
+   (CodeMirror) is the right surface for actually editing these. */
+.mode-read pre.nicermd-plain,
+.mode-split__preview pre.nicermd-plain {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-family: var(--font-body);
+  font-size: 1em;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-x: visible;
+}
+
 /* highlight.js fenced-code-block tokens, mapped to the same --cm-*
    variables CodeMirror uses for markdown-source highlighting in
    Code and Split modes. Each theme has already tuned these

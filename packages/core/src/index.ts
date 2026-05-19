@@ -288,3 +288,32 @@ export function render(markdown: string, options: RenderOptions = {}): string {
   if (options.sanitize === false) return html
   return DOMPurify.sanitize(html, PURIFY_CONFIG) as string
 }
+
+// Render plain-text content (LICENSE, CHANGELOG, .txt, …). No markdown
+// parsing — the literal characters are preserved so `**` doesn't
+// surprise-bold a LICENSE clause. The `.nicermd-plain` class hook lets
+// themes override the default <pre> monospace styling so the content
+// reads as flowing prose in the theme's reading font; consumers that
+// want monospace plain text can ignore the class.
+export function renderPlain(text: string): string {
+  return DOMPurify.sanitize(`<pre class="nicermd-plain">${escapeHtml(text)}</pre>`, PURIFY_CONFIG) as string
+}
+
+// Render a source file with syntax highlighting via the same hljs
+// integration as fenced code blocks. Languages outside the registered
+// set fall back to escaped monospace (no highlighting). The `.hljs`
+// class is the hook for the existing token-color CSS.
+export function renderSource(text: string, language: string): string {
+  let inner: string
+  if (hljs.getLanguage(language)) {
+    try {
+      const out = hljs.highlight(text, { language, ignoreIllegals: true })
+      inner = `<pre><code class="hljs language-${language}">${out.value}</code></pre>`
+    } catch {
+      inner = `<pre><code class="hljs">${escapeHtml(text)}</code></pre>`
+    }
+  } else {
+    inner = `<pre><code class="hljs">${escapeHtml(text)}</code></pre>`
+  }
+  return DOMPurify.sanitize(inner, PURIFY_CONFIG) as string
+}
