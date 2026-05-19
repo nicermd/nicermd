@@ -9,6 +9,18 @@ _(no tracked issues)_
 
 ## Recently fixed
 
+- **URL fetch buffered the entire response before checking the 5 MiB
+  cap.** An attacker-controlled server could ship up to ~5 MiB of body
+  before we'd reject — wasteful at best, a memory-pressure vector at
+  worst. Fix: stream the body via `resp.body.getReader()`, accumulate
+  bytes per chunk, and `reader.cancel()` as soon as the cumulative
+  total exceeds the cap. TextDecoder stream-mode handles multi-byte
+  UTF-8 sequences split across chunks. Falls back to the old buffer-
+  then-check path only when `resp.body` is null. Defensive only;
+  current cap is still adequate in practice but the failure mode is
+  now bounded.
+  _packages/website/src/url-open.ts readBodyWithCap_
+
 - **`<picture>` + `<source>` dark-mode-aware images dropped.** READMEs
   that swap a cover image by `prefers-color-scheme` (using `<picture>`
   with multiple `<source>` candidates) rendered as an empty paragraph

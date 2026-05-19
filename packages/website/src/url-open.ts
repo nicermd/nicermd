@@ -442,17 +442,62 @@ function computeDisplayName(p: Parsed, fetchedUrl: string): string {
 async function fetchMarkdown(rawUrl: string): Promise<string> {
   const resp = await fetch(rawUrl, { redirect: 'error' })
   if (!resp.ok) throw new HttpError(resp.status, resp.statusText)
-  // Cheap pre-check before reading the body; the byte cap below is the
-  // real defence (servers can lie or omit content-length).
+  // Cheap pre-check before reading the body; the streaming cap below
+  // is the real defence (servers can lie or omit content-length).
   const declared = Number(resp.headers.get('content-length') ?? '')
   if (Number.isFinite(declared) && declared > MAX_BYTES) {
     throw new Error('File is too large (>5 MiB)')
   }
-  const buf = await resp.arrayBuffer()
-  if (buf.byteLength > MAX_BYTES) {
-    throw new Error('File is too large (>5 MiB)')
+  return readBodyWithCap(resp, MAX_BYTES)
+}
+
+// Stream the response body, aborting as soon as cumulative bytes exceed
+// `cap`. Previous implementation buffered the whole arrayBuffer first
+// and checked size after — meaning an attacker-controlled server could
+// transmit up to (cap-1) bytes BEFORE the check, plus a TCP send window
+// of overshoot, and we'd still hold the whole thing in memory. The
+// streaming variant pulls chunks until the running total exceeds the
+// cap, then cancels the reader; no whole-body buffering past the cap.
+// `resp.body` may be null on certain older browsers / opaque responses;
+// fall back to the arrayBuffer path with the same cap check after.
+export async function readBodyWithCap(resp: Response, cap: number): Promise<string> {
+  if (!resp.body) {
+    const buf = await resp.arrayBuffer()
+    if (buf.byteLength > cap) throw new Error('File is too large (>5 MiB)')
+    return new TextDecoder('utf-8').decode(buf)
   }
-  return new TextDecoder('utf-8').decode(buf)
+  const reader = resp.body.getReader()
+  const decoder = new TextDecoder('utf-8')
+  let text = ''
+  let received = 0
+  try {
+    while (true) {
+      const { done, value } = await reader.read()
+      if (done) {
+        // Final flush — picks up any incomplete multi-byte sequence
+        // remaining in the decoder's internal buffer.
+        text += decoder.decode()
+        return text
+      }
+      received += value.byteLength
+      if (received > cap) {
+        await reader.cancel('size cap exceeded')
+        throw new Error('File is too large (>5 MiB)')
+      }
+      // stream: true defers errors until the final decode() flush so
+      // a multi-byte UTF-8 sequence split across chunks decodes
+      // correctly when reassembled.
+      text += decoder.decode(value, { stream: true })
+    }
+  } catch (err) {
+    // Make sure the reader is released even on unexpected errors.
+    try {
+      await reader.cancel()
+    } catch {
+      // ignore
+    }
+    throw err
+  }
 }
 
 export async function loadFromUrl(harness: Harness, input: string): Promise<void> {
