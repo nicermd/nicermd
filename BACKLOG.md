@@ -107,10 +107,6 @@ shouldn't be forgotten.
   a signed update manifest from GitHub Releases. Adds ~200 lines + a
   key-pair generation step. Worth doing once a couple of versions have
   shipped and there are users to update.
-- **Universal binary CI.** `pnpm release:tauri` builds locally on a Mac
-  with both Rust targets installed. Moving this to GitHub Actions removes
-  the local-machine dependency and lets non-Mac contributors cut releases.
-  Needs `gh` token + (Layer 2) Apple secrets in repo settings.
 - **Windows / Linux builds.** Mac-first today. Windows would need a
   code-signing cert (~$300-500/year) for a no-warning install; Linux
   AppImage / deb / rpm could ship unsigned. Defer until cross-platform
