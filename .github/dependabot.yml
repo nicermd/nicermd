@@ -40,6 +40,12 @@ updates:
         update-types:
           - "patch"
           - "minor"
+    # Major bumps on the test framework are deferred — the suite is
+    # mid-build and a config/API rework isn't worth the churn right
+    # now. Patch/minor on vitest still flow via the `tooling` group.
+    ignore:
+      - dependency-name: "vitest"
+        update-types: ["version-update:semver-major"]
 
   # Cargo for the Tauri shell. Lower cadence — the Rust glue is small
   # and Tauri itself ships infrequently.
