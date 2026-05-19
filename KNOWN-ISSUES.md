@@ -9,6 +9,17 @@ _(no tracked issues)_
 
 ## Recently fixed
 
+- **Tauri `fs` scope was wide-open (`**`).** With `read-text-file` +
+  `write-text-file` permissions, the webview could read or write any
+  file the user could — including `/etc/passwd`, ssh keys, other
+  users' home directories. Defence relied entirely on rendering-side
+  hardening (DOMPurify + tag allowlist). Tightened to `$HOME/**` +
+  `$TEMP/**`, blocking system files and cross-user reads while
+  preserving all reasonable file-picker / autosave flows. Proper
+  per-dialog runtime scope authorisation still pending — tracked in
+  BACKLOG under Tauri hardening.
+  _packages/website/src-tauri/capabilities/default.json fs:scope_
+
 - **URL fetch buffered the entire response before checking the 5 MiB
   cap.** An attacker-controlled server could ship up to ~5 MiB of body
   before we'd reject — wasteful at best, a memory-pressure vector at
