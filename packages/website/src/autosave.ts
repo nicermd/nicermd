@@ -6,15 +6,19 @@
 // exists and is younger than 24h and differs from what's currently
 // loaded, surfaces a small banner offering to Restore or Discard.
 //
-// Single-slot — multiple Tauri windows would clobber each other (we
-// don't support multi-window yet, so moot for now). FSA handles can't
-// be serialised, and Tauri paths would need permission re-confirmation,
-// so a recovered doc lands as anonymous (Cmd+S becomes Save-As).
+// Per-window when running in Tauri (multiple windows would otherwise
+// clobber each other's localStorage slot — Tauri windows share an
+// origin so localStorage is shared). The key is suffixed with the
+// window label resolved at setupAutosave time. Web build uses the
+// bare key (one tab = one slot). FSA handles can't be serialised, and
+// Tauri paths would need permission re-confirmation, so a recovered
+// doc lands as anonymous (Cmd+S becomes Save-As).
 
 import type { Harness } from './main'
 import { isDirty, getCurrentName, setDocState } from './doc-source'
 
-const KEY = 'nicermd:autosave'
+const BASE_KEY = 'nicermd:autosave'
+let KEY = BASE_KEY
 const DEBOUNCE_MS = 1500
 const RECOVERY_MAX_AGE_MS = 24 * 60 * 60 * 1000
 
@@ -65,8 +69,22 @@ function flush(): void {
   })
 }
 
+// Resolve the per-window autosave key synchronously. Tauri exposes
+// the current window label at `window.__TAURI_INTERNALS__.metadata
+// .currentWindow.label` from the moment the bundle evaluates — no
+// async import needed. Web build has no `__TAURI_INTERNALS__`, so
+// the bare key is used (one tab = one slot).
+function resolveAutosaveKey(): void {
+  const internals = (window as unknown as {
+    __TAURI_INTERNALS__?: { metadata?: { currentWindow?: { label?: string } } }
+  }).__TAURI_INTERNALS__
+  const label = internals?.metadata?.currentWindow?.label
+  if (label) KEY = `${BASE_KEY}:${label}`
+}
+
 export function setupAutosave(harness: Harness): void {
   harnessRef = harness
+  resolveAutosaveKey()
 
   harness.onLocalChange(() => {
     if (debounceTimer !== null) window.clearTimeout(debounceTimer)

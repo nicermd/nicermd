@@ -53,32 +53,22 @@ shouldn't be forgotten.
 
 ## Desktop features
 
-- **Multiple windows.** Today the Tauri shell is single-window: one
-  document, one editor surface, and `WindowEvent::CloseRequested`
-  calls `app_handle.exit(0)` so the red traffic light fully quits.
-  Multi-window would let the user read or edit several files
-  side-by-side. Implementation touches several layers:
-  - Drop the "exit on last-window close" behaviour and restore
-    macOS's normal "app keeps running with no windows" convention —
-    or keep "quit when the last window closes" but stop exiting on
-    every close. Decision shapes how the menu/dock feels.
-  - `File → New Window` menu item; `Cmd+N` either opens a new empty
-    window or stays as "new doc in current window" (decide).
-  - Each window owns its own doc-source state. The current
-    `doc-source.ts` abstraction is per-shell; need to scope it
-    per-window (likely a window-id keyed map on the Rust side, or
-    have each window manage its own state in JS with no shared
-    store).
-  - OS-level file open (`RunEvent::Opened`, Open With) should open
-    in a new window if any window already has an unsaved doc, else
-    reuse the focused window. Worth deciding the rule before coding.
-  - Autosave `localStorage` slot is currently single-slot; needs to
-    become per-window or use a different storage scheme.
-  - Drag-drop, fullscreen, zoom — all need to be window-scoped.
-  Real architectural shift; not a flip-of-a-switch. Worth scoping a
-  spike first to see how invasive the per-window state-isolation is.
-  _packages/website/src-tauri/src/lib.rs WindowEvent + RunEvent;
-  packages/website/src/doc-source.ts; packages/website/src/main.ts_
+- **Multi-window polish.** Core multi-window landed 2026-05-19: Cmd+N
+  opens a new window, each window's JS realm is isolated, menu events
+  route to the focused window via `app.emit_to(label, …)`, autosave is
+  per-window-label, last-window close quits the app. Remaining polish:
+  - OS-level "Open With" / double-click currently routes to whichever
+    window is focused. Smarter rule: open in a new window if the
+    focused window's doc is dirty, else replace in-place. Needs the
+    Rust side to query the focused window's dirty state — likely via
+    a window-tagged JS event back to Rust.
+  - Window state (size, position) isn't restored across launches.
+    Tauri's `window-state` plugin handles this with a `<state-flags>`
+    config; small add when it matters.
+  - The `File → New Document` (Cmd+Shift+N) item reuses the current
+    window. Worth deciding the discard-confirmation behaviour when
+    that doc is dirty — currently delegates to `newFile` which prompts.
+  _packages/website/src-tauri/src/lib.rs_
 
 ## Browser integration
 

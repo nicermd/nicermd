@@ -44,36 +44,51 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
   if (!isTauri()) return
 
   const { listen } = await import('@tauri-apps/api/event')
+  const { getCurrentWebviewWindow } = await import('@tauri-apps/api/webviewWindow')
 
-  await listen<number>('menu:view-mode', (event) => {
+  // Per-window scoping is critical for multi-window: the Rust shell
+  // uses `app.emit_to(focused_window_label, …)` to route menu events
+  // to only the focused window so Cmd+S in window A doesn't trigger a
+  // save in window B. A default `listen()` call registers with
+  // `EventTarget::Any`, which Tauri's filter only matches against the
+  // unscoped `emit()` path — meaning `Any` listeners would NEVER hear
+  // a label-targeted emit. Passing the current window's label as the
+  // target string registers as `EventTarget::AnyLabel(label)`, which
+  // DOES match emit_to. Wrapped here so each listener below registers
+  // with the same scoping consistently.
+  const label = getCurrentWebviewWindow().label
+  const listenHere = <T>(event: string, handler: (ev: { payload: T }) => void) =>
+    listen<T>(event, handler, { target: label })
+
+  await listenHere<number>('menu:view-mode', (event) => {
     harness.switchTo(event.payload)
   })
 
-  await listen('menu:view-cycle', () => {
+  await listenHere('menu:view-cycle', () => {
     harness.cycle()
   })
 
-  await listen('menu:view-focus-toggle', () => {
+  await listenHere('menu:view-focus-toggle', () => {
     // Focus mode wiring lands in a future iteration. Listener is
     // registered so the menu item doesn't appear dead; intentional no-op.
   })
 
-  await listen('menu:file-open', () => {
+  await listenHere('menu:file-open', () => {
     void openFile(harness)
   })
-  await listen('menu:file-save', () => {
+  await listenHere('menu:file-save', () => {
     void saveFile(harness)
   })
-  await listen('menu:file-save-as', () => {
+  await listenHere('menu:file-save-as', () => {
     void saveFile(harness, { saveAs: true })
   })
-  await listen('menu:file-new', () => {
+  await listenHere('menu:file-new', () => {
     void newFile(harness)
   })
-  await listen('menu:view-reload', () => {
+  await listenHere('menu:view-reload', () => {
     window.location.reload()
   })
-  await listen<string>('menu:file-open-path', (event) => {
+  await listenHere<string>('menu:file-open-path', (event) => {
     void openFromTauriPath(harness, event.payload)
   })
 

@@ -9,6 +9,21 @@ _(no tracked issues)_
 
 ## Recently fixed
 
+- **Tauri shell was single-window only.** `Cmd+N` opened a new empty
+  doc in the same window; `WindowEvent::CloseRequested` always called
+  `app.exit(0)`. No way to read two files side by side. Now: Cmd+N
+  opens a new window with its own JS realm, menu events
+  (Save / mode-switch / Open) route only to the focused window via
+  `app.emit_to(label, …)`, autosave's localStorage slot is per-window-
+  label so two windows don't clobber each other, and the app only
+  exits when the last window closes. Capability `windows` field
+  widened from `["main"]` to `["*"]` so new windows inherit all
+  permissions (without this, drag/save/dialog all silently fail in
+  any window other than the original).
+  _packages/website/src-tauri/src/lib.rs +
+  packages/website/src-tauri/capabilities/default.json +
+  packages/website/src/{autosave,tauri-bridge}.ts_
+
 - **Tauri `fs` scope was wide-open (`**`).** With `read-text-file` +
   `write-text-file` permissions, the webview could read or write any
   file the user could — including `/etc/passwd`, ssh keys, other

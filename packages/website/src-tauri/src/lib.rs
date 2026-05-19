@@ -1,10 +1,25 @@
-// Tauri shell entry. Runs the bundled Vite frontend in a frameless-overlay
-// window with a native macOS menu. The menu emits events the web frontend
-// listens for (file-open, save, focus-mode-toggle, mode-switch); Rust holds
-// no state about the document.
+// Tauri shell entry. Runs the bundled Vite frontend in webview windows
+// with a native macOS menu. The menu emits events the web frontend
+// listens for (file-open, save, focus-mode-toggle, mode-switch); Rust
+// holds no state about the documents themselves.
+//
+// Multi-window: Cmd+N spawns a new window with its own webview context.
+// Each window's JS module state (doc-source, harness) is naturally
+// isolated because each webview is its own JS realm. localStorage IS
+// shared across same-origin windows, so per-window state that needs
+// disk persistence (autosave snapshots) is scoped on the JS side by
+// the window label. Menu events route to the focused window only, so
+// Cmd+S in window A doesn't trigger a save in window B.
 
+use std::sync::atomic::{AtomicU32, Ordering};
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
-use tauri::{AppHandle, Emitter, Wry};
+use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder, Wry};
+
+// Monotonic counter for new-window labels. Labels must be unique
+// across the app lifetime; the main window is "main", subsequent
+// windows are "window-2", "window-3", etc. Order doesn't matter for
+// correctness — only uniqueness.
+static WINDOW_COUNTER: AtomicU32 = AtomicU32::new(2);
 
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
@@ -50,31 +65,97 @@ pub fn run() {
         // OS-level file-open events: macOS fires this when the user picks
         // 'Open With → Nicer.md' in Finder, double-clicks a .md file with
         // Nicer.md as the default app, or drops a file onto the Dock icon.
-        // We extract the file path and forward it to the frontend; the web
-        // listener (tauri-bridge.ts) reads the file via tauri-plugin-fs
-        // and updates the harness, same flow as the in-app Open dialog.
+        // We extract the file path and forward it to the focused window;
+        // if no window is currently focused (cold start), the event is
+        // broadcast — the listener that hooks up first wins. tauri-
+        // bridge.ts reads the file via tauri-plugin-fs and updates that
+        // window's harness, same flow as the in-app Open dialog.
         tauri::RunEvent::Opened { urls } => {
             for url in urls {
                 if let Ok(path) = url.to_file_path() {
                     let path_str = path.to_string_lossy().to_string();
-                    if let Err(err) = app_handle.emit("menu:file-open-path", path_str) {
-                        log::error!("failed to emit menu:file-open-path: {err}");
-                    }
+                    emit_to_focused_or_all(app_handle, "menu:file-open-path", path_str);
                 }
             }
         }
-        // macOS convention is for apps to keep running with no windows;
-        // for a single-window reader that surprises users — they expect
-        // the red X to fully quit. Single-window app, so any close
-        // request means the user's done.
+        // With multi-window enabled, the red X closes ONE window — it
+        // doesn't quit the app. We only call `app.exit(0)` when the
+        // last window closes; until then the runtime lets the close
+        // proceed naturally (the WebviewWindow itself disposes) and
+        // we just check whether any windows remain. macOS users
+        // accustomed to "Cmd+W closes the window, app stays in the
+        // dock with no windows" can pull that off via menu File →
+        // Close Window (no special handling); when they close the
+        // FINAL window, we exit so the app doesn't linger headless.
         tauri::RunEvent::WindowEvent {
-            event: tauri::WindowEvent::CloseRequested { .. },
+            event: tauri::WindowEvent::Destroyed,
             ..
         } => {
-            app_handle.exit(0);
+            if app_handle.webview_windows().is_empty() {
+                app_handle.exit(0);
+            }
         }
         _ => {}
     });
+}
+
+// Find the currently-focused window and emit an event to it alone. If
+// no window is focused (rare — e.g. macOS dock click before any window
+// has come to front), broadcast to all windows. The fallback covers
+// the cold-start race where OS-level Opened fires before the first
+// window has finished initialising.
+//
+// IMPORTANT: in Tauri 2, `app.emit(...)` and `window.emit(...)` both
+// broadcast to ALL listeners (the receiver doesn't bind a target).
+// Scoping requires `app.emit_to(label, ...)`, which only delivers to
+// listeners that registered against that label's WebviewWindow target.
+// The JS-side `listen()` from `@tauri-apps/api/event` automatically
+// scopes to the current window's target, so emit_to + global listen
+// is the right pairing for per-window menu routing.
+fn emit_to_focused_or_all<P: serde::Serialize + Clone>(
+    app: &AppHandle,
+    event: &str,
+    payload: P,
+) {
+    let focused_label = app
+        .webview_windows()
+        .into_iter()
+        .find(|(_, w)| w.is_focused().unwrap_or(false))
+        .map(|(label, _)| label);
+    match focused_label {
+        Some(label) => {
+            if let Err(err) = app.emit_to(label.as_str(), event, payload) {
+                log::error!("failed to emit {event} to {label}: {err}");
+            }
+        }
+        None => {
+            if let Err(err) = app.emit(event, payload) {
+                log::error!("failed to emit {event}: {err}");
+            }
+        }
+    }
+}
+
+// Spawn a new webview window with a unique label, the same URL as the
+// main window, and matching chrome settings (overlay title bar, hidden
+// title, decorations on). Each window mounts its own JS realm; module
+// state in doc-source.ts / main.ts is therefore per-window without any
+// explicit isolation work. Returns the window's label so callers can
+// address it later if needed.
+fn create_window(app: &AppHandle) -> tauri::Result<String> {
+    let n = WINDOW_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let label = format!("window-{n}");
+    let url = WebviewUrl::App("index.html".into());
+    WebviewWindowBuilder::new(app, &label, url)
+        .title("Nicer.md")
+        .inner_size(1100.0, 750.0)
+        .min_inner_size(480.0, 320.0)
+        .resizable(true)
+        .title_bar_style(tauri::TitleBarStyle::Overlay)
+        .hidden_title(true)
+        .decorations(true)
+        .build()?;
+    Ok(label)
 }
 
 fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
@@ -96,8 +177,13 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
 
     let file_submenu = SubmenuBuilder::new(app, "File")
         .item(
-            &MenuItemBuilder::with_id("file-new", "New")
+            &MenuItemBuilder::with_id("file-new-window", "New Window")
                 .accelerator("CmdOrCtrl+N")
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::with_id("file-new", "New Document")
+                .accelerator("CmdOrCtrl+Shift+N")
                 .build(app)?,
         )
         .item(
@@ -174,8 +260,19 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
         .item(&PredefinedMenuItem::minimize(app, None)?)
         .item(&PredefinedMenuItem::maximize(app, None)?)
         .separator()
+        .item(&PredefinedMenuItem::bring_all_to_front(app, None)?)
+        .separator()
         .item(&PredefinedMenuItem::close_window(app, None)?)
         .build()?;
+
+    // Make this submenu the macOS "Windows" menu (NSApp.windowsMenu).
+    // The OS uses that designation to: (a) auto-append open windows
+    // to the bottom of the menu so the user can pick one to bring
+    // forward — fixes the "minimised window can't be recovered" case;
+    // (b) enable Cmd+` window-cycling within the app. Without this
+    // call the submenu is just a regular submenu and the OS doesn't
+    // know to wire those behaviours.
+    let _ = window_submenu.set_as_windows_menu_for_nsapp();
 
     MenuBuilder::new(app)
         .item(&app_submenu)
@@ -190,26 +287,27 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
     let id = event.id().0.as_str();
     log::info!("menu event: {id}");
 
-    // File events go up to the web side as named events the frontend listens
-    // to. The Rust side stays stateless.
+    // Most menu events should affect only the focused window so a
+    // Cmd+S in window A doesn't trigger a save in window B. The one
+    // exception is "New Window" — that's an app-level action that
+    // creates a fresh window regardless of which one was focused.
     match id {
-        "file-new" => emit(app, "menu:file-new", ()),
-        "file-open" => emit(app, "menu:file-open", ()),
-        "file-save" => emit(app, "menu:file-save", ()),
-        "file-save-as" => emit(app, "menu:file-save-as", ()),
-        "view-mode-1" => emit(app, "menu:view-mode", 1),
-        "view-mode-2" => emit(app, "menu:view-mode", 2),
-        "view-mode-3" => emit(app, "menu:view-mode", 3),
-        "view-mode-4" => emit(app, "menu:view-mode", 4),
-        "view-cycle-mode" => emit(app, "menu:view-cycle", ()),
-        "view-focus" => emit(app, "menu:view-focus-toggle", ()),
-        "view-reload" => emit(app, "menu:view-reload", ()),
+        "file-new-window" => {
+            if let Err(err) = create_window(app) {
+                log::error!("failed to create new window: {err}");
+            }
+        }
+        "file-new" => emit_to_focused_or_all(app, "menu:file-new", ()),
+        "file-open" => emit_to_focused_or_all(app, "menu:file-open", ()),
+        "file-save" => emit_to_focused_or_all(app, "menu:file-save", ()),
+        "file-save-as" => emit_to_focused_or_all(app, "menu:file-save-as", ()),
+        "view-mode-1" => emit_to_focused_or_all(app, "menu:view-mode", 1),
+        "view-mode-2" => emit_to_focused_or_all(app, "menu:view-mode", 2),
+        "view-mode-3" => emit_to_focused_or_all(app, "menu:view-mode", 3),
+        "view-mode-4" => emit_to_focused_or_all(app, "menu:view-mode", 4),
+        "view-cycle-mode" => emit_to_focused_or_all(app, "menu:view-cycle", ()),
+        "view-focus" => emit_to_focused_or_all(app, "menu:view-focus-toggle", ()),
+        "view-reload" => emit_to_focused_or_all(app, "menu:view-reload", ()),
         _ => {}
-    }
-}
-
-fn emit<P: serde::Serialize + Clone>(app: &AppHandle, event: &str, payload: P) {
-    if let Err(err) = app.emit(event, payload) {
-        log::error!("failed to emit {event}: {err}");
     }
 }
