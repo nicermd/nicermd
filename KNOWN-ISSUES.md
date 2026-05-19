@@ -5,19 +5,24 @@ once they've been quiet for a release or two.
 
 ## Open
 
-- **Command palette: Escape may need two presses in Chrome.**
-  Chrome's input autofill machinery seems to silently consume the first
-  Escape on the search input before any keydown listener sees it.
-  Window-level capture-phase listener + input-level capture-phase
-  listener + `data-form-type="other"` / `data-1p-ignore` /
-  `data-lpignore` mitigations are in place; if they're not enough,
-  next step is to swap the `<input>` for a `<div contenteditable>` —
-  different DOM contract, bypasses Chrome's text-input autofill
-  entirely. Tauri / Safari / Firefox unaffected. Living with it for
-  now since Esc-to-close is power-user behaviour and click-outside /
-  click-result still work. _packages/website/src/command-palette.ts_
+_(no tracked issues)_
 
 ## Recently fixed
+
+- **`<picture>` + `<source>` dark-mode-aware images dropped.** READMEs
+  that swap a cover image by `prefers-color-scheme` (using `<picture>`
+  with multiple `<source>` candidates) rendered as an empty paragraph
+  on the website. Two root causes: (a) `<picture>` not in markdown-it's
+  block-HTML allowlist, so it tokenised as inline HTML and the renderer
+  emitted `<p></p>`; (b) `<picture>` and `<source>` not in DOMPurify's
+  allowlist, so even when surrounded by `<div>` they'd be stripped.
+  Plus `srcset` URLs weren't rewritten against `baseUrl` for URL-loaded
+  docs. Fix: normalize-html wraps standalone `<picture>` blocks in
+  `<div>` to land on markdown-it's block path; DOMPurify allowlist
+  extended with `picture` / `source` + `srcset` / `media` / `sizes` /
+  `type` attrs; `rewriteRelativeUrls` parses the comma-separated
+  `srcset` candidate list and rewrites each URL.
+  _packages/core/src/{index,normalize-html}.ts_
 
 - **Source files showed uniform grey in CodeMirror modes.** With the
   markdown language extension removed for non-markdown content (so
