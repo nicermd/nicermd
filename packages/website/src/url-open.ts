@@ -60,11 +60,67 @@ const RAW_HOST = 'raw.githubusercontent.com'
 const GIST_PAGE_HOST = 'gist.github.com'
 const GIST_RAW_HOST = 'gist.githubusercontent.com'
 const API_HOST = 'api.github.com'
-const MAX_BYTES = 5 * 1024 * 1024 // 5 MiB; markdown is never this big.
+const MAX_BYTES = 5 * 1024 * 1024 // 5 MiB; even big READMEs are nowhere near this.
 const MD_EXT_RE = /\.(md|markdown|mdx)$/i
 
-// Strip query / fragment before testing the extension — paths like
-// `path/file.md?token=...` should still match.
+// What kind of document the loaded file is — drives the renderer and
+// the mode-toggle visibility. `source` carries an hljs language id
+// matching one of the 9 languages registered in nicermd-core.
+export type ContentKind =
+  | { kind: 'markdown' }
+  | { kind: 'plain' }
+  | { kind: 'source'; language: string }
+
+// hljs languages registered in nicermd-core/src/index.ts. File
+// extensions outside this table fall back to plain text (still
+// rendered, just without syntax highlighting).
+const SOURCE_EXT_TO_LANG: Record<string, string> = {
+  ts: 'typescript',
+  tsx: 'tsx',
+  js: 'javascript',
+  jsx: 'jsx',
+  py: 'python',
+  sh: 'bash',
+  bash: 'bash',
+  json: 'json',
+  html: 'html',
+  htm: 'html',
+  xml: 'xml',
+  svg: 'svg',
+  css: 'css',
+}
+
+// Extensionless basenames that conventionally hold plain-text docs.
+const PLAIN_TEXT_BASENAMES = /^(LICENSE|LICENCE|COPYING|AUTHORS|CONTRIBUTORS|NOTICE|CHANGELOG|README|INSTALL|NEWS|TODO)$/
+
+// Classify a URL path by its filename. Returns null for unsupported
+// shapes (e.g. `.exe`, `.zip`) — those get rejected at parse time so
+// the user sees an explicit error rather than a broken render later.
+function classifyPath(path: string): ContentKind | null {
+  const clean = path.split('?')[0]!.split('#')[0]!
+  const basename = clean.split('/').pop() ?? ''
+  if (!basename) return null
+
+  if (MD_EXT_RE.test(basename)) return { kind: 'markdown' }
+
+  const extMatch = basename.match(/\.([a-z0-9]+)$/i)
+  const ext = extMatch?.[1]?.toLowerCase()
+
+  if (ext) {
+    const lang = SOURCE_EXT_TO_LANG[ext]
+    if (lang) return { kind: 'source', language: lang }
+    if (ext === 'txt' || ext === 'text') return { kind: 'plain' }
+    return null
+  }
+
+  // No extension — match against known plain-text doc basenames.
+  if (PLAIN_TEXT_BASENAMES.test(basename.toUpperCase())) return { kind: 'plain' }
+  return null
+}
+
+// Back-compat shim for callers that only need the markdown check
+// (the GitHub `/readme` API filter). Kept narrow because the API can
+// return `README.rst` etc. and we still don't handle those.
 function isMarkdownPath(path: string): boolean {
   const clean = path.split('?')[0]!.split('#')[0]!
   return MD_EXT_RE.test(clean)
@@ -77,15 +133,24 @@ function isMarkdownPath(path: string): boolean {
 // /raw endpoint that serves the latest revision in one CORS-clean hop
 // — we never go via gist.github.com.
 type Parsed =
-  | { kind: 'direct'; rawUrl: string }
+  | { kind: 'direct'; rawUrl: string; content: ContentKind }
   | { kind: 'tree'; user: string; repo: string; branch: string; dir: string }
   | { kind: 'repo'; user: string; repo: string }
   | { kind: 'gist'; user: string; id: string }
 
-type ParseResult = { ok: true; parsed: Parsed } | { ok: false; reason: string }
+// reasonCode is the discriminator callers branch on (e.g. "should we
+// surface this rejection in the UI?"); reason is the human-readable
+// string for direct display. Keeping both means callers can pick
+// their own message without re-discriminating on the string.
+export type ParseRejectReason = 'not-github' | 'unsupported-file'
+
+type ParseResult =
+  | { ok: true; parsed: Parsed }
+  | { ok: false; reason: string; reasonCode: ParseRejectReason }
 
 const REASON_NOT_GITHUB = 'Not a GitHub URL'
-const REASON_NOT_MARKDOWN = 'URL must point to a .md, .markdown, or .mdx file'
+const REASON_UNSUPPORTED_FILE =
+  'Unsupported file — Nicer.md reads markdown, plain text (LICENSE/CHANGELOG/.txt), and common source files'
 
 export function parseGithubUrl(input: string): ParseResult {
   let trimmed = input.trim()
@@ -107,33 +172,36 @@ export function parseGithubUrl(input: string): ParseResult {
   try {
     url = new URL(trimmed)
   } catch {
-    return { ok: false, reason: REASON_NOT_GITHUB }
+    return { ok: false, reason: REASON_NOT_GITHUB, reasonCode: 'not-github' }
   }
-  if (url.protocol !== 'https:') return { ok: false, reason: REASON_NOT_GITHUB }
+  if (url.protocol !== 'https:') return { ok: false, reason: REASON_NOT_GITHUB, reasonCode: 'not-github' }
 
   if (url.hostname === RAW_HOST) {
-    if (!isMarkdownPath(url.pathname)) return { ok: false, reason: REASON_NOT_MARKDOWN }
-    return { ok: true, parsed: { kind: 'direct', rawUrl: url.toString() } }
+    const content = classifyPath(url.pathname)
+    if (!content) return { ok: false, reason: REASON_UNSUPPORTED_FILE, reasonCode: 'unsupported-file' }
+    return { ok: true, parsed: { kind: 'direct', rawUrl: url.toString(), content } }
   }
 
   // gist.githubusercontent.com paths are revision-specific raw content;
-  // pass through as direct (no redirect needed). Path-extension filter
-  // doesn't apply — gists aren't typed by extension.
+  // pass through as direct (no redirect needed). Gists aren't typed by
+  // extension at the URL level, so we treat them as markdown by default
+  // (matches pre-plain-text behaviour); content-type sniffing post-fetch
+  // could refine this later.
   if (url.hostname === GIST_RAW_HOST) {
-    return { ok: true, parsed: { kind: 'direct', rawUrl: url.toString() } }
+    return { ok: true, parsed: { kind: 'direct', rawUrl: url.toString(), content: { kind: 'markdown' } } }
   }
 
   // gist.github.com/<u>/<id> — gist page; we'll fetch via /<id>/raw
   // which 302s to the latest revision's first file.
   if (url.hostname === GIST_PAGE_HOST) {
     const gistMatch = url.pathname.match(/^\/([^/]+)\/([0-9a-f]+)(?:\/.*)?$/i)
-    if (!gistMatch) return { ok: false, reason: REASON_NOT_GITHUB }
+    if (!gistMatch) return { ok: false, reason: REASON_NOT_GITHUB, reasonCode: 'not-github' }
     const [, gistUser, gistId] = gistMatch
     return { ok: true, parsed: { kind: 'gist', user: gistUser!, id: gistId! } }
   }
 
   if (url.hostname !== 'github.com' && url.hostname !== 'www.github.com') {
-    return { ok: false, reason: REASON_NOT_GITHUB }
+    return { ok: false, reason: REASON_NOT_GITHUB, reasonCode: 'not-github' }
   }
 
   // Strip any trailing slash so /<u>/<r>/ matches the bare-repo branch.
@@ -143,8 +211,9 @@ export function parseGithubUrl(input: string): ParseResult {
   const blob = path.match(/^\/([^/]+)\/([^/]+)\/(?:blob|raw)\/(.+)$/)
   if (blob) {
     const [, user, repo, rest] = blob
-    if (!isMarkdownPath(rest!)) return { ok: false, reason: REASON_NOT_MARKDOWN }
-    return { ok: true, parsed: { kind: 'direct', rawUrl: `https://${RAW_HOST}/${user}/${repo}/${rest}` } }
+    const content = classifyPath(rest!)
+    if (!content) return { ok: false, reason: REASON_UNSUPPORTED_FILE, reasonCode: 'unsupported-file' }
+    return { ok: true, parsed: { kind: 'direct', rawUrl: `https://${RAW_HOST}/${user}/${repo}/${rest}`, content } }
   }
 
   // /<u>/<r>/tree/<branch>[/<dir>] — directory listing on a branch;
@@ -163,7 +232,7 @@ export function parseGithubUrl(input: string): ParseResult {
     return { ok: true, parsed: { kind: 'repo', user: user!, repo: repoName! } }
   }
 
-  return { ok: false, reason: REASON_NOT_GITHUB }
+  return { ok: false, reason: REASON_NOT_GITHUB, reasonCode: 'not-github' }
 }
 
 // What we'd fetch if the user pressed Enter right now. For repo URLs
@@ -418,7 +487,11 @@ export async function loadFromUrl(harness: Harness, input: string): Promise<void
       // path so the title strip shows something useful even before
       // hover.
       const name = displayNameFor(result.parsed, url)
-      setDocState(text, name, { kind: 'url', url })
+      // tree/repo/gist resolve to README.md, so they're implicitly
+      // markdown. Only `direct` shapes carry an explicit content kind.
+      const contentKind: ContentKind =
+        result.parsed.kind === 'direct' ? result.parsed.content : { kind: 'markdown' }
+      setDocState(text, name, { kind: 'url', url }, contentKind)
       harness.replaceDoc(text)
       // Record the user's original input (not the resolved URL) — chips
       // show what they typed, and re-clicking re-runs the parser so
@@ -527,10 +600,24 @@ async function processBootUrlParamAsync(harness: Harness): Promise<void> {
   window.history.replaceState({}, '', newUrl)
 
   const result = parseGithubUrl(urlParam)
-  // Silently ignore malformed / non-GitHub URLs in the param. We don't
-  // want to surface specific parser reasons here — reduces phishing
-  // signal value (an attacker could probe what shapes are accepted).
-  if (!result.ok) return
+  if (!result.ok) {
+    // Silently ignore malformed / non-GitHub URLs — surfacing a
+    // specific reason here helps an attacker probe what shapes the
+    // parser accepts. But the `unsupported-file` case is different:
+    // the URL IS a GitHub URL the user clearly intended Nicer.md to
+    // render, just for a file type we don't support yet. Tell them
+    // discreetly so they don't think the share-link is broken.
+    if (result.reasonCode === 'unsupported-file') {
+      try {
+        const basename = new URL(urlParam).pathname.split('/').pop() || urlParam
+        const { showNoticeBanner } = await import('./link-chain')
+        showNoticeBanner(`${basename} isn't a supported file type yet`)
+      } catch {
+        // Banner module failed to load — fall through silently.
+      }
+    }
+    return
+  }
 
   showBootConfirmation(harness, urlParam, result.parsed)
 }

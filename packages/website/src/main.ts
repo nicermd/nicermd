@@ -22,13 +22,13 @@ import { markdown } from '@codemirror/lang-markdown'
 import { GFM } from '@lezer/markdown'
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
 import { tags as t } from '@lezer/highlight'
-import { render as renderMarkdown } from 'nicermd-core'
+import { render as renderMarkdown, renderPlain, renderSource } from 'nicermd-core'
 
 import showcase from './samples/showcase.md?raw'
 import { IS_MAC } from './platform'
 import { setupTauriBridge } from './tauri-bridge'
 import { setupFileDrop } from './file-drop'
-import { openFile, saveFile, newFile, setDocState, isDirty, markDirty, getCurrentSourceUrl } from './doc-source'
+import { openFile, saveFile, newFile, setDocState, isDirty, markDirty, getCurrentSourceUrl, getContentKind } from './doc-source'
 import { setupAutosave, checkRecovery } from './autosave'
 import { setupModeIcons } from './mode-icons'
 import { setupTitle } from './title'
@@ -135,16 +135,38 @@ const editorTheme = EditorView.theme({
   },
 })
 
-const codeMirrorBase = [
-  history(),
-  drawSelection(),
-  lineNumbers(),
-  EditorView.lineWrapping,
-  markdown({ extensions: [GFM] }),
-  syntaxHighlighting(mdHighlight),
-  editorTheme,
-  keymap.of([...defaultKeymap, ...historyKeymap]),
-]
+// Per-content-kind CodeMirror extensions. Markdown gets the markdown
+// language parser + token-color highlighting; plain text and source
+// files skip those so Python's `# comment` lines don't get parsed as
+// H1 headings and rendered in --cm-heading colour (which was the
+// most visible "themes broken" symptom in modes 3/4). Source files
+// fall through to plain CodeMirror today — adding per-language
+// parsers (lang-python, lang-typescript, …) would re-introduce
+// syntax-aware editing but at non-trivial bundle cost; deferred.
+function codeMirrorExtensions() {
+  const isMarkdown = getContentKind().kind === 'markdown'
+  return [
+    history(),
+    drawSelection(),
+    lineNumbers(),
+    EditorView.lineWrapping,
+    ...(isMarkdown ? [markdown({ extensions: [GFM] }), syntaxHighlighting(mdHighlight)] : []),
+    editorTheme,
+    keymap.of([...defaultKeymap, ...historyKeymap]),
+  ]
+}
+
+// Render the current document with the renderer matching its content
+// kind. Markdown gets the full pipeline (parse → sanitise → relative-
+// URL rewrite). Plain text and source files use the simpler dedicated
+// renderers in nicermd-core. The baseUrl is only meaningful for
+// markdown (relative <img src> resolution) so plain/source skip it.
+function renderForCurrentKind(text: string): string {
+  const kind = getContentKind()
+  if (kind.kind === 'plain') return renderPlain(text)
+  if (kind.kind === 'source') return renderSource(text, kind.language)
+  return renderMarkdown(text, { baseUrl: getCurrentSourceUrl() ?? undefined })
+}
 
 function mountRead(parent: HTMLElement, markdown: string): ModeHandle {
   const div = document.createElement('div')
@@ -154,7 +176,7 @@ function mountRead(parent: HTMLElement, markdown: string): ModeHandle {
   // `images/logo.png`) against the source URL; null/undefined for local
   // and showcase docs leaves URLs untouched.
   const renderInto = (text: string): void => {
-    div.innerHTML = renderMarkdown(text, { baseUrl: getCurrentSourceUrl() ?? undefined })
+    div.innerHTML = renderForCurrentKind(text)
   }
   renderInto(current)
   parent.appendChild(div)
@@ -265,7 +287,7 @@ function mountCodePlusPreview(
   parent.appendChild(wrap)
 
   const renderTo = (text: string): void => {
-    previewPane.innerHTML = renderMarkdown(text, { baseUrl: getCurrentSourceUrl() ?? undefined })
+    previewPane.innerHTML = renderForCurrentKind(text)
   }
   renderTo(markdown)
 
@@ -273,7 +295,7 @@ function mountCodePlusPreview(
     state: EditorState.create({
       doc: markdown,
       extensions: [
-        ...codeMirrorBase,
+        ...codeMirrorExtensions(),
         EditorView.updateListener.of((update) => {
           if (!update.docChanged) return
           const md = update.state.doc.toString()
@@ -306,7 +328,7 @@ function mountRawCode(
     state: EditorState.create({
       doc: markdown,
       extensions: [
-        ...codeMirrorBase,
+        ...codeMirrorExtensions(),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) onChange?.(update.state.doc.toString())
         }),
@@ -430,6 +452,11 @@ export class Harness {
     style: 'fade' | 'slide' = 'fade',
   ): void {
     if (key === this.currentMode && this.currentHandle) return
+    // Defence in depth — Write mode is hidden for non-markdown docs, but
+    // also block the Cmd+2 shortcut, cycle-mode keystrokes, and the
+    // command palette from landing on it. Silent no-op so cycle callers
+    // skip to the next mode instead of stalling.
+    if (key === 2 && getContentKind().kind !== 'markdown') return
     const dir = direction ?? (key > this.currentMode ? 'forward' : 'backward')
     const reducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
@@ -486,7 +513,7 @@ export class Harness {
   }
 
   cycle(style: 'fade' | 'slide' = 'fade'): void {
-    const next = (this.currentMode % MODES.length) + 1
+    const next = this.nextAllowedMode(this.currentMode, 1)
     // Pass 'forward' explicitly so the 4 → 1 wrap reads as forward
     // (key comparison would infer 'backward' from target < current).
     this.switchTo(next, 'forward', style)
@@ -496,8 +523,22 @@ export class Harness {
   // as cycle() but stepping backward (1 → 4, 2 → 1, …). Passes
   // 'backward' to override the wrap-direction inference.
   cyclePrevious(style: 'fade' | 'slide' = 'fade'): void {
-    const prev = ((this.currentMode - 2 + MODES.length) % MODES.length) + 1
+    const prev = this.nextAllowedMode(this.currentMode, -1)
     this.switchTo(prev, 'backward', style)
+  }
+
+  // Step forward/backward through modes, skipping ones that switchTo
+  // would refuse (Write/key=2 when the doc isn't markdown). Without
+  // the skip, cycling past Write on a plain-text doc would stall on
+  // the current mode because switchTo would silently no-op.
+  private nextAllowedMode(from: number, step: 1 | -1): number {
+    let candidate = from
+    for (let i = 0; i < MODES.length; i++) {
+      candidate = ((candidate - 1 + step + MODES.length) % MODES.length) + 1
+      if (candidate === 2 && getContentKind().kind !== 'markdown') continue
+      return candidate
+    }
+    return from
   }
 
   // Format command surface — delegates to the active mode handle if it

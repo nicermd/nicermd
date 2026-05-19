@@ -14,6 +14,7 @@
 // (anonymous), so a subsequent Save falls through to Save-As.
 
 import type { Harness } from './main'
+import type { ContentKind } from './url-open'
 
 type DocSource =
   | { kind: 'tauri-path'; path: string }
@@ -39,6 +40,11 @@ type DocSource =
 // editors behave the same way).
 let currentSource: DocSource | null = null
 let currentName: string | null = null
+// What the loaded doc IS — drives the renderer and the mode-toggle
+// visibility (Write/WYSIWYG is hidden for non-markdown so Tiptap
+// doesn't round-trip plain text or source files through its markdown
+// serialiser). Defaults to markdown; the URL-open path overrides it.
+let currentContentKind: ContentKind = { kind: 'markdown' }
 let dirty = false
 
 const SOURCE_CHANGED = 'nicermd:source-changed'
@@ -49,13 +55,26 @@ function notifySourceChanged(): void {
 
 // Identity setter — used by boot, open, save, drag-drop, new. Clears
 // the dirty flag (we just loaded or saved, so by definition the editor
-// is in sync with the source). Updates display name + source; always
-// fires the source-changed event so the title manager can refresh.
-export function setDocState(_text: string, name: string | null, source: DocSource | null): void {
+// is in sync with the source). Updates display name + source + content
+// kind; fires the source-changed event so the title manager and the
+// mode-toggle UI both refresh.
+export function setDocState(
+  _text: string,
+  name: string | null,
+  source: DocSource | null,
+  contentKind: ContentKind = { kind: 'markdown' },
+): void {
   dirty = false
   currentName = name
   currentSource = source
+  currentContentKind = contentKind
   notifySourceChanged()
+}
+
+// What kind of content is loaded right now. Defaults to markdown for
+// every entry point except url-open (which classifies the URL path).
+export function getContentKind(): ContentKind {
+  return currentContentKind
 }
 
 // Called by main.ts on every harness onLocalChange (real user edit).

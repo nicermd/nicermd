@@ -8,6 +8,7 @@
 // package).
 
 import type { Harness } from './main'
+import { getContentKind } from './doc-source'
 
 interface ModeIconDef {
   key: number
@@ -85,6 +86,23 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
     }
   }
 
+  // Write mode (key=2) routes through Tiptap, whose markdown serialiser
+  // would round-trip plain text or source files through markdown-shaped
+  // output on save — surprising and lossy. Hide the button when the
+  // loaded doc isn't markdown; Read + Split (preview is rendered, editor
+  // is CodeMirror) + Code stay available. If the user happens to be in
+  // Write mode when a non-markdown doc loads, kick them back to Read.
+  const updateVisibility = (): void => {
+    const isMarkdown = getContentKind().kind === 'markdown'
+    const writeBtn = buttons.get(2)
+    if (writeBtn) writeBtn.hidden = !isMarkdown
+    if (!isMarkdown && harness.getCurrentMode().key === 2) {
+      harness.switchTo(1)
+    }
+  }
+
   updateActive(harness.getCurrentMode().key)
+  updateVisibility()
   harness.onModeChange((key) => updateActive(key))
+  document.addEventListener('nicermd:source-changed', updateVisibility)
 }

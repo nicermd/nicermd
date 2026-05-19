@@ -1423,6 +1423,25 @@ html {
   padding: 0;
 }
 
+/* Plain-text docs (LICENSE, CHANGELOG, *.txt) — the renderer wraps
+   them in <pre class="nicermd-plain"> so they read as flowing prose
+   in the theme's body font rather than as a code block. white-space:
+   pre-wrap keeps line breaks AND wraps long lines, so a LICENSE with
+   80-column hard-wraps doesn't horizontal-scroll. The Code mode
+   (CodeMirror) is the right surface for actually editing these. */
+.mode-read pre.nicermd-plain,
+.mode-split__preview pre.nicermd-plain {
+  background: transparent;
+  color: inherit;
+  padding: 0;
+  border-radius: 0;
+  font-family: var(--font-body);
+  font-size: 1em;
+  line-height: 1.65;
+  white-space: pre-wrap;
+  overflow-x: visible;
+}
+
 /* highlight.js fenced-code-block tokens, mapped to the same --cm-*
    variables CodeMirror uses for markdown-source highlighting in
    Code and Split modes. Each theme has already tuned these
@@ -2178,10 +2197,12 @@ html {
 }
 
 /* --- Chain-load error banner --- */
-/* Shown when a chained markdown-link click fails to load. Same
-   visual shape as the autosave recovery banner; a faint left-edge
-   stripe in --warn distinguishes the failure intent. Auto-dismisses
-   after 8s; Dismiss button removes immediately. */
+/* Shown when a chained markdown-link click fails to load, or when
+   the URL loader rejects an unsupported file type. Same visual
+   shape as the autosave recovery banner; symmetric edge stripes
+   in --warn (matching left + right) signal failure / notice intent
+   without leaning the banner one way visually. Auto-dismisses after
+   8s; Dismiss button (and Esc / Return) remove immediately. */
 .chain-error-banner {
   position: fixed;
   top: 1rem;
@@ -2191,12 +2212,13 @@ html {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 8px 12px 8px 12px;
+  padding: 8px 12px;
   font-size: 13px;
   color: var(--fg);
   background: var(--bg);
   border: 1px solid var(--border);
   border-left: 3px solid var(--warn, var(--accent));
+  border-right: 3px solid var(--warn, var(--accent));
   border-radius: 8px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
   font-family: var(--font-body);

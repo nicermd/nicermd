@@ -5,7 +5,7 @@
 // break them.
 
 import { describe, expect, it } from 'vitest'
-import { render } from './index.js'
+import { render, renderPlain, renderSource } from './index.js'
 
 // --- Helpers -------------------------------------------------------------
 
@@ -393,5 +393,74 @@ const x = 1
     // wrapper and the body is just html-escaped text.
     const out = render('```wat\nfn foo()\n```\n')
     expect(out).toContain('<pre><code class="hljs">fn foo()')
+  })
+})
+
+// --- Plain-text rendering ---------------------------------------------------
+
+describe('renderPlain', () => {
+  it('wraps content in <pre class="nicermd-plain">', () => {
+    const out = renderPlain('MIT License\n\nCopyright (c) 2026 …')
+    expect(out).toMatch(/^<pre class="nicermd-plain">/)
+    expect(out).toMatch(/<\/pre>$/)
+  })
+
+  it('escapes HTML characters literally — no markdown parsing', () => {
+    // ** stays as **, # stays as #, < becomes &lt;, etc. The whole
+    // point is "what the file says, verbatim".
+    const out = renderPlain('Use **bold** and # H1 and <script>alert(1)</script>')
+    expect(out).toContain('**bold**')
+    expect(out).toContain('# H1')
+    expect(out).toContain('&lt;script&gt;')
+    expect(out).not.toContain('<strong>')
+    expect(out).not.toContain('<h1')
+    expect(out).not.toContain('<script>')
+  })
+
+  it('preserves whitespace and indentation', () => {
+    const out = renderPlain('  one\n    two\n  three')
+    expect(out).toContain('  one\n    two\n  three')
+  })
+
+  it('escapes adversarial input rather than removing it', () => {
+    // Plain text preserves every character literally — the word
+    // "onerror" survives as text, but the surrounding < and >
+    // are escaped so the browser never parses an <img> tag.
+    const out = renderPlain('<img src=x onerror=alert(1)>')
+    expect(out).toContain('&lt;img src=x onerror=alert(1)&gt;')
+    expect(out).not.toContain('<img')
+  })
+})
+
+// --- Source-file rendering -------------------------------------------------
+
+describe('renderSource', () => {
+  it('highlights TypeScript with the right hljs spans', () => {
+    const out = renderSource('const x = 1', 'typescript')
+    expect(out).toContain('class="hljs language-typescript"')
+    expect(out).toMatch(/<span class="hljs-keyword">const<\/span>/)
+  })
+
+  it('highlights Python', () => {
+    const out = renderSource("def hello():\n    return 'hi'", 'python')
+    expect(out).toContain('class="hljs language-python"')
+    expect(out).toMatch(/hljs-keyword/)
+  })
+
+  it('falls back to plain monospace for unregistered languages', () => {
+    const out = renderSource('fn main() {}', 'rust')
+    expect(out).toContain('<pre><code class="hljs">')
+    expect(out).toContain('fn main()')
+  })
+
+  it('escapes embedded HTML in the source — no live tags', () => {
+    // hljs wraps string literals in its own <span class="hljs-string">,
+    // so the surrounding quotes don't get HTML-escaped. The inner
+    // <b> does — that's what matters for safety. The literal <b> tag
+    // must never reach the DOM.
+    const out = renderSource('const a = "<b>" + 1', 'typescript')
+    expect(out).toContain('&lt;b&gt;')
+    // No raw <b> outside the hljs span structure.
+    expect(out).not.toMatch(/<b>(?!\w)/)
   })
 })
