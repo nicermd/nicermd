@@ -4,37 +4,6 @@ Living log of deferred work. Bugs go in `KNOWN-ISSUES.md`. This file
 tracks mid-grain follow-ups that aren't worth a fresh issue but
 shouldn't be forgotten.
 
-## Plain text in the reader
-
-- **Render non-markdown text in Nicer.md theme typography.** A
-  visitor reading a README via the URL loader often wants to click
-  through to `LICENSE`, `CHANGELOG` (without `.md`), `.txt` notes,
-  or even source files in the same repo — and right now those
-  links navigate away to raw GitHub. Rendering them inside Nicer.md
-  with the active theme's typography keeps the reading experience
-  consistent. Surfaced 2026-05-18.
-  Design questions before building:
-  - **Scope.** Just LICENSE-shaped files (no extension, plain text
-    obvious from path)? `.txt` too? `.markdown`, `.mdx`, `.rst`?
-    Source files (`.py`, `.ts`, `.go`) with syntax highlighting via
-    the existing highlight.js integration? Each step widens what
-    counts as "a Nicer.md document".
-  - **Rendering path.** Wrap in `<pre>` so whitespace is preserved
-    and characters are literal (no accidental bold from `**` in a
-    LICENSE), or run markdown-it anyway because most plain-text
-    files happen to parse harmlessly? Pre-with-theme is safer.
-  - **Loader filter.** `parseGithubUrl` currently rejects non-
-    markdown paths via `MD_EXT_RE`. Relax to an allowlist of safe
-    extensions (`.md`, `.markdown`, `.mdx`, `.txt`, no extension)?
-    Or content-type sniff after fetch?
-  - **Link-chain eligibility.** Once the loader accepts more shapes,
-    chain-clicks automatically pick them up (chaining is gated by
-    `parseGithubUrl`). Bonus: makes "click through README → LICENSE"
-    work as a single fluid read.
-  - **Interaction with edit modes.** Plain-text files probably
-    shouldn't get Write-mode (Tiptap WYSIWYG would mangle them);
-    consider gating Mode 2 off when the doc-source is non-markdown.
-
 ## Rendering / HTML
 
 - **Tag-scoped `data:` image hook.** The DOMPurify URI hook currently
@@ -47,15 +16,16 @@ shouldn't be forgotten.
 
 ## Tauri hardening
 
-- **`fs` plugin scope is currently `**` (entire filesystem).** Combined
-  with `read-text-file` + `write-text-file` permissions, this means the
-  webview has unrestricted file access via IPC — guarded today only by
-  upstream rendering defences (DOMPurify allowlist + inline-tag
-  allowlist). Defence-in-depth fix: switch to Tauri 2's
-  runtime scope authorisation pattern — paths returned by the dialog
-  plugin get added to the runtime fs scope, and `read-text-file` /
-  `write-text-file` reject anything outside it. Requires a small Rust
-  glue layer in `src-tauri/src/lib.rs`.
+- **Runtime `fs` scope per dialog-opened path.** Static scope was
+  narrowed from `**` to `$HOME/**` + `$TEMP/**` (commit, 2026-05-19),
+  blocking the worst-case attack on system files (`/etc/*`, other
+  users' homes). Proper defence-in-depth fix still pending: switch to
+  Tauri 2's runtime scope authorisation pattern — paths returned by
+  the dialog plugin get added to the runtime fs scope, and
+  `read-text-file` / `write-text-file` reject anything outside the
+  user-consented set. Requires a small Rust glue layer in
+  `src-tauri/src/lib.rs` that calls `tauri_plugin_fs::FsExt::scope()`
+  on dialog responses.
   _packages/website/src-tauri/capabilities/default.json fs:scope_
 - **`style-src 'unsafe-inline'` in Tauri CSP.** Currently permitted
   because Tauri's overlay title-bar chrome and Tiptap's editor may
