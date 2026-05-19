@@ -19,6 +19,34 @@ once they've been quiet for a release or two.
 
 ## Recently fixed
 
+- **Source files showed uniform grey in CodeMirror modes.** With the
+  markdown language extension removed for non-markdown content (so
+  `#` lines stop being parsed as H1 headings), source files had no
+  syntax highlighting at all in Code / Split modes — every keyword,
+  string, comment was the same `--cm-fg` colour. Fix: per-language
+  CodeMirror extensions (python, javascript / typescript / jsx / tsx,
+  json, css, html, xml / svg) lazy-loaded via `Compartment`, with a
+  shared `sourceHighlight` palette mapping tag types to existing
+  `--cm-*` CSS variables so themes drive the colours. _commit 8155afc_
+
+- **URL stripped from address bar after boot-URL gate acceptance.**
+  Path 3 (external arrival) cleared `?url=…` from the address bar
+  on arrival to avoid a re-prompt loop on refresh, then never
+  restored it after the user clicked Open. Result: refresh lost the
+  loaded doc, and the URL wasn't a copyable share link any more.
+  Fix: after the gate is accepted, mirror the ext-pickup path —
+  rewrite the address bar to `?url=<original>` with a `chainKind:
+  'chain'` history state so refresh hits Path 2 (trusted nav,
+  gate-free reload). _commit 8155afc_
+
+- **Save-As forced `.md` for non-markdown docs.** The FSA / Tauri /
+  download save paths hardcoded markdown-only file-type filters and
+  a `text/markdown` MIME, so a python file edited in Mode 4 saved
+  as `__init__.py.md` or got rejected by the picker. Fix: filters
+  + MIME + default name now derive from the current `ContentKind`;
+  open dialog widened symmetrically to accept every renderable
+  source extension. _commit 8155afc_
+
 - **Filename missing in Tauri after fullscreen toggle.** `data-fullscreen`
   on `<html>` got stuck at `'1'` if the user entered or exited
   fullscreen via macOS native controls (green button, swipe gestures)

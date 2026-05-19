@@ -74,7 +74,7 @@ export type ContentKind =
 // hljs languages registered in nicermd-core/src/index.ts. File
 // extensions outside this table fall back to plain text (still
 // rendered, just without syntax highlighting).
-const SOURCE_EXT_TO_LANG: Record<string, string> = {
+export const SOURCE_EXT_TO_LANG: Record<string, string> = {
   ts: 'typescript',
   tsx: 'tsx',
   js: 'javascript',
@@ -96,7 +96,10 @@ const PLAIN_TEXT_BASENAMES = /^(LICENSE|LICENCE|COPYING|AUTHORS|CONTRIBUTORS|NOT
 // Classify a URL path by its filename. Returns null for unsupported
 // shapes (e.g. `.exe`, `.zip`) — those get rejected at parse time so
 // the user sees an explicit error rather than a broken render later.
-function classifyPath(path: string): ContentKind | null {
+// Exported so doc-source can classify locally-opened files by the
+// same rules, and derive save/open filter extensions from the same
+// table (single source of truth).
+export function classifyPath(path: string): ContentKind | null {
   const clean = path.split('?')[0]!.split('#')[0]!
   const basename = clean.split('/').pop() ?? ''
   if (!basename) return null
@@ -811,6 +814,20 @@ function showBootConfirmation(harness: Harness, originalInput: string, parsed: P
     openBtn.textContent = 'Loading…'
     try {
       await loadFromUrl(harness, originalInput)
+      // Mirror the ext-pickup path: once the user has consented and the
+      // doc has loaded, restore `?url=<original>` to the address bar and
+      // mark it `chainKind: 'chain'` so a refresh hits the trusted-nav
+      // path (Path 2) instead of stripping again. Effect: the URL becomes
+      // a copyable share link, and refresh re-loads the same doc without
+      // re-prompting. The gate's defence only matters on initial arrival
+      // from outside; once accepted, this tab is internal.
+      const dest = new URL(window.location.href)
+      dest.searchParams.set('url', originalInput)
+      window.history.replaceState(
+        { chainKind: 'chain', url: originalInput },
+        '',
+        dest.toString(),
+      )
       close()
     } catch (err) {
       openBtn.disabled = false
