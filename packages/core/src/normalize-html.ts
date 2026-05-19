@@ -39,18 +39,45 @@ export function normalizeHtml(markdown: string): string {
   // cost on the common case.
   if (!markdown.includes('<')) return markdown
 
-  const replacements = collectReplacements(markdown)
-  if (replacements.length === 0) return markdown
+  // Pre-pass: wrap standalone <picture>…</picture> blocks in a <div>.
+  // markdown-it's block_html rule (rule 6) has `<source>` in its
+  // recognised-tag list but NOT `<picture>` — so a bare <picture> at
+  // column 0 falls through to rule 7 / inline HTML and the renderer
+  // drops the whole region. Wrapping in <div> hits rule 6 directly
+  // and lets the inner picture/source/img tree survive to DOMPurify.
+  const withWrappedPictures = wrapPictureBlocks(markdown)
+
+  const replacements = collectReplacements(withWrappedPictures)
+  if (replacements.length === 0) return withWrappedPictures
 
   // Apply bottom-up so earlier line indices stay valid as we splice.
   replacements.sort((a, b) => b.startLine - a.startLine)
 
-  const lines = markdown.split('\n')
+  const lines = withWrappedPictures.split('\n')
   for (const { startLine, endLine, text } of replacements) {
     const replacementLines = text === '' ? [] : text.split('\n')
     lines.splice(startLine, endLine - startLine, ...replacementLines)
   }
   return lines.join('\n')
+}
+
+// Wrap standalone <picture>…</picture> blocks in <div>…</div> so
+// markdown-it tokenises them as block HTML. Splits the source by
+// fenced code blocks first so a literal `<picture>` example in a
+// ```html fence stays untouched. The picture match anchors at the
+// start of a line (`m` flag + `^`) — inline `<picture>` mid-sentence
+// is unsupported and would still be dropped, but no README writes
+// that.
+function wrapPictureBlocks(markdown: string): string {
+  if (!/<picture[\s>]/i.test(markdown)) return markdown
+  const segments = markdown.split(/(```[\s\S]*?```)/g)
+  for (let i = 0; i < segments.length; i += 2) {
+    segments[i] = segments[i]!.replace(
+      /^<picture\b[\s\S]*?<\/picture>/gim,
+      (match) => `<div>${match}</div>`,
+    )
+  }
+  return segments.join('')
 }
 
 function collectReplacements(markdown: string): Replacement[] {

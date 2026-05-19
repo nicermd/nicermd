@@ -160,6 +160,13 @@ const PURIFY_CONFIG = {
     'blockquote', 'em', 'strong', 'del', 's',
     'hr', 'br', 'wbr',
     'img',
+    // <picture> + <source> for responsive / dark-mode-aware images. A
+    // modern README idiom: <picture><source media="(prefers-color-
+    // scheme: dark)" srcset="dark.png"><img src="light.png"></picture>.
+    // The browser picks the <source> whose media query matches and
+    // falls back to <img>; we just need to keep the tag tree intact
+    // and rewrite any relative srcset URLs (see rewriteRelativeUrls).
+    'picture', 'source',
     'table', 'thead', 'tbody', 'tr', 'th', 'td',
     'span', 'div',
     'center',
@@ -183,6 +190,12 @@ const PURIFY_CONFIG = {
     'aria-hidden', 'aria-label', 'aria-labelledby', 'aria-describedby',
     // External-link hardening — see the link_open renderer rule above.
     'rel',
+    // <picture>/<source>/<img srcset=…>: srcset carries a comma-list
+    // of URL+descriptor candidates; media is the CSS media-query
+    // that selects this source; sizes is the responsive sizing hint;
+    // type is the MIME for format-based fallback (`image/avif` etc.).
+    // None are scriptable surfaces.
+    'srcset', 'media', 'sizes', 'type',
   ],
   // URI scheme validation lives in the hook below rather than in
   // ALLOWED_URI_REGEXP, because DOMPurify v3 applies the regex to every
@@ -243,7 +256,9 @@ DOMPurify.addHook('uponSanitizeAttribute', (_node, data) => {
 const ABSOLUTE_OR_SAME_DOC_RE = /^(?:[a-z][a-z0-9+.-]*:|\/\/|[#?])/i
 
 function rewriteRelativeUrls(html: string, baseUrl: string): string {
-  return html.replace(
+  // First pass: single-URL attributes (href, src). These are the bulk
+  // of the rewrites — every <a href>, <img src>, <source src>, etc.
+  let out = html.replace(
     /(\b(?:href|src)=)"([^"]+)"/gi,
     (match, prefix: string, url: string) => {
       if (ABSOLUTE_OR_SAME_DOC_RE.test(url)) return match
@@ -254,6 +269,31 @@ function rewriteRelativeUrls(html: string, baseUrl: string): string {
       }
     },
   )
+  // Second pass: srcset, which carries a comma-separated list of
+  // `<url> [descriptor]` pairs (descriptor is `1x` / `2x` / `100w` or
+  // omitted). Each URL needs rewriting independently against baseUrl;
+  // descriptors pass through unchanged. URLs containing commas are
+  // theoretically legal but never seen in the wild for README usage,
+  // and the spec recommends URL-encoding them — naïve comma-split is
+  // the standard parsing pattern.
+  out = out.replace(/(\bsrcset=)"([^"]+)"/gi, (match, prefix: string, list: string) => {
+    const candidates = list.split(',').map((entry) => {
+      const trimmed = entry.trim()
+      if (!trimmed) return null
+      const spaceIdx = trimmed.search(/\s/)
+      const url = spaceIdx === -1 ? trimmed : trimmed.slice(0, spaceIdx)
+      const descriptor = spaceIdx === -1 ? '' : trimmed.slice(spaceIdx)
+      if (ABSOLUTE_OR_SAME_DOC_RE.test(url)) return `${url}${descriptor}`
+      try {
+        return `${new URL(url, baseUrl).href}${descriptor}`
+      } catch {
+        return `${url}${descriptor}`
+      }
+    }).filter((s): s is string => s !== null)
+    if (candidates.length === 0) return match
+    return `${prefix}"${candidates.join(', ')}"`
+  })
+  return out
 }
 
 // Direct HTML → safe-HTML pass, for callers that already have HTML (no

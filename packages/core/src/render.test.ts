@@ -134,15 +134,44 @@ describe('Allowlist hardening', () => {
     expect(out).not.toContain('<object')
   })
 
-  it('drops disallowed media tags (picture/source/video/audio) but keeps the fallback img', () => {
-    // Wrap in a <div> so markdown-it treats this as block HTML (rule 6).
-    // A bare <picture>…</picture> on a single line tokenises as inline HTML
-    // and is dropped wholesale by the inline allowlist before DOMPurify sees
-    // anything — that's a separate, less interesting code path.
+  it('preserves <picture> / <source> for dark-mode-aware images', () => {
+    // Modern READMEs use <picture> + <source media="(prefers-color-
+    // scheme: dark)"> to swap cover images per theme. We now allow
+    // the tag tree through DOMPurify; the <img> inside acts as the
+    // universal fallback if no <source> matches.
     const out = render('<div><picture><source srcset="https://x.test/dark.png" media="(prefers-color-scheme: dark)"><img src="https://x.test/light.png" alt="i"></picture></div>\n')
-    expect(out).not.toContain('<picture')
-    expect(out).not.toContain('<source')
+    expect(out).toContain('<picture')
+    expect(out).toContain('<source')
+    expect(out).toContain('srcset="https://x.test/dark.png"')
+    expect(out).toContain('media="(prefers-color-scheme: dark)"')
     expect(out).toContain('src="https://x.test/light.png"')
+  })
+
+  it('still drops other media tags (video, audio, iframe)', () => {
+    const out = render('<div><video src="https://x.test/v.mp4"></video><audio src="https://x.test/a.mp3"></audio></div>\n')
+    expect(out).not.toContain('<video')
+    expect(out).not.toContain('<audio')
+  })
+})
+
+describe('srcset relative-URL rewriting', () => {
+  it('resolves relative srcset URLs against baseUrl', () => {
+    const baseUrl = 'https://raw.githubusercontent.com/u/r/main/README.md'
+    const out = render('<picture><source srcset="docs/dark.png" media="(prefers-color-scheme: dark)"><img src="docs/light.png" alt="i"></picture>\n', { baseUrl })
+    expect(out).toContain('srcset="https://raw.githubusercontent.com/u/r/main/docs/dark.png"')
+    expect(out).toContain('src="https://raw.githubusercontent.com/u/r/main/docs/light.png"')
+  })
+
+  it('preserves srcset descriptors (1x / 2x / 100w) while rewriting URLs', () => {
+    const baseUrl = 'https://raw.githubusercontent.com/u/r/main/README.md'
+    const out = render('<img src="logo.png" srcset="logo.png 1x, logo@2x.png 2x" alt="logo">\n', { baseUrl })
+    expect(out).toContain('srcset="https://raw.githubusercontent.com/u/r/main/logo.png 1x, https://raw.githubusercontent.com/u/r/main/logo@2x.png 2x"')
+  })
+
+  it('leaves absolute srcset URLs untouched', () => {
+    const baseUrl = 'https://raw.githubusercontent.com/u/r/main/README.md'
+    const out = render('<img src="x.png" srcset="https://cdn.test/x.png 1x, https://cdn.test/x@2x.png 2x" alt="x">\n', { baseUrl })
+    expect(out).toContain('srcset="https://cdn.test/x.png 1x, https://cdn.test/x@2x.png 2x"')
   })
 })
 

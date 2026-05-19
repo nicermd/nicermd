@@ -45,24 +45,6 @@ shouldn't be forgotten.
 
 ## Rendering / HTML
 
-- **`<picture>` support for dark-mode-aware images.** Many modern READMEs
-  use `<picture>` with `<source media="(prefers-color-scheme: …)">` to
-  swap the cover image per theme. Currently both the block-HTML path
-  (rule 6 doesn't list `picture` so the tag is tokenised as inline HTML
-  and stripped by the inline allowlist) and the would-be allowed path
-  (`<source srcset="…">` is relative-path soup not currently rewritten)
-  break. Two pieces, ship together:
-  - Rewrite `srcset` candidate URLs against `baseUrl` in
-    `rewriteRelativeUrls` (parse comma-separated `<url> <descriptor>`
-    pairs; resolve each URL; preserve descriptors).
-  - Add `picture` / `source` to the DOMPurify allowlist + handle inline
-    position (either widen the inline allowlist or pre-process to a
-    block in `normalize-html.ts`).
-  No driver today, but real-world README rendering hits this often
-  enough that it's worth doing once `<picture>` shows up in a doc the
-  user actually wants to read.
-  _packages/core/src/index.ts rewriteRelativeUrls + PURIFY_CONFIG_
-
 - **Tag-scoped `data:` image hook.** The DOMPurify URI hook currently
   drops `data:` URIs on every attribute as a blanket measure. If inline
   image embedding (base64 `<img src="data:image/png;base64,…">`) ever
@@ -166,25 +148,12 @@ shouldn't be forgotten.
 
 ## Documentation polish
 
-- **README screenshot or short screencap.** A "what does this look
-  like" image at the top of the README would carry visual weight.
-  One screenshot of the showcase doc in a clean theme is enough; a
-  5–10s screencap of mode switching is a stretch goal.
+- **README screencap of mode switching.** Two static screenshots
+  already in the README. A 5–10s screencap showing Read → Write →
+  Split → Code on a single doc would carry the mode-switching
+  ergonomic better than prose. Stretch goal, not blocking.
 - **CHANGELOG.md entries.** File is currently a stub. Populate from
   `git log` summary points so there's a real history page.
-
-## Editor layout
-
-- **Content-aware shrink-to-fit width for source.** Read (Mode 1) and
-  Code (Mode 4) currently use a fixed 900px cap for source files. For
-  short-line files (most Python / config files) that's still wider
-  than the actual content, leaving large empty side margins. Measure
-  the widest rendered line at mount and clamp the container to that
-  width + comfortable padding, floored at reading-width and ceilinged
-  at e.g. 1100px so very long lines still wrap. Mode 4 needs a
-  re-measure on every edit; Mode 1 is one-shot. Architectural memory
-  forbids user-facing width controls, so this stays auto-tuned.
-  Surfaced 2026-05-19.
 
 ## Distribution / hosting
 
