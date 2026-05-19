@@ -30,7 +30,7 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "dompurify": "^3.4.4",
+    "dompurify": "^3.4.5",
     "highlight.js": "^11.10.0",
     "markdown-it": "^14.1.0"
   },
