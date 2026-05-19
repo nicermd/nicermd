@@ -4,14 +4,6 @@ Living log of deferred work. Bugs go in `KNOWN-ISSUES.md`. This file
 tracks mid-grain follow-ups that aren't worth a fresh issue but
 shouldn't be forgotten.
 
-## Open URL
-
-- **Streaming size guard.** The 5 MiB cap currently buffers the whole
-  response before checking — an attacker-controlled server could ship
-  the first 4.99 MiB then keep writing. Replace with a streaming reader
-  that aborts as soon as bytes-read exceeds the cap. Defensive only;
-  current cap is enough in practice.
-  _packages/website/src/url-open.ts fetchMarkdown_
 ## Plain text in the reader
 
 - **Render non-markdown text in Nicer.md theme typography.** A

@@ -5,7 +5,7 @@
 // boundary.
 
 import { describe, expect, it } from 'vitest'
-import { parseGithubUrl } from './url-open'
+import { parseGithubUrl, readBodyWithCap } from './url-open'
 
 function reject(input: string): void {
   const r = parseGithubUrl(input)
@@ -198,5 +198,72 @@ describe('Malformed inputs', () => {
   it('rejects github.com with too-deep tree but no /tree/ prefix', () => {
     reject('https://github.com/u/r/issues')
     reject('https://github.com/u/r/pulls/1')
+  })
+})
+
+// --- Streaming body cap --------------------------------------------------
+// readBodyWithCap streams the response, aborting as soon as cumulative
+// bytes exceed the cap. Previous implementation buffered the whole body
+// and only checked length after — meaning an attacker-controlled server
+// could ship up to (cap-1) bytes "for free". These tests pin that the
+// streaming variant terminates early and never accumulates past the cap.
+
+describe('Streaming body cap', () => {
+  // Build a Response whose body is a stream emitting `chunks` of size
+  // `chunkSize`. Total bytes = chunks * chunkSize. Useful for testing
+  // the cap without allocating the full payload in test setup.
+  function streamingResponse(chunks: number, chunkSize: number): Response {
+    let emitted = 0
+    const stream = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (emitted >= chunks) {
+          controller.close()
+          return
+        }
+        controller.enqueue(new Uint8Array(chunkSize).fill(0x61)) // 'a'
+        emitted++
+      },
+    })
+    return new Response(stream)
+  }
+
+  it('returns text when total bytes are under the cap', async () => {
+    // 4 chunks × 256 KiB = 1 MiB total, well under the 5 MiB cap.
+    const resp = streamingResponse(4, 256 * 1024)
+    const out = await readBodyWithCap(resp, 5 * 1024 * 1024)
+    expect(out.length).toBe(4 * 256 * 1024)
+  })
+
+  it('aborts mid-stream once cumulative bytes exceed the cap', async () => {
+    // Cap = 1 MiB; chunks emit 4 × 256 KiB then would keep going. If
+    // the cap check fires on the chunk that pushes the cumulative size
+    // past cap, we abort after at most 5 chunks (≈ 1.25 MiB read).
+    const cap = 1024 * 1024 // 1 MiB for fast test
+    const resp = streamingResponse(20, 256 * 1024) // would be 5 MiB total
+    await expect(readBodyWithCap(resp, cap)).rejects.toThrow(/too large/)
+  })
+
+  it('aborts as soon as a single oversized chunk lands', async () => {
+    // One chunk larger than the cap — must reject without buffering.
+    const cap = 1024 // 1 KiB
+    const resp = streamingResponse(1, 4 * 1024) // single 4 KiB chunk
+    await expect(readBodyWithCap(resp, cap)).rejects.toThrow(/too large/)
+  })
+
+  it('decodes UTF-8 across chunk boundaries correctly', async () => {
+    // The em dash (—, U+2014) is 3 UTF-8 bytes: 0xE2 0x80 0x94. Split
+    // it across two chunks to verify TextDecoder stream-mode stitches
+    // it back together instead of emitting replacement characters.
+    const chunk1 = new Uint8Array([0xe2, 0x80])
+    const chunk2 = new Uint8Array([0x94])
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(chunk1)
+        controller.enqueue(chunk2)
+        controller.close()
+      },
+    })
+    const out = await readBodyWithCap(new Response(stream), 1024)
+    expect(out).toBe('—')
   })
 })
