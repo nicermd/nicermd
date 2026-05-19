@@ -1,0 +1,65 @@
+name: Release Tauri DMG
+
+# Triggered by pushing a `tauri-v*` tag. The local `pnpm release:tauri`
+# script does the same thing on a maintainer's Mac; this workflow lifts
+# it into CI so the release can be cut from a fresh checkout without a
+# local Rust toolchain. `workflow_dispatch` provides a manual run path
+# from the Actions tab — useful for re-publishing the current tag if a
+# previous attempt half-completed.
+on:
+  push:
+    tags: ['tauri-v*']
+  workflow_dispatch:
+
+# `contents: write` is required so `gh release create` can publish a
+# new release + upload the DMG asset. No other scope needed.
+permissions:
+  contents: write
+
+jobs:
+  build:
+    # macos-latest is currently Apple Silicon; we install the x86_64
+    # target as well so `tauri build --target universal-apple-darwin`
+    # can produce a fat binary that runs natively on both architectures.
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install Rust targets
+        # Default rustup on macos-latest already has aarch64-apple-darwin
+        # (the host target). x86_64-apple-darwin needs to be added so
+        # the universal-apple-darwin meta-target can link both slices.
+        run: |
+          rustup target add aarch64-apple-darwin
+          rustup target add x86_64-apple-darwin
+
+      - name: Cache Cargo build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: packages/website/src-tauri
+
+      - name: Enable Corepack
+        run: corepack enable
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install JS deps
+        run: pnpm install --frozen-lockfile
+
+      - name: Build core
+        # Same reason as ci.yml — the website's tauri build imports
+        # nicermd-core types from its dist/ output.
+        run: pnpm --filter nicermd-core build
+
+      - name: Build DMG + publish GitHub Release
+        # The script reads the version from tauri.conf.json, runs
+        # `tauri build --target universal-apple-darwin`, and uploads
+        # the resulting DMG to a fresh release with --latest=false so
+        # the Chrome extension's install URL keeps its evergreen
+        # `/releases/latest/download/` pointer.
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: pnpm release:tauri
