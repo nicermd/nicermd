@@ -61,7 +61,13 @@ const notes = [
 ].join('\n')
 
 console.log(`Publishing GitHub release ${tag}…`)
-execSync(`gh release create ${tag} ${JSON.stringify(dmgPath)} --title ${JSON.stringify(`${productName} v${version}`)} --notes ${JSON.stringify(notes)}`, {
+// --latest=false: the README's Chrome extension install URL uses
+// `/releases/latest/download/nicermd-chrome-ext.zip`, which 404s if
+// GitHub's "Latest" pointer flips to a Tauri release that doesn't
+// carry that asset. Keep the Chrome ext release as the latest pointer
+// so the install link stays evergreen; Tauri releases are discovered
+// via the `?q=tauri` filtered list linked from the README.
+execSync(`gh release create ${tag} ${JSON.stringify(dmgPath)} --title ${JSON.stringify(`${productName} v${version}`)} --notes ${JSON.stringify(notes)} --latest=false`, {
   stdio: 'inherit',
   cwd: root,
 })
