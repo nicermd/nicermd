@@ -2197,10 +2197,12 @@ html {
 }
 
 /* --- Chain-load error banner --- */
-/* Shown when a chained markdown-link click fails to load. Same
-   visual shape as the autosave recovery banner; a faint left-edge
-   stripe in --warn distinguishes the failure intent. Auto-dismisses
-   after 8s; Dismiss button removes immediately. */
+/* Shown when a chained markdown-link click fails to load, or when
+   the URL loader rejects an unsupported file type. Same visual
+   shape as the autosave recovery banner; symmetric edge stripes
+   in --warn (matching left + right) signal failure / notice intent
+   without leaning the banner one way visually. Auto-dismisses after
+   8s; Dismiss button (and Esc / Return) remove immediately. */
 .chain-error-banner {
   position: fixed;
   top: 1rem;
@@ -2210,12 +2212,13 @@ html {
   display: flex;
   align-items: center;
   gap: 0.6rem;
-  padding: 8px 12px 8px 12px;
+  padding: 8px 12px;
   font-size: 13px;
   color: var(--fg);
   background: var(--bg);
   border: 1px solid var(--border);
   border-left: 3px solid var(--warn, var(--accent));
+  border-right: 3px solid var(--warn, var(--accent));
   border-radius: 8px;
   box-shadow: 0 6px 24px rgba(0, 0, 0, 0.12);
   font-family: var(--font-body);

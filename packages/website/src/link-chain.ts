@@ -77,10 +77,22 @@ export function setupLinkChaining(harness: Harness, host: HTMLElement): void {
     // still download a markdown file if they want the raw bytes.
     if (e.altKey) return
 
-    // Eligibility = exactly the URL shapes the loader accepts. Anything
-    // else navigates normally.
+    // Eligibility = exactly the URL shapes the loader accepts.
+    // - `not-github`: leave the default browser nav alone (the link
+    //   simply isn't ours to handle).
+    // - `unsupported-file`: the link IS a GitHub URL we'd otherwise
+    //   chain, but its file type (e.g. Makefile, .rb, .go) isn't
+    //   supported yet. Suppress the navigation and surface a discreet
+    //   banner so the user knows why we didn't render it inline.
     const parseResult = parseGithubUrl(href)
-    if (!parseResult.ok) return
+    if (!parseResult.ok) {
+      if (parseResult.reasonCode === 'unsupported-file') {
+        e.preventDefault()
+        const basename = new URL(href, window.location.href).pathname.split('/').pop() || href
+        showNoticeBanner(`${basename} isn't a supported file type yet`)
+      }
+      return
+    }
 
     e.preventDefault()
 
@@ -159,7 +171,17 @@ let activeBanner: HTMLElement | null = null
 function showChainError(err: unknown, attemptedUrl: string): void {
   const message = err instanceof Error ? err.message : String(err)
   console.error('[link-chain] load failed:', attemptedUrl, err)
+  showNoticeBanner(`Couldn't load: ${message}`)
+}
 
+// Discreet, dismissible banner used for chain-load failures AND for
+// surfacing parser rejections like "Makefile isn't a supported file
+// type yet" (per the surface-limits-discreetly feedback rule). One
+// banner visible at a time — a second message replaces the first.
+// Auto-dismisses after 8s; clicking Dismiss / pressing Esc or Return
+// removes immediately (keyboard parity for the "I see it, move on"
+// dismissal — no need to mouse to the button).
+export function showNoticeBanner(message: string): void {
   if (activeBanner) {
     activeBanner.remove()
     activeBanner = null
@@ -167,22 +189,49 @@ function showChainError(err: unknown, attemptedUrl: string): void {
 
   const banner = document.createElement('div')
   banner.className = 'chain-error-banner'
-  banner.setAttribute('role', 'alert')
+  banner.setAttribute('role', 'status')
 
   const text = document.createElement('span')
   text.className = 'chain-error-banner__text'
-  text.textContent = `Couldn't load: ${message}`
+  text.textContent = message
 
   const dismissBtn = document.createElement('button')
   dismissBtn.type = 'button'
   dismissBtn.className = 'chain-error-banner__btn'
   dismissBtn.textContent = 'Dismiss'
 
+  let onKey: ((ev: KeyboardEvent) => void) | null = null
   const dismiss = (): void => {
     if (activeBanner === banner) activeBanner = null
+    if (onKey) {
+      window.removeEventListener('keydown', onKey, true)
+      onKey = null
+    }
     banner.remove()
   }
   dismissBtn.addEventListener('click', dismiss)
+
+  // Keyboard dismissal — capture-phase listener so an open command
+  // palette or modal doesn't swallow the key before us. We only
+  // intercept Esc/Return that haven't already been consumed by an
+  // input/textarea/contenteditable (so typing 'Return' in the URL
+  // prompt while a banner is visible doesn't kill the prompt's submit).
+  onKey = (ev: KeyboardEvent): void => {
+    if (ev.key !== 'Escape' && ev.key !== 'Enter') return
+    const target = ev.target as HTMLElement | null
+    if (
+      target &&
+      (target.tagName === 'INPUT' ||
+        target.tagName === 'TEXTAREA' ||
+        target.isContentEditable)
+    ) {
+      return
+    }
+    ev.preventDefault()
+    ev.stopPropagation()
+    dismiss()
+  }
+  window.addEventListener('keydown', onKey, true)
 
   banner.append(text, dismissBtn)
   document.body.appendChild(banner)

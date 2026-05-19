@@ -135,16 +135,26 @@ const editorTheme = EditorView.theme({
   },
 })
 
-const codeMirrorBase = [
-  history(),
-  drawSelection(),
-  lineNumbers(),
-  EditorView.lineWrapping,
-  markdown({ extensions: [GFM] }),
-  syntaxHighlighting(mdHighlight),
-  editorTheme,
-  keymap.of([...defaultKeymap, ...historyKeymap]),
-]
+// Per-content-kind CodeMirror extensions. Markdown gets the markdown
+// language parser + token-color highlighting; plain text and source
+// files skip those so Python's `# comment` lines don't get parsed as
+// H1 headings and rendered in --cm-heading colour (which was the
+// most visible "themes broken" symptom in modes 3/4). Source files
+// fall through to plain CodeMirror today — adding per-language
+// parsers (lang-python, lang-typescript, …) would re-introduce
+// syntax-aware editing but at non-trivial bundle cost; deferred.
+function codeMirrorExtensions() {
+  const isMarkdown = getContentKind().kind === 'markdown'
+  return [
+    history(),
+    drawSelection(),
+    lineNumbers(),
+    EditorView.lineWrapping,
+    ...(isMarkdown ? [markdown({ extensions: [GFM] }), syntaxHighlighting(mdHighlight)] : []),
+    editorTheme,
+    keymap.of([...defaultKeymap, ...historyKeymap]),
+  ]
+}
 
 // Render the current document with the renderer matching its content
 // kind. Markdown gets the full pipeline (parse → sanitise → relative-
@@ -285,7 +295,7 @@ function mountCodePlusPreview(
     state: EditorState.create({
       doc: markdown,
       extensions: [
-        ...codeMirrorBase,
+        ...codeMirrorExtensions(),
         EditorView.updateListener.of((update) => {
           if (!update.docChanged) return
           const md = update.state.doc.toString()
@@ -318,7 +328,7 @@ function mountRawCode(
     state: EditorState.create({
       doc: markdown,
       extensions: [
-        ...codeMirrorBase,
+        ...codeMirrorExtensions(),
         EditorView.updateListener.of((update) => {
           if (update.docChanged) onChange?.(update.state.doc.toString())
         }),

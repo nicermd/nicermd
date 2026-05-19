@@ -138,7 +138,15 @@ type Parsed =
   | { kind: 'repo'; user: string; repo: string }
   | { kind: 'gist'; user: string; id: string }
 
-type ParseResult = { ok: true; parsed: Parsed } | { ok: false; reason: string }
+// reasonCode is the discriminator callers branch on (e.g. "should we
+// surface this rejection in the UI?"); reason is the human-readable
+// string for direct display. Keeping both means callers can pick
+// their own message without re-discriminating on the string.
+export type ParseRejectReason = 'not-github' | 'unsupported-file'
+
+type ParseResult =
+  | { ok: true; parsed: Parsed }
+  | { ok: false; reason: string; reasonCode: ParseRejectReason }
 
 const REASON_NOT_GITHUB = 'Not a GitHub URL'
 const REASON_UNSUPPORTED_FILE =
@@ -164,13 +172,13 @@ export function parseGithubUrl(input: string): ParseResult {
   try {
     url = new URL(trimmed)
   } catch {
-    return { ok: false, reason: REASON_NOT_GITHUB }
+    return { ok: false, reason: REASON_NOT_GITHUB, reasonCode: 'not-github' }
   }
-  if (url.protocol !== 'https:') return { ok: false, reason: REASON_NOT_GITHUB }
+  if (url.protocol !== 'https:') return { ok: false, reason: REASON_NOT_GITHUB, reasonCode: 'not-github' }
 
   if (url.hostname === RAW_HOST) {
     const content = classifyPath(url.pathname)
-    if (!content) return { ok: false, reason: REASON_UNSUPPORTED_FILE }
+    if (!content) return { ok: false, reason: REASON_UNSUPPORTED_FILE, reasonCode: 'unsupported-file' }
     return { ok: true, parsed: { kind: 'direct', rawUrl: url.toString(), content } }
   }
 
@@ -187,13 +195,13 @@ export function parseGithubUrl(input: string): ParseResult {
   // which 302s to the latest revision's first file.
   if (url.hostname === GIST_PAGE_HOST) {
     const gistMatch = url.pathname.match(/^\/([^/]+)\/([0-9a-f]+)(?:\/.*)?$/i)
-    if (!gistMatch) return { ok: false, reason: REASON_NOT_GITHUB }
+    if (!gistMatch) return { ok: false, reason: REASON_NOT_GITHUB, reasonCode: 'not-github' }
     const [, gistUser, gistId] = gistMatch
     return { ok: true, parsed: { kind: 'gist', user: gistUser!, id: gistId! } }
   }
 
   if (url.hostname !== 'github.com' && url.hostname !== 'www.github.com') {
-    return { ok: false, reason: REASON_NOT_GITHUB }
+    return { ok: false, reason: REASON_NOT_GITHUB, reasonCode: 'not-github' }
   }
 
   // Strip any trailing slash so /<u>/<r>/ matches the bare-repo branch.
@@ -204,7 +212,7 @@ export function parseGithubUrl(input: string): ParseResult {
   if (blob) {
     const [, user, repo, rest] = blob
     const content = classifyPath(rest!)
-    if (!content) return { ok: false, reason: REASON_UNSUPPORTED_FILE }
+    if (!content) return { ok: false, reason: REASON_UNSUPPORTED_FILE, reasonCode: 'unsupported-file' }
     return { ok: true, parsed: { kind: 'direct', rawUrl: `https://${RAW_HOST}/${user}/${repo}/${rest}`, content } }
   }
 
@@ -224,7 +232,7 @@ export function parseGithubUrl(input: string): ParseResult {
     return { ok: true, parsed: { kind: 'repo', user: user!, repo: repoName! } }
   }
 
-  return { ok: false, reason: REASON_NOT_GITHUB }
+  return { ok: false, reason: REASON_NOT_GITHUB, reasonCode: 'not-github' }
 }
 
 // What we'd fetch if the user pressed Enter right now. For repo URLs
@@ -592,10 +600,24 @@ async function processBootUrlParamAsync(harness: Harness): Promise<void> {
   window.history.replaceState({}, '', newUrl)
 
   const result = parseGithubUrl(urlParam)
-  // Silently ignore malformed / non-GitHub URLs in the param. We don't
-  // want to surface specific parser reasons here — reduces phishing
-  // signal value (an attacker could probe what shapes are accepted).
-  if (!result.ok) return
+  if (!result.ok) {
+    // Silently ignore malformed / non-GitHub URLs — surfacing a
+    // specific reason here helps an attacker probe what shapes the
+    // parser accepts. But the `unsupported-file` case is different:
+    // the URL IS a GitHub URL the user clearly intended Nicer.md to
+    // render, just for a file type we don't support yet. Tell them
+    // discreetly so they don't think the share-link is broken.
+    if (result.reasonCode === 'unsupported-file') {
+      try {
+        const basename = new URL(urlParam).pathname.split('/').pop() || urlParam
+        const { showNoticeBanner } = await import('./link-chain')
+        showNoticeBanner(`${basename} isn't a supported file type yet`)
+      } catch {
+        // Banner module failed to load — fall through silently.
+      }
+    }
+    return
+  }
 
   showBootConfirmation(harness, urlParam, result.parsed)
 }
