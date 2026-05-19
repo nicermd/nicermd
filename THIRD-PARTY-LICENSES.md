@@ -1188,7 +1188,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@codemirror/view@6.41.1`
+#### `@codemirror/view@6.43.0`
 
 Author: Marijn Haverbeke
 
