@@ -14,11 +14,18 @@ once they've been quiet for a release or two.
   Reproducer needed.
 - **Window → Bring All to Front does nothing.** Predefined menu item
   in `lib.rs:build_menu`. Restoring an individual minimised window
-  from the windowsMenu list works fine, so this is specific to the
-  multi-window-arrange action — likely a muda-on-macOS quirk that
-  needs deeper investigation, or possibly the `TitleBarStyle::Overlay`
-  excluding our windows from the standard NSApp.arrangeInFront window
-  set.
+  from the windowsMenu list works fine (confirmed on 0.1.10), so this
+  is specific to the multi-window-arrange action — likely a muda-on-
+  macOS quirk that needs deeper investigation, or possibly the
+  `TitleBarStyle::Overlay` excluding our windows from the standard
+  NSApp.arrangeInFront window set. Confirmed broken on 0.1.10.
+- **No way to duplicate a window / open a link in a new window from
+  the app.** During multi-window dogfooding the user wanted a quick
+  path to put the same doc — or a link inside the current doc — in a
+  second window for side-by-side comparison. Cmd+N opens an empty
+  showcase, OS Open-With spawns a new window with a *different* file.
+  Candidates: File → Duplicate Window (Cmd+Shift+D), and/or a webview
+  context-menu entry on links offering "Open Link in New Window".
 - **Dialog keyboard nav.** `ask()`-based discard dialogs
   (Cmd+R reload, Cmd+Q quit, file-new discard) accept Enter for the
   default button but Escape doesn't reliably cancel and Left/Right
