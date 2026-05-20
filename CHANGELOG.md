@@ -10,6 +10,61 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.6 — 2026-05-20
+
+### Added
+- **Multi-window support.** `Cmd+N` opens a new window with its own
+  JS realm; per-window autosave (localStorage suffixed with window
+  label); menu events route to the focused window only; last-window
+  close quits the app. macOS `Window` menu wired as `windowsMenu` so
+  ``Cmd+` `` cycles between open windows and a minimised window can
+  be brought back from the menu.
+- **`<picture>` element support.** Dark-mode-aware READMEs (which
+  swap a cover image by `prefers-color-scheme`) now render correctly
+  on both the website and the desktop app. `<picture>` + `<source>`
+  added to the DOMPurify allowlist; `srcset` URLs are rewritten
+  against `baseUrl` for URL-loaded docs.
+
+### Changed
+- **Streaming cap on URL fetches.** Bodies stream through a 5 MiB
+  ceiling with early abort, replacing the buffer-then-check path.
+- **`fs` scope on desktop is now runtime-only.** Static
+  `$HOME/**` + `$TEMP/**` allow block dropped; `readTextFile` /
+  `writeTextFile` only succeed for paths the user has explicitly
+  picked via the system dialog (auto-registered by the dialog
+  plugin) or arrived via OS-level "Open With" / double-click
+  (registered in the `RunEvent::Opened` handler). Closes the
+  worst-case attack surface where attacker-controlled JS could have
+  read arbitrary `$HOME` files.
+
+### Fixed
+- **Cold-start "Open With" silently dropped the file.** Double-
+  clicking a `.md` in Finder while Nicer.md wasn't running raced the
+  JS bundle's listener registration; the `RunEvent::Opened` emit
+  fired into no listener and the file was lost. Added a Rust-side
+  `PendingOpened` cache (mirrors deep-link plugin's `getCurrent()`
+  pattern): paths arriving pre-bundle are queued; JS drains the
+  queue and flips a `drained` flag once the listener is registered.
+  Subsequent Opened events emit live as before.
+- **`Cmd+R` reload had no dirty guard.** A misfire wiped any work
+  not yet flushed by the 1.5s autosave debounce AND dropped the
+  source path so the next Cmd+S became Save As. Now prompts before
+  reloading if there are unsaved changes.
+- **`Cmd+Q` bypassed each window's dirty guard.** Native macOS
+  quit terminates `NSApp` directly, so per-window
+  `WindowEvent::CloseRequested` listeners never fired. Multi-window
+  users could silently lose unsaved work in every window. Replaced
+  the predefined Quit menu item with a custom Quit that closes each
+  window via `close()`, which DOES emit CloseRequested — so each
+  realm gets its prompt. The existing last-window-quit cascade then
+  exits the app once all windows are gone.
+- **Pre-multi-window autosave snapshots never recovered after
+  upgrade.** Pre-0.1.6 builds wrote to a bare `nicermd:autosave`
+  key; the multi-window build moved to `nicermd:autosave:<label>`.
+  Users mid-edit at upgrade time would see no recovery banner. The
+  main window now migrates the bare snapshot into the labelled slot
+  on first boot if present.
+
 ## 0.1.5 — 2026-05-19
 
 ### Added

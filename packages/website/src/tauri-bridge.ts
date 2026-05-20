@@ -33,7 +33,7 @@
 //                                 prompt before launching us.
 
 import type { Harness } from './main'
-import { openFile, saveFile, newFile, openFromTauriPath } from './doc-source'
+import { openFile, saveFile, newFile, openFromTauriPath, isDirty } from './doc-source'
 import { loadFromUrl } from './url-open'
 
 function isTauri(): boolean {
@@ -85,12 +85,44 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
   await listenHere('menu:file-new', () => {
     void newFile(harness)
   })
-  await listenHere('menu:view-reload', () => {
+  await listenHere('menu:view-reload', async () => {
+    // Cmd+R is right next to Cmd+T / Cmd+W on the keyboard and easy
+    // to hit accidentally. Without a guard, a misfire wipes anything
+    // not yet flushed by the 1.5s autosave debounce AND drops the
+    // file association (recovery banner restores text but anonymises
+    // the source — the next Cmd+S becomes Save As, not a write-back).
+    if (isDirty()) {
+      const { ask } = await import('@tauri-apps/plugin-dialog')
+      const ok = await ask('Discard unsaved changes and reload?', {
+        title: 'Nicer.md',
+        kind: 'warning',
+      })
+      if (!ok) return
+    }
     window.location.reload()
   })
   await listenHere<string>('menu:file-open-path', (event) => {
     void openFromTauriPath(harness, event.payload)
   })
+
+  // Cold-start file-open replay. RunEvent::Opened can fire before
+  // this bundle has finished loading and registered the listener
+  // above (e.g. user double-clicks a .md in Finder while Nicer.md
+  // isn't running — the OS launches us, fires Opened, and the JS
+  // realm isn't ready yet). The Rust side caches those paths in
+  // `PendingOpened`; drain them here now that we have a listener and
+  // a harness. The command also flips the cache's `drained` flag so
+  // subsequent Opened events emit live instead of caching. Mirrors
+  // the deep-link getCurrent() pattern above.
+  try {
+    const { invoke } = await import('@tauri-apps/api/core')
+    const pending = await invoke<string[]>('drain_pending_opened')
+    for (const path of pending) {
+      void openFromTauriPath(harness, path)
+    }
+  } catch (err) {
+    console.error('[tauri-bridge] failed to drain pending opens:', err)
+  }
 
   // Deep-link arrivals from `nicermd://` clicks (e.g. Chrome extension's
   // "Open in Nicer.md desktop").
