@@ -45,10 +45,9 @@ export const THEMES: readonly Theme[] = [
   { slug: 'catppuccin-latte', name: 'Catppuccin Latte', mode: 'light', inspiredBy: 'Catppuccin', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'catppuccin-mocha', name: 'Catppuccin Mocha', mode: 'dark', inspiredBy: 'Catppuccin', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'ayu-light', name: 'Ayu Light', mode: 'light', inspiredBy: 'Ivan Konstantinov', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
+  { slug: 'ayu-dark', name: 'Ayu Dark', mode: 'dark', inspiredBy: 'Ivan Konstantinov', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
+  { slug: 'ayu-mirage', name: 'Ayu Mirage', mode: 'dark', inspiredBy: 'Ivan Konstantinov', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
   { slug: 'rose-pine-dawn', name: 'Rosé Pine Dawn', mode: 'light', inspiredBy: 'Rosé Pine', defaultProseFont: 'crimson-pro', defaultCodeFont: 'jetbrains-mono' },
-  // Warm-print read — cream paper + deep brown ink, restrained earth-
-  // tone syntax. Pairs naturally with a literary serif for body.
-  { slug: 'newsprint', name: 'Newsprint', mode: 'light', defaultProseFont: 'crimson-pro', defaultCodeFont: 'jetbrains-mono' },
 ]
 
 const STORAGE_KEY = 'nicermd:theme'

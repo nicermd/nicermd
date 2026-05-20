@@ -10,6 +10,20 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.9 — 2026-05-20
+
+### Added
+- **Ayu Dark + Ayu Mirage themes.** Companion to the existing Ayu
+  Light. Inspired by Ivan Konstantinov's
+  [Ayu palette](https://github.com/dempfi/ayu); attributed in
+  [PALETTES.md](./PALETTES.md).
+
+### Removed
+- **Newsprint theme.** Was a Nicer.md original and felt redundant
+  alongside the other warm-light themes (Solarized Light,
+  Catppuccin Latte, Rosé Pine Dawn). Anyone with it active will fall
+  back to One Light on next launch.
+
 ## 0.1.8 — 2026-05-20
 
 ### Changed

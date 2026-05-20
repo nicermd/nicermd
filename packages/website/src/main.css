@@ -425,6 +425,66 @@
   --cm-quote: #f29718;
 }
 
+/* Ayu Dark — high-contrast dark companion. Yellow accent against
+   near-black; blue tags, green strings, lilac entities. */
+[data-theme='ayu-dark'] {
+  --bg: #0b0e14;
+  --fg: #bfbdb6;
+  --muted: #707984;
+  --border: #1d2230;
+  --surface: #131721;
+
+  --link: #59c2ff;
+  --accent: #e6b450;
+
+  --code-bg: #131721;
+  --code-fg: #bfbdb6;
+
+  --cm-bg: #0b0e14;
+  --cm-fg: #bfbdb6;
+  --cm-caret: #e6b450;
+  --cm-selection: rgba(230, 180, 80, 0.18);
+  --cm-gutter-bg: #0b0e14;
+  --cm-gutter-fg: #4a5566;
+
+  --cm-marker: #f29668;
+  --cm-heading: #e6b450;
+  --cm-link: #59c2ff;
+  --cm-url: #aad94c;
+  --cm-monospace: #d2a6ff;
+  --cm-quote: #ffb454;
+}
+
+/* Ayu Mirage — softer dark variant. Muted slate background with
+   warmer orange accent than Ayu Dark; cyan tags, lime strings. */
+[data-theme='ayu-mirage'] {
+  --bg: #1f2430;
+  --fg: #cbccc6;
+  --muted: #707a8c;
+  --border: #2a2f3d;
+  --surface: #232834;
+
+  --link: #5ccfe6;
+  --accent: #ffad66;
+
+  --code-bg: #232834;
+  --code-fg: #cbccc6;
+
+  --cm-bg: #1f2430;
+  --cm-fg: #cbccc6;
+  --cm-caret: #ffad66;
+  --cm-selection: rgba(255, 173, 102, 0.18);
+  --cm-gutter-bg: #1f2430;
+  --cm-gutter-fg: #4a5260;
+
+  --cm-marker: #f29e74;
+  --cm-heading: #ffad66;
+  --cm-link: #5ccfe6;
+  --cm-url: #d5ff80;
+  --cm-monospace: #d4bfff;
+  --cm-quote: #ffd580;
+}
+
 [data-theme='rose-pine-dawn'] {
   --bg: #faf4ed;
   --fg: #575279;
@@ -451,39 +511,6 @@
   --cm-url: #d7827e;
   --cm-monospace: #ea9d34;
   --cm-quote: #907aa9;
-}
-
-/* Warm-print / lamplight read. Cream paper, deep brown ink (not stark
-   black), restrained syntax colours leaning on muted earth tones —
-   moss greens and terracotta — instead of the crisper blue/red of
-   most code themes. Distinct from Paper (which is cooler and lighter)
-   by being more "long-form reading by lamplight." */
-[data-theme='newsprint'] {
-  --bg: #f4ecda;
-  --fg: #2a2520;
-  --muted: #7a6f5e;
-  --border: #d4c8a8;
-  --surface: #ede4cc;
-
-  --link: #6b3d2e;
-  --accent: #6b3d2e;
-
-  --code-bg: #ede4cc;
-  --code-fg: #2a2520;
-
-  --cm-bg: #f4ecda;
-  --cm-fg: #2a2520;
-  --cm-caret: #6b3d2e;
-  --cm-selection: rgba(107, 61, 46, 0.18);
-  --cm-gutter-bg: #f4ecda;
-  --cm-gutter-fg: #a89a82;
-
-  --cm-marker: #5a4830;
-  --cm-heading: #3a2818;
-  --cm-link: #6b3d2e;
-  --cm-url: #4a5e2e;
-  --cm-monospace: #5a4830;
-  --cm-quote: #4a5e2e;
 }
 
 /* --- Layout & shared --- */
