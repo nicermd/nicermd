@@ -127,15 +127,16 @@ is prefixed with a status tag so its disposition is scannable:
 
 ## Distribution / hosting
 
-- **PARKED — Cloudflare cost mitigation for viral spikes.**
-  _Gated on the launch moment — explicitly deferred until the user
-  starts sharing links broadly._ Today every byte served to nicer.md
-  comes off Cloudflare Pages free tier (which has generous-but-finite
-  request and bandwidth quotas). Explore at launch time: (a) Loading
-  large vendored libs from public CDNs (markdown-it, hljs, KaTeX)
-  with SRI hashes so they're cached globally and don't count against
-  our requests; (b) Aggressive immutable cache-control on hashed
-  assets so most return visits are 304s; (c) jsDelivr/unpkg as a
-  fallback origin for static releases tagged on GitHub. Trade-off vs
-  the current bundle-it-all approach: bundle-it-all is faster
-  first-paint (no extra DNS), CDN-loaded is cheaper at scale.
+- **LATER — Cloudflare cost mitigation, remaining options.**
+  Immutable cache-control on `/assets/*` shipped 2026-05-20 (one-year
+  `Cache-Control: public, max-age=31536000, immutable` in
+  `public/_headers`), so revisitors hit disk cache rather than
+  round-tripping to Cloudflare. That's the biggest single egress
+  saving for a viral spike, and it cost essentially nothing.
+  Remaining options are bigger lifts, parked on launch demand:
+  (a) Load large vendored libs (markdown-it, hljs, KaTeX) from
+  public CDNs with SRI hashes so they cache globally and don't count
+  against our requests; (c) jsDelivr/unpkg as a fallback origin for
+  static releases tagged on GitHub. Trade-off vs the current
+  bundle-it-all approach: bundle-it-all is faster first-paint (no
+  extra DNS), CDN-loaded is cheaper at scale.

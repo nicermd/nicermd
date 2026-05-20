@@ -5,6 +5,20 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="description" content="A nicer, zero-server markdown reader. Read, write, and save markdown beautifully, in the same pane, with no server." />
     <meta name="theme-color" content="#ffffff" />
+    <link rel="canonical" href="https://nicer.md/" />
+
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://nicer.md/" />
+    <meta property="og:title" content="Nicer.md — a nicer markdown reader" />
+    <meta property="og:description" content="A beautiful, zero-server markdown reader. Open, read, write, and save markdown — beautifully, entirely in your browser." />
+    <meta property="og:image" content="https://nicer.md/favicon-512.png" />
+    <meta property="og:site_name" content="Nicer.md" />
+
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Nicer.md — a nicer markdown reader" />
+    <meta name="twitter:description" content="A beautiful, zero-server markdown reader. Open, read, write, and save markdown — beautifully, entirely in your browser." />
+    <meta name="twitter:image" content="https://nicer.md/favicon-512.png" />
+
     <link rel="icon" href="/favicon.ico" sizes="any" />
     <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
     <link rel="icon" type="image/png" sizes="192x192" href="/favicon-192.png" />
@@ -15,7 +29,22 @@
     <title>Nicer.md — a nicer markdown reader</title>
   </head>
   <body>
-    <div id="app"></div>
+    <div id="app">
+      <main class="seo-fallback">
+        <h1>Nicer.md</h1>
+        <p>A beautiful, zero-server markdown reader. Open and read markdown files — beautifully. No server. No backend. Everything runs in your browser.</p>
+        <ul>
+          <li>Paste markdown and see it rendered live, with a choice of themes</li>
+          <li>Reader, Write, Split and Source modes — switch as you work</li>
+          <li>Save back to disk: the file you opened is the file you save</li>
+          <li>Native desktop app for macOS, plus a Chrome extension and CLI</li>
+        </ul>
+        <p>Open source under MIT. <a href="https://github.com/nicermd/nicermd">Source on GitHub</a>.</p>
+      </main>
+      <noscript>
+        <p>Nicer.md renders markdown entirely in your browser, so JavaScript needs to be enabled to use the app. Source and docs: <a href="https://github.com/nicermd/nicermd">github.com/nicermd/nicermd</a>.</p>
+      </noscript>
+    </div>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>
