@@ -4,7 +4,7 @@ A nicer, zero-server markdown reader. Read, write, and save markdown — beautif
 
 **Status:** v0.1 alpha. Live at [nicer.md](https://nicer.md).
 
-![Nicer.md rendering a markdown document in the macOS desktop app](docs/images/reader.png)
+![Nicer.md cycling Read, Write, Split and Code modes, then switching from a light to a dark theme](docs/media/screencap.gif)
 
 ## Download
 
