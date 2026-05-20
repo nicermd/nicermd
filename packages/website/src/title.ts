@@ -148,6 +148,18 @@ export function refreshTitle(): void {
   // corner badge + landing strap so the title stays uncluttered.
   const display = isLanding ? APP_NAME : (dirty ? '• ' : '') + (rawName ?? 'Untitled')
   document.title = isLanding ? APP_NAME : `${display} — ${APP_NAME}`
+  // In Tauri, also push the same string up to the native NSWindow
+  // title. This is what shows up in macOS's Windows menu and in the
+  // Dock-icon hover; without it every window appears as the literal
+  // "Nicer.md" from WebviewWindowBuilder::title, so users can't tell
+  // multiple open documents apart. Async, fire-and-forget — the JS
+  // tab title is already up-to-date for in-app surfaces.
+  if (isTauri()) {
+    void (async () => {
+      const { getCurrentWindow } = await import('@tauri-apps/api/window')
+      await getCurrentWindow().setTitle(document.title)
+    })()
+  }
   if (titleBarEl && titleTextEl) {
     fitEnd(titleTextEl, display)
     // Native browser tooltip shows the source URL on hover for files
