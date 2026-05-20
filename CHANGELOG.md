@@ -26,11 +26,15 @@ Quick-turn fixes from dogfood testing of 0.1.6.
   focused window — surprising and prone to clobbering unsaved work.
   Cold-start Open-With still loads into the main window (same as
   before).
-- **Headings carry the theme's accent colour.** `.mode-read`,
-  `.mode-wysiwyg`, and `.mode-split__preview` h1–h6 now use
-  `var(--cm-heading)` rather than inheriting body `--fg`. Each
-  theme's existing heading colour applies to prose headings too;
-  previously only CodeMirror source view picked it up.
+- **Read-mode prose now picks up the theme.** Previously `.mode-read`
+  styled only paragraphs, links, code, and pre — headings, blockquotes,
+  tables, and HRs inherited body `--fg`/defaults, so every theme
+  rendered most of the document in plain body colour. Mode 1 now
+  carries the same per-element theming Modes 2 (Write) and 3 (Split
+  preview) already had: heading colour via `var(--cm-heading)`,
+  blockquote border + `--muted` text, HR `--border` rule, table
+  cell borders + header row in `--surface`. Mode 2's heading colour
+  also added (was missing) for consistency across modes.
 - **Theme-picker "selected" indicator is more visible.** The
   hardcoded `#2563eb` outline blended into themes whose page
   background sat in a similar blue. Now uses `var(--accent)` at 3px

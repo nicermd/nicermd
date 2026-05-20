@@ -1435,6 +1435,36 @@ html {
   background: transparent;
   padding: 0;
 }
+.mode-read blockquote {
+  border-left: 3px solid var(--border);
+  margin-left: 0;
+  padding-left: 1em;
+  color: var(--muted);
+}
+.mode-read hr {
+  border: none;
+  border-top: 1px solid var(--border);
+  margin: 2em 0;
+}
+.mode-read table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.95em;
+}
+.mode-read th,
+.mode-read td {
+  padding: 0.4em 0.6em;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.mode-read th {
+  background: var(--surface);
+  font-weight: 600;
+}
+.mode-read img {
+  max-width: 100%;
+  border-radius: 4px;
+}
 
 /* Plain-text docs (LICENSE, CHANGELOG, *.txt) — the renderer wraps
    them in <pre class="nicermd-plain"> so they read as flowing prose
