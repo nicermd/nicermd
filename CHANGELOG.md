@@ -10,6 +10,26 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.8 — 2026-05-20
+
+### Changed
+- **Inline code (`backticked`) picks up the theme's monospace tint.**
+  Per-theme `--cm-monospace` colour — already used in CodeMirror's
+  source view for inline-monospace tokens — now applies to inline
+  `<code>` in Read, Write, and Split-preview modes too. A backticked
+  `Cmd+S` reads as distinctly coloured against prose instead of just
+  a subtly-tinted background block. Fenced code blocks (`pre code`)
+  stay neutral so hljs / Shiki tokens carry the palette inside.
+
+### Fixed
+- **Window menu now shows the filename of each open window.** Every
+  window's NSWindow title was the literal "Nicer.md" from
+  `WebviewWindowBuilder::title`, so the macOS Window menu listed
+  every open document with the same name — impossible to disambiguate.
+  `refreshTitle` now also calls `getCurrentWindow().setTitle()` in
+  Tauri so the NSWindow title follows the loaded doc (and dirty
+  marker). The Dock-icon hover and Mission Control also benefit.
+
 ## 0.1.7 — 2026-05-20
 
 Quick-turn fixes from dogfood testing of 0.1.6.

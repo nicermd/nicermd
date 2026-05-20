@@ -1420,7 +1420,13 @@ html {
   font-family: var(--font-code);
   font-size: 0.9em;
   background: var(--code-bg);
-  color: var(--code-fg);
+  /* Inline code uses the theme's `--cm-monospace` tint — same colour
+     CodeMirror source view uses for inline-monospace tokens — so a
+     backtick'd `Cmd+S` reads as distinctly coloured against prose,
+     not just a subtly-tinted background. Block code (`pre code`)
+     overrides this back to neutral so hljs/Shiki tokens carry the
+     palette inside fenced blocks. */
+  color: var(--cm-monospace, var(--code-fg));
   padding: 0.1em 0.35em;
   border-radius: 4px;
 }
@@ -1433,6 +1439,7 @@ html {
 }
 .mode-read pre code {
   background: transparent;
+  color: var(--code-fg);
   padding: 0;
 }
 .mode-read blockquote {
@@ -1655,7 +1662,7 @@ html {
   font-family: var(--font-code);
   font-size: 0.9em;
   background: var(--code-bg);
-  color: var(--code-fg);
+  color: var(--cm-monospace, var(--code-fg));
   padding: 0.1em 0.35em;
   border-radius: 4px;
 }
@@ -1670,6 +1677,7 @@ html {
 }
 .mode-wysiwyg .ProseMirror pre code {
   background: transparent;
+  color: var(--code-fg);
   padding: 0;
 }
 .mode-wysiwyg .ProseMirror blockquote {
@@ -1772,7 +1780,7 @@ html {
   font-family: var(--font-code);
   font-size: 0.9em;
   background: var(--code-bg);
-  color: var(--code-fg);
+  color: var(--cm-monospace, var(--code-fg));
   padding: 0.1em 0.35em;
   border-radius: 4px;
 }
@@ -1783,7 +1791,7 @@ html {
   border-radius: 6px;
   overflow-x: auto;
 }
-.mode-split__preview pre code { background: transparent; padding: 0; }
+.mode-split__preview pre code { background: transparent; color: var(--code-fg); padding: 0; }
 .mode-split__preview blockquote {
   border-left: 3px solid var(--border);
   margin-left: 0;
