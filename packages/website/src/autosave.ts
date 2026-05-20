@@ -81,30 +81,38 @@ function resolveAutosaveKey(): void {
   const label = internals?.metadata?.currentWindow?.label
   if (!label) return
   KEY = `${BASE_KEY}:${label}`
-
-  // Upgrade-path migration: pre-multi-window builds wrote snapshots
-  // to the bare `nicermd:autosave` key. Users who quit mid-edit and
-  // then updated to a multi-window build would otherwise see their
-  // unsaved work stranded at the old key and never get a recovery
-  // banner. On the main window only, migrate the bare snapshot into
-  // the labelled slot if present and the labelled slot isn't.
-  // One-shot — delete the bare key after copying.
-  if (label !== 'main') return
   try {
-    const bare = localStorage.getItem(BASE_KEY)
-    const labelled = localStorage.getItem(KEY)
-    if (bare && !labelled) {
-      localStorage.setItem(KEY, bare)
-      localStorage.removeItem(BASE_KEY)
-    } else if (bare && labelled) {
-      // Both present — labelled wins (newer build's slot). Drop the
-      // stale bare key so it doesn't keep showing up in migration
-      // checks across subsequent launches.
-      localStorage.removeItem(BASE_KEY)
-    }
+    migrateLegacyAutosaveKey(localStorage, BASE_KEY, label)
   } catch {
     // localStorage unavailable — silent.
   }
+}
+
+// Upgrade-path migration: pre-multi-window builds wrote snapshots to
+// the bare `nicermd:autosave` key. Users who quit mid-edit and then
+// updated to a multi-window build would otherwise see their unsaved
+// work stranded at the old key and never get a recovery banner. On
+// the main window only, migrate the bare snapshot into the labelled
+// slot if present and the labelled slot isn't. One-shot — delete
+// the bare key after copying (or after seeing both, where labelled
+// wins). Exported for testability — the call site above is the only
+// production caller.
+export function migrateLegacyAutosaveKey(
+  storage: Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>,
+  baseKey: string,
+  label: string,
+): void {
+  if (label !== 'main') return
+  const labelledKey = `${baseKey}:${label}`
+  const bare = storage.getItem(baseKey)
+  if (!bare) return
+  const labelled = storage.getItem(labelledKey)
+  if (!labelled) {
+    storage.setItem(labelledKey, bare)
+  }
+  // Either we copied (and the bare is now stale) or the labelled
+  // already won; in both cases the bare slot has served its purpose.
+  storage.removeItem(baseKey)
 }
 
 export function setupAutosave(harness: Harness): void {
