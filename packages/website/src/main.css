@@ -104,37 +104,6 @@
   --cm-quote: #5c6370;
 }
 
-[data-theme='terminal-light'] {
-  --font-body: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-  --font-code: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-
-  --bg: #ffffff;
-  --fg: #1a1a1a;
-  --muted: #555555;
-  --border: #cccccc;
-  --surface: #f5f5f5;
-
-  --link: #006400;
-  --accent: #006400;
-
-  --code-bg: transparent;
-  --code-fg: #1a1a1a;
-
-  --cm-bg: #ffffff;
-  --cm-fg: #1a1a1a;
-  --cm-caret: #006400;
-  --cm-selection: rgba(0, 100, 0, 0.18);
-  --cm-gutter-bg: #ffffff;
-  --cm-gutter-fg: #999999;
-
-  --cm-marker: #aa0000;
-  --cm-heading: #006400;
-  --cm-link: #006400;
-  --cm-url: #006400;
-  --cm-monospace: #006400;
-  --cm-quote: #555555;
-}
-
 [data-theme='terminal-dark'] {
   --font-body: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
   --font-code: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
@@ -313,34 +282,6 @@
   --cm-quote: #ffb86c;
 }
 
-[data-theme='everforest'] {
-  --bg: #2d353b;
-  --fg: #d3c6aa;
-  --muted: #859289;
-  --border: #343f44;
-  --surface: #343f44;
-
-  --link: #7fbbb3;
-  --accent: #a7c080;
-
-  --code-bg: #343f44;
-  --code-fg: #d3c6aa;
-
-  --cm-bg: #2d353b;
-  --cm-fg: #d3c6aa;
-  --cm-caret: #a7c080;
-  --cm-selection: rgba(167, 192, 128, 0.22);
-  --cm-gutter-bg: #2d353b;
-  --cm-gutter-fg: #4f5b58;
-
-  --cm-marker: #e67e80;
-  --cm-heading: #dbbc7f;
-  --cm-link: #7fbbb3;
-  --cm-url: #a7c080;
-  --cm-monospace: #d699b6;
-  --cm-quote: #83c092;
-}
-
 [data-theme='catppuccin-latte'] {
   --bg: #eff1f5;
   --fg: #4c4f69;
@@ -483,34 +424,6 @@
   --cm-url: #d5ff80;
   --cm-monospace: #d4bfff;
   --cm-quote: #ffd580;
-}
-
-[data-theme='rose-pine-dawn'] {
-  --bg: #faf4ed;
-  --fg: #575279;
-  --muted: #797593;
-  --border: #f2e9e1;
-  --surface: #fffaf3;
-
-  --link: #286983;
-  --accent: #907aa9;
-
-  --code-bg: #fffaf3;
-  --code-fg: #575279;
-
-  --cm-bg: #faf4ed;
-  --cm-fg: #575279;
-  --cm-caret: #907aa9;
-  --cm-selection: rgba(144, 122, 169, 0.2);
-  --cm-gutter-bg: #faf4ed;
-  --cm-gutter-fg: #9893a5;
-
-  --cm-marker: #b4637a;
-  --cm-heading: #286983;
-  --cm-link: #56949f;
-  --cm-url: #d7827e;
-  --cm-monospace: #ea9d34;
-  --cm-quote: #907aa9;
 }
 
 /* --- Layout & shared --- */

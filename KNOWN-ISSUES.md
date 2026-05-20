@@ -12,6 +12,13 @@ once they've been quiet for a release or two.
   competing for an OS resource, or some lifecycle race in Tauri 2's
   WebviewWindowBuilder when several windows boot in quick succession.
   Reproducer needed.
+- **Window → Bring All to Front does nothing.** Predefined menu item
+  in `lib.rs:build_menu`. Restoring an individual minimised window
+  from the windowsMenu list works fine, so this is specific to the
+  multi-window-arrange action — likely a muda-on-macOS quirk that
+  needs deeper investigation, or possibly the `TitleBarStyle::Overlay`
+  excluding our windows from the standard NSApp.arrangeInFront window
+  set.
 - **Dialog keyboard nav.** `ask()`-based discard dialogs
   (Cmd+R reload, Cmd+Q quit, file-new discard) accept Enter for the
   default button but Escape doesn't reliably cancel and Left/Right

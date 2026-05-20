@@ -35,6 +35,7 @@
 import type { Harness } from './main'
 import { openFile, saveFile, newFile, openFromTauriPath, isDirty } from './doc-source'
 import { loadFromUrl, openUrlPrompt } from './url-open'
+import { openPalette } from './command-palette'
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
@@ -66,6 +67,10 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
 
   await listenHere('menu:view-cycle', () => {
     harness.cycle()
+  })
+
+  await listenHere('menu:command-palette', () => {
+    openPalette()
   })
 
   await listenHere('menu:view-focus-toggle', () => {

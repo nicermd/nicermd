@@ -364,6 +364,12 @@ fn build_menu(
         )
         .separator()
         .item(
+            &MenuItemBuilder::with_id("view-command-palette", "Command Palette…")
+                .accelerator("CmdOrCtrl+K")
+                .build(app)?,
+        )
+        .separator()
+        .item(
             &MenuItemBuilder::with_id("view-focus", "Focus Mode")
                 .accelerator("CmdOrCtrl+.")
                 .build(app)?,
@@ -437,6 +443,7 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
         "view-mode-3" => emit_to_focused_or_all(app, "menu:view-mode", 3),
         "view-mode-4" => emit_to_focused_or_all(app, "menu:view-mode", 4),
         "view-cycle-mode" => emit_to_focused_or_all(app, "menu:view-cycle", ()),
+        "view-command-palette" => emit_to_focused_or_all(app, "menu:command-palette", ()),
         "view-focus" => emit_to_focused_or_all(app, "menu:view-focus-toggle", ()),
         "view-reload" => emit_to_focused_or_all(app, "menu:view-reload", ()),
         _ => {}
