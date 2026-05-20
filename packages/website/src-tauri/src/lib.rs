@@ -14,6 +14,7 @@
 use std::sync::atomic::{AtomicU32, Ordering};
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder, Wry};
+use tauri_plugin_fs::FsExt;
 
 // Monotonic counter for new-window labels. Labels must be unique
 // across the app lifetime; the main window is "main", subsequent
@@ -73,6 +74,15 @@ pub fn run() {
         tauri::RunEvent::Opened { urls } => {
             for url in urls {
                 if let Ok(path) = url.to_file_path() {
+                    // OS-level file-open bypasses the dialog plugin, so
+                    // the path never gets auto-registered with the
+                    // runtime fs scope. Register it here before the JS
+                    // side tries to read it — otherwise readTextFile
+                    // fails with PathForbidden under the no-static-scope
+                    // capability config.
+                    if let Err(err) = app_handle.fs_scope().allow_file(&path) {
+                        log::error!("failed to allow opened path {path:?}: {err}");
+                    }
                     let path_str = path.to_string_lossy().to_string();
                     emit_to_focused_or_all(app_handle, "menu:file-open-path", path_str);
                 }
