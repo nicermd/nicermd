@@ -17,7 +17,7 @@ The in-product theme picker renders each palette's "Inspired by …" subtitle fr
 | Dracula | Zeno Rocha | MIT | <https://github.com/dracula/dracula-theme> |
 | Everforest | sainnhe | MIT | <https://github.com/sainnhe/everforest> |
 | Catppuccin Latte / Mocha | Catppuccin org | MIT | <https://github.com/catppuccin/catppuccin> |
-| Ayu Light | Ivan Konstantinov | MIT | <https://github.com/dempfi/ayu> |
+| Ayu Light / Dark / Mirage | Ivan Konstantinov | MIT | <https://github.com/dempfi/ayu> |
 | Rosé Pine Dawn | Rosé Pine team | MIT | <https://github.com/rose-pine/rose-pine-theme> |
 
 ## Originals
@@ -25,7 +25,6 @@ The in-product theme picker renders each palette's "Inspired by …" subtitle fr
 The following palettes are Nicer.md originals:
 
 - **Terminal Light** / **Terminal Dark** — system-mono pair, designed for byte-level reading
-- **Newsprint** — cream-paper / deep-brown ink, paired with a literary serif
 
 ## Reporting a missing or incorrect credit
 
