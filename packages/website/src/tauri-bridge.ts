@@ -34,7 +34,7 @@
 
 import type { Harness } from './main'
 import { openFile, saveFile, newFile, openFromTauriPath, isDirty } from './doc-source'
-import { loadFromUrl } from './url-open'
+import { loadFromUrl, openUrlPrompt } from './url-open'
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
@@ -75,6 +75,9 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
 
   await listenHere('menu:file-open', () => {
     void openFile(harness)
+  })
+  await listenHere('menu:file-open-url', () => {
+    openUrlPrompt(harness)
   })
   await listenHere('menu:file-save', () => {
     void saveFile(harness)
