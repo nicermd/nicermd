@@ -10,6 +10,42 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.7 — 2026-05-20
+
+Quick-turn fixes from dogfood testing of 0.1.6.
+
+### Added
+- **File → Open URL…** menu item with `Cmd+Alt+O` accelerator. The
+  desktop app now has a discoverable menu path for opening URL-loaded
+  markdown (raw GitHub, gists, etc.); the JS-side keyboard shortcut
+  wasn't reliably reaching the webview in the bundled build.
+
+### Changed
+- **OS "Open With" now opens in a new window** when the app is already
+  running. Previously the picked file replaced whatever was in the
+  focused window — surprising and prone to clobbering unsaved work.
+  Cold-start Open-With still loads into the main window (same as
+  before).
+- **Headings carry the theme's accent colour.** `.mode-read`,
+  `.mode-wysiwyg`, and `.mode-split__preview` h1–h6 now use
+  `var(--cm-heading)` rather than inheriting body `--fg`. Each
+  theme's existing heading colour applies to prose headings too;
+  previously only CodeMirror source view picked it up.
+- **Theme-picker "selected" indicator is more visible.** The
+  hardcoded `#2563eb` outline blended into themes whose page
+  background sat in a similar blue. Now uses `var(--accent)` at 3px
+  with a `--fg` hairline so the ring reads against any theme.
+
+### Fixed
+- **Minimised window couldn't be recovered from the Window menu.**
+  `set_as_windows_menu_for_nsapp` was called inside `build_menu`
+  before the menu was installed on the app, so muda's
+  `resolve_ns_menu_for_nsapp` silently no-op'd (no main menu →
+  returns `None`). Moved the call after `app.set_menu(menu)`. Cmd+\`
+  cycling was working via a different code path; the windowsMenu
+  designation specifically governs auto-appending open windows and
+  minimised-state arrows in that menu.
+
 ## 0.1.6 — 2026-05-20
 
 ### Added

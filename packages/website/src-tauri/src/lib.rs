@@ -74,8 +74,19 @@ pub fn run() {
                         .build(),
                 )?;
             }
-            let menu = build_menu(app.handle())?;
+            let (menu, window_submenu) = build_menu(app.handle())?;
             app.set_menu(menu)?;
+            // Designate the Window submenu as macOS's NSApp.windowsMenu
+            // — auto-appends open windows so minimised ones can be
+            // brought back, and enables Cmd+` cycling. MUST happen
+            // AFTER `set_menu`, because muda's
+            // `resolve_ns_menu_for_nsapp` looks up the submenu via the
+            // app's currently-installed main menu; calling it before
+            // install silently no-ops (no main menu → returns None).
+            // That silent no-op is why the menu marker was broken in
+            // 0.1.6 even though it appeared correct in the build_menu
+            // body before.
+            let _ = window_submenu.set_as_windows_menu_for_nsapp();
             app.on_menu_event(handle_menu_event);
 
             // Deep-link handling is done entirely on the JS side via
@@ -110,29 +121,58 @@ pub fn run() {
         // bridge.ts reads the file via tauri-plugin-fs and updates that
         // window's harness, same flow as the in-app Open dialog.
         tauri::RunEvent::Opened { urls } => {
+            // OS-level Open-With / double-click / Dock drop. Two
+            // distinct sub-cases:
+            //   • Cold start: drained=false, no window's listener is
+            //     ready. Queue the path; the first window to boot will
+            //     drain and open it in-place.
+            //   • Warm state: app already running, user does Open-With
+            //     on a second file. Queueing and spawning a NEW window
+            //     lets that file land in its own window without
+            //     clobbering whatever the focused window was showing.
+            //     The new window's `setupTauriBridge` boot drains the
+            //     queue exactly like cold start does.
             let state = app_handle.state::<PendingOpened>();
             for url in urls {
                 if let Ok(path) = url.to_file_path() {
-                    // OS-level file-open bypasses the dialog plugin, so
-                    // the path never gets auto-registered with the
-                    // runtime fs scope. Register it here before the JS
-                    // side tries to read it — otherwise readTextFile
-                    // fails with PathForbidden under the no-static-scope
-                    // capability config.
+                    // Static fs scope was dropped in 0.1.6; allow the
+                    // path here so readTextFile/writeTextFile work for
+                    // it in the destination window.
                     if let Err(err) = app_handle.fs_scope().allow_file(&path) {
                         log::error!("failed to allow opened path {path:?}: {err}");
                     }
                     let path_str = path.to_string_lossy().to_string();
-                    // Cache-or-emit under the same mutex so no path is
-                    // lost across the cold→warm boundary. Drop the
-                    // guard before emit so the lock isn't held during
-                    // listener dispatch.
+                    // Push under the mutex, then read `drained` under
+                    // the same critical section to decide whether to
+                    // spawn a fresh window. Pairs with
+                    // `drain_pending_opened` which flips drained under
+                    // the same lock.
                     let mut paths_guard = state.paths.lock().unwrap();
-                    if state.drained.load(Ordering::Acquire) {
-                        drop(paths_guard);
-                        emit_to_focused_or_all(app_handle, "menu:file-open-path", path_str);
-                    } else {
-                        paths_guard.push(path_str);
+                    paths_guard.push(path_str);
+                    let was_drained = state.drained.load(Ordering::Acquire);
+                    drop(paths_guard);
+                    if was_drained {
+                        if let Err(err) = create_window(app_handle) {
+                            log::error!(
+                                "failed to spawn window for opened path: {err}; \
+                                 falling back to focused-window emit"
+                            );
+                            // Recover the path we just queued and emit
+                            // to the focused window — better than
+                            // silently losing it. If multiple paths
+                            // are queued from this batch, only the
+                            // most-recent one is recoverable here;
+                            // earlier ones get drained by whatever
+                            // window happens to boot next.
+                            let recovered = state.paths.lock().unwrap().pop();
+                            if let Some(p) = recovered {
+                                emit_to_focused_or_all(
+                                    app_handle,
+                                    "menu:file-open-path",
+                                    p,
+                                );
+                            }
+                        }
                     }
                 }
             }
@@ -217,7 +257,9 @@ fn create_window(app: &AppHandle) -> tauri::Result<String> {
     Ok(label)
 }
 
-fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
+fn build_menu(
+    app: &AppHandle,
+) -> tauri::Result<(tauri::menu::Menu<Wry>, tauri::menu::Submenu<Wry>)> {
     let app_submenu = SubmenuBuilder::new(app, "Nicer.md")
         .item(&PredefinedMenuItem::about(
             app,
@@ -263,6 +305,11 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
         .item(
             &MenuItemBuilder::with_id("file-open", "Open…")
                 .accelerator("CmdOrCtrl+O")
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::with_id("file-open-url", "Open URL…")
+                .accelerator("CmdOrCtrl+Alt+O")
                 .build(app)?,
         )
         .separator()
@@ -339,22 +386,18 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
         .item(&PredefinedMenuItem::close_window(app, None)?)
         .build()?;
 
-    // Make this submenu the macOS "Windows" menu (NSApp.windowsMenu).
-    // The OS uses that designation to: (a) auto-append open windows
-    // to the bottom of the menu so the user can pick one to bring
-    // forward — fixes the "minimised window can't be recovered" case;
-    // (b) enable Cmd+` window-cycling within the app. Without this
-    // call the submenu is just a regular submenu and the OS doesn't
-    // know to wire those behaviours.
-    let _ = window_submenu.set_as_windows_menu_for_nsapp();
-
-    MenuBuilder::new(app)
+    // Designating window_submenu as NSApp.windowsMenu must happen
+    // AFTER the menu is installed on the app — caller is responsible.
+    // See the `setup` block where `set_as_windows_menu_for_nsapp` is
+    // called after `app.set_menu(menu)`.
+    let menu = MenuBuilder::new(app)
         .item(&app_submenu)
         .item(&file_submenu)
         .item(&edit_submenu)
         .item(&view_submenu)
         .item(&window_submenu)
-        .build()
+        .build()?;
+    Ok((menu, window_submenu))
 }
 
 fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
@@ -386,6 +429,7 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
         }
         "file-new" => emit_to_focused_or_all(app, "menu:file-new", ()),
         "file-open" => emit_to_focused_or_all(app, "menu:file-open", ()),
+        "file-open-url" => emit_to_focused_or_all(app, "menu:file-open-url", ()),
         "file-save" => emit_to_focused_or_all(app, "menu:file-save", ()),
         "file-save-as" => emit_to_focused_or_all(app, "menu:file-save-as", ()),
         "view-mode-1" => emit_to_focused_or_all(app, "menu:view-mode", 1),

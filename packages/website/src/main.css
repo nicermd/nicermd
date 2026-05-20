@@ -1395,7 +1395,11 @@ html {
 
 .mode-read h1,
 .mode-read h2,
-.mode-read h3 {
+.mode-read h3,
+.mode-read h4,
+.mode-read h5,
+.mode-read h6 {
+  color: var(--cm-heading);
   line-height: 1.25;
   margin-top: 1.5em;
   margin-bottom: 0.5em;
@@ -1596,7 +1600,11 @@ html {
 }
 .mode-wysiwyg .ProseMirror h1,
 .mode-wysiwyg .ProseMirror h2,
-.mode-wysiwyg .ProseMirror h3 {
+.mode-wysiwyg .ProseMirror h3,
+.mode-wysiwyg .ProseMirror h4,
+.mode-wysiwyg .ProseMirror h5,
+.mode-wysiwyg .ProseMirror h6 {
+  color: var(--cm-heading);
   line-height: 1.25;
   margin-top: 1.5em;
   margin-bottom: 0.5em;
@@ -1717,6 +1725,14 @@ html {
   padding: 2rem 2rem 4rem;
   background: var(--bg);
   color: var(--fg);
+}
+.mode-split__preview h1,
+.mode-split__preview h2,
+.mode-split__preview h3,
+.mode-split__preview h4,
+.mode-split__preview h5,
+.mode-split__preview h6 {
+  color: var(--cm-heading);
 }
 .mode-split__preview h1 { font-size: 1.8em; margin-top: 0; }
 .mode-split__preview h2 { font-size: 1.4em; margin-top: 1.25em; }
@@ -1898,8 +1914,17 @@ html {
   transform: translateY(-1px);
 }
 .theme-card--selected {
-  outline: 2px solid #2563eb;
+  /* Outline + offset gives a halo around the tile. The previous
+     hardcoded #2563eb blew out to invisible on themes whose page
+     background was a similar blue (one-dark, nord-on-page, etc.). Use
+     the theme's own --accent so the indicator picks up whatever the
+     theme has nominated as its highlight colour; bump the width so it
+     reads even on themes whose accent is muted (rose-pine, etc.).
+     Belt-and-braces hairline box-shadow in --fg guarantees the ring
+     is visible even when --accent and --bg sit close to each other. */
+  outline: 3px solid var(--accent);
   outline-offset: 2px;
+  box-shadow: 0 0 0 1px var(--fg);
 }
 
 .theme-card__preview {

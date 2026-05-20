@@ -5,7 +5,20 @@ once they've been quiet for a release or two.
 
 ## Open
 
-_(no tracked issues)_
+- **App crashes when spawning a 3rd window.** Reported during 0.1.6
+  dogfood testing: two existing windows die when the third window is
+  opened. No repro steps captured yet. Suspected root causes to
+  investigate: WebKit shared-process GPU limit, multiple webviews
+  competing for an OS resource, or some lifecycle race in Tauri 2's
+  WebviewWindowBuilder when several windows boot in quick succession.
+  Reproducer needed.
+- **Dialog keyboard nav.** `ask()`-based discard dialogs
+  (Cmd+R reload, Cmd+Q quit, file-new discard) accept Enter for the
+  default button but Escape doesn't reliably cancel and Left/Right
+  arrows don't move the highlighted button on macOS. May be a
+  limitation of `tauri-plugin-dialog`'s native NSAlert wrapping vs
+  the underlying NSAlert behaviour. Low priority — fallback is to
+  click the No button.
 
 ## Recently fixed
 
