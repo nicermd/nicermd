@@ -21,17 +21,6 @@ is prefixed with a status tag so its disposition is scannable:
 
 ## Tauri hardening
 
-- **NEXT — Runtime `fs` scope per dialog-opened path.** Static scope
-  was narrowed from `**` to `$HOME/**` + `$TEMP/**` (commit, 2026-05-19),
-  blocking the worst-case attack on system files (`/etc/*`, other
-  users' homes). Proper defence-in-depth fix still pending: switch to
-  Tauri 2's runtime scope authorisation pattern — paths returned by
-  the dialog plugin get added to the runtime fs scope, and
-  `read-text-file` / `write-text-file` reject anything outside the
-  user-consented set. Requires a small Rust glue layer in
-  `src-tauri/src/lib.rs` that calls `tauri_plugin_fs::FsExt::scope()`
-  on dialog responses.
-  _packages/website/src-tauri/capabilities/default.json fs:scope_
 - **LATER — `style-src 'unsafe-inline'` hygiene.** Audited 2026-05-19.
   Threat model: this only matters *if* an attacker can inject HTML
   into the rendered page. DOMPurify already strips `<style>` elements
@@ -116,14 +105,6 @@ is prefixed with a status tag so its disposition is scannable:
   _Gated on Tauri/iOS distribution actually shipping with offline as
   a real concern._ Tauri offline currently falls back to system fonts;
   bundling the catalogue increases install size.
-
-## Documentation polish
-
-- **LATER — README screencap of mode switching.** Two static
-  screenshots already in the README. A 5–10s screencap showing
-  Read → Write → Split → Code on a single doc would carry the
-  mode-switching ergonomic better than prose. Stretch goal, not
-  blocking.
 
 ## Distribution / hosting
 
