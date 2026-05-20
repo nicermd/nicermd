@@ -10,6 +10,30 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.10 — 2026-05-20
+
+### Added
+- **View → Command Palette…** menu item with `Cmd+K` accelerator.
+  Surfaces the existing palette through a discoverable menu path; the
+  underlying `openPalette()` is unchanged.
+- **Nx README** added to the showcase doc's "Try it on a real
+  document" list — showcases the dark-mode-aware `<picture>` image
+  support added in 0.1.6.
+
+### Removed
+- **Rosé Pine Dawn**, **Everforest**, and **Terminal Light** themes.
+  Trimming the catalogue to keep the picker focused; the remaining
+  warm-light themes (Solarized Light, Catppuccin Latte, Ayu Light)
+  cover the same space. Anyone with one of these active falls back
+  to One Light on next launch.
+
+### Fixed
+- **Window title actually updates now.** 0.1.8 added a JS-side
+  `setTitle` call but the capability config didn't grant
+  `core:window:allow-set-title` (it's not in `core:default`); Tauri
+  rejected every call silently. Permission added — Window menu
+  entries now follow the loaded doc.
+
 ## 0.1.9 — 2026-05-20
 
 ### Added

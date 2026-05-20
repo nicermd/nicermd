@@ -19,6 +19,7 @@ A nicer, zero-server markdown reader. The page you're looking at is plain markdo
 - [Markdown Cheatsheet](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fwiki%2Fadam-p%2Fmarkdown-here%2FMarkdown-Cheatsheet.md) — adam-p/markdown-here
 - [Awesome](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fsindresorhus%2Fawesome%2Fmain%2Freadme.md) — sindresorhus/awesome
 - [Tauri README](?url=https%3A%2F%2Fraw.githubusercontent.com%2Ftauri-apps%2Ftauri%2Fdev%2FREADME.md) — tauri-apps/tauri
+- [Nx README](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnrwl%2Fnx%2Fmaster%2FREADME.md) — nrwl/nx (showcases dark-mode-aware `<picture>` images)
 
 Or read the docs of the libraries that power Nicer.md itself:
 

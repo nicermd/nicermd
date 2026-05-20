@@ -30,8 +30,7 @@ export const THEMES: readonly Theme[] = [
   // palettes with balanced contrast, recognised across many editors.
   { slug: 'one-light', name: 'One Light', mode: 'light', inspiredBy: 'Atom', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
   { slug: 'one-dark', name: 'One Dark', mode: 'dark', inspiredBy: 'Atom', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
-  // Mono-styled originals — kept on system fonts so they stay zero-network.
-  { slug: 'terminal-light', name: 'Terminal Light', mode: 'light', defaultProseFont: 'system-mono', defaultCodeFont: 'system' },
+  // Mono-styled original — kept on system fonts so it stays zero-network.
   { slug: 'terminal-dark', name: 'Terminal Dark', mode: 'dark', defaultProseFont: 'system-mono', defaultCodeFont: 'system' },
   // Community-palette tributes (palettes MIT/BSD; original credits below).
   // Default fonts pair each theme with a typography that matches its
@@ -41,13 +40,11 @@ export const THEMES: readonly Theme[] = [
   { slug: 'nord', name: 'Nord', mode: 'dark', inspiredBy: 'Arctic Ice Studio', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
   { slug: 'gruvbox-dark', name: 'Gruvbox Dark', mode: 'dark', inspiredBy: 'Pavel Pertsev', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'dracula', name: 'Dracula', mode: 'dark', inspiredBy: 'Zeno Rocha', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
-  { slug: 'everforest', name: 'Everforest', mode: 'dark', inspiredBy: 'sainnhe', defaultProseFont: 'lora', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'catppuccin-latte', name: 'Catppuccin Latte', mode: 'light', inspiredBy: 'Catppuccin', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'catppuccin-mocha', name: 'Catppuccin Mocha', mode: 'dark', inspiredBy: 'Catppuccin', defaultProseFont: 'inter', defaultCodeFont: 'jetbrains-mono' },
   { slug: 'ayu-light', name: 'Ayu Light', mode: 'light', inspiredBy: 'Ivan Konstantinov', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
   { slug: 'ayu-dark', name: 'Ayu Dark', mode: 'dark', inspiredBy: 'Ivan Konstantinov', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
   { slug: 'ayu-mirage', name: 'Ayu Mirage', mode: 'dark', inspiredBy: 'Ivan Konstantinov', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
-  { slug: 'rose-pine-dawn', name: 'Rosé Pine Dawn', mode: 'light', inspiredBy: 'Rosé Pine', defaultProseFont: 'crimson-pro', defaultCodeFont: 'jetbrains-mono' },
 ]
 
 const STORAGE_KEY = 'nicermd:theme'
