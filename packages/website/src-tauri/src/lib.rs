@@ -11,10 +11,43 @@
 // the window label. Menu events route to the focused window only, so
 // Cmd+S in window A doesn't trigger a save in window B.
 
-use std::sync::atomic::{AtomicU32, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
+use std::sync::Mutex;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
 use tauri::{AppHandle, Emitter, Manager, WebviewUrl, WebviewWindowBuilder, Wry};
 use tauri_plugin_fs::FsExt;
+
+// Cold-start replay cache for OS-level file-open events. Without this,
+// `RunEvent::Opened` fires before the JS bundle has finished loading
+// and registered its `menu:file-open-path` listener — the emit goes to
+// no listener and the requested file is silently dropped. Mirrors the
+// deep-link plugin's getCurrent() / onOpenUrl cache+listen pattern.
+//
+// Lifecycle:
+// 1. App launches. State<PendingOpened> initialised with empty paths
+//    and drained=false.
+// 2. Any RunEvent::Opened arriving before the frontend signals ready
+//    pushes its path onto `paths` (and never emits — there's no
+//    listener to receive it yet).
+// 3. JS bundle boots, setupTauriBridge registers its listener, then
+//    calls `drain_pending_opened` which atomically swaps `paths` empty
+//    AND flips `drained=true`. Returned paths are opened by the JS
+//    side as if they'd arrived through the listener.
+// 4. Subsequent RunEvent::Opened see drained=true and emit live to
+//    the focused window's listener (warm-state Open With / Dock drop).
+// Mutex serialises check-and-cache vs drain — no path can be lost
+// during the cold→warm transition.
+struct PendingOpened {
+    paths: Mutex<Vec<String>>,
+    drained: AtomicBool,
+}
+
+#[tauri::command]
+fn drain_pending_opened(state: tauri::State<'_, PendingOpened>) -> Vec<String> {
+    let mut paths_guard = state.paths.lock().unwrap();
+    state.drained.store(true, Ordering::Release);
+    std::mem::take(&mut *paths_guard)
+}
 
 // Monotonic counter for new-window labels. Labels must be unique
 // across the app lifetime; the main window is "main", subsequent
@@ -28,6 +61,11 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_deep_link::init())
+        .manage(PendingOpened {
+            paths: Mutex::new(Vec::new()),
+            drained: AtomicBool::new(false),
+        })
+        .invoke_handler(tauri::generate_handler![drain_pending_opened])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -72,6 +110,7 @@ pub fn run() {
         // bridge.ts reads the file via tauri-plugin-fs and updates that
         // window's harness, same flow as the in-app Open dialog.
         tauri::RunEvent::Opened { urls } => {
+            let state = app_handle.state::<PendingOpened>();
             for url in urls {
                 if let Ok(path) = url.to_file_path() {
                     // OS-level file-open bypasses the dialog plugin, so
@@ -84,7 +123,17 @@ pub fn run() {
                         log::error!("failed to allow opened path {path:?}: {err}");
                     }
                     let path_str = path.to_string_lossy().to_string();
-                    emit_to_focused_or_all(app_handle, "menu:file-open-path", path_str);
+                    // Cache-or-emit under the same mutex so no path is
+                    // lost across the cold→warm boundary. Drop the
+                    // guard before emit so the lock isn't held during
+                    // listener dispatch.
+                    let mut paths_guard = state.paths.lock().unwrap();
+                    if state.drained.load(Ordering::Acquire) {
+                        drop(paths_guard);
+                        emit_to_focused_or_all(app_handle, "menu:file-open-path", path_str);
+                    } else {
+                        paths_guard.push(path_str);
+                    }
                 }
             }
         }
@@ -182,7 +231,22 @@ fn build_menu(app: &AppHandle) -> tauri::Result<tauri::menu::Menu<Wry>> {
         .item(&PredefinedMenuItem::hide_others(app, None)?)
         .item(&PredefinedMenuItem::show_all(app, None)?)
         .separator()
-        .item(&PredefinedMenuItem::quit(app, None)?)
+        // Custom Quit instead of PredefinedMenuItem::quit. The native
+        // macOS quit (`NSApp.terminate`) bypasses each window's
+        // `WindowEvent::CloseRequested` listener, so per-window dirty
+        // guards in main.ts's `setupTauriCloseGuard` never fire on
+        // Cmd+Q — multi-window users would silently lose unsaved work
+        // in every window but the focused one. Routing through
+        // `app-quit` lets `handle_menu_event` close each window via
+        // `close()`, which DOES emit CloseRequested per-window so each
+        // realm gets the chance to prompt. After all windows are gone
+        // (or stayed open because the user cancelled), the existing
+        // `WindowEvent::Destroyed` last-window check handles the exit.
+        .item(
+            &MenuItemBuilder::with_id("app-quit", "Quit Nicer.md")
+                .accelerator("CmdOrCtrl+Q")
+                .build(app)?,
+        )
         .build()?;
 
     let file_submenu = SubmenuBuilder::new(app, "File")
@@ -302,6 +366,19 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
     // exception is "New Window" — that's an app-level action that
     // creates a fresh window regardless of which one was focused.
     match id {
+        "app-quit" => {
+            // Close each window in turn. Each window's JS-side
+            // `onCloseRequested` guard fires its own dirty check; if
+            // the user cancels any window, that one stays open and the
+            // rest of the cascade still proceeds. The existing
+            // `WindowEvent::Destroyed` → empty → `app.exit(0)` cascade
+            // handles the actual app exit once all windows are gone.
+            for (_, window) in app.webview_windows() {
+                if let Err(err) = window.close() {
+                    log::error!("failed to close window during quit: {err}");
+                }
+            }
+        }
         "file-new-window" => {
             if let Err(err) = create_window(app) {
                 log::error!("failed to create new window: {err}");

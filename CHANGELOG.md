@@ -37,6 +37,34 @@ next release.
   worst-case attack surface where attacker-controlled JS could have
   read arbitrary `$HOME` files.
 
+### Fixed
+- **Cold-start "Open With" silently dropped the file.** Double-
+  clicking a `.md` in Finder while Nicer.md wasn't running raced the
+  JS bundle's listener registration; the `RunEvent::Opened` emit
+  fired into no listener and the file was lost. Added a Rust-side
+  `PendingOpened` cache (mirrors deep-link plugin's `getCurrent()`
+  pattern): paths arriving pre-bundle are queued; JS drains the
+  queue and flips a `drained` flag once the listener is registered.
+  Subsequent Opened events emit live as before.
+- **`Cmd+R` reload had no dirty guard.** A misfire wiped any work
+  not yet flushed by the 1.5s autosave debounce AND dropped the
+  source path so the next Cmd+S became Save As. Now prompts before
+  reloading if there are unsaved changes.
+- **`Cmd+Q` bypassed each window's dirty guard.** Native macOS
+  quit terminates `NSApp` directly, so per-window
+  `WindowEvent::CloseRequested` listeners never fired. Multi-window
+  users could silently lose unsaved work in every window. Replaced
+  the predefined Quit menu item with a custom Quit that closes each
+  window via `close()`, which DOES emit CloseRequested — so each
+  realm gets its prompt. The existing last-window-quit cascade then
+  exits the app once all windows are gone.
+- **Pre-multi-window autosave snapshots never recovered after
+  upgrade.** Pre-0.1.6 builds wrote to a bare `nicermd:autosave`
+  key; the multi-window build moved to `nicermd:autosave:<label>`.
+  Users mid-edit at upgrade time would see no recovery banner. The
+  main window now migrates the bare snapshot into the labelled slot
+  on first boot if present.
+
 ## 0.1.5 — 2026-05-19
 
 ### Added

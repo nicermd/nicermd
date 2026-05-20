@@ -79,7 +79,32 @@ function resolveAutosaveKey(): void {
     __TAURI_INTERNALS__?: { metadata?: { currentWindow?: { label?: string } } }
   }).__TAURI_INTERNALS__
   const label = internals?.metadata?.currentWindow?.label
-  if (label) KEY = `${BASE_KEY}:${label}`
+  if (!label) return
+  KEY = `${BASE_KEY}:${label}`
+
+  // Upgrade-path migration: pre-multi-window builds wrote snapshots
+  // to the bare `nicermd:autosave` key. Users who quit mid-edit and
+  // then updated to a multi-window build would otherwise see their
+  // unsaved work stranded at the old key and never get a recovery
+  // banner. On the main window only, migrate the bare snapshot into
+  // the labelled slot if present and the labelled slot isn't.
+  // One-shot — delete the bare key after copying.
+  if (label !== 'main') return
+  try {
+    const bare = localStorage.getItem(BASE_KEY)
+    const labelled = localStorage.getItem(KEY)
+    if (bare && !labelled) {
+      localStorage.setItem(KEY, bare)
+      localStorage.removeItem(BASE_KEY)
+    } else if (bare && labelled) {
+      // Both present — labelled wins (newer build's slot). Drop the
+      // stale bare key so it doesn't keep showing up in migration
+      // checks across subsequent launches.
+      localStorage.removeItem(BASE_KEY)
+    }
+  } catch {
+    // localStorage unavailable — silent.
+  }
 }
 
 export function setupAutosave(harness: Harness): void {
