@@ -90,6 +90,19 @@ fn set_window_dirty(
         .insert(window.label().to_string(), dirty);
 }
 
+// Add `path` to the runtime fs scope so readTextFile / writeTextFile
+// can touch it. Used by the per-window source-restore boot path: the
+// path was previously dialog-picked or OS-opened (both auto-allowed
+// at the time), but the fs scope is per-app-run since we dropped the
+// static $HOME/** scope in 0.1.6 — restart needs to re-allow.
+// Idempotent; safe to call any number of times.
+#[tauri::command]
+fn allow_fs_path(app: AppHandle, path: String) -> Result<(), String> {
+    app.fs_scope()
+        .allow_file(std::path::Path::new(&path))
+        .map_err(|e| e.to_string())
+}
+
 #[tauri::command]
 fn spawn_window_with_payload(
     app: AppHandle,
@@ -145,6 +158,7 @@ pub fn run() {
             spawn_window_with_payload,
             drain_window_payload,
             set_window_dirty,
+            allow_fs_path,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
