@@ -54,22 +54,16 @@ is prefixed with a status tag so its disposition is scannable:
 
 ## Desktop features
 
-- **NEXT — Multi-window polish.** Core multi-window landed 2026-05-19:
-  Cmd+N opens a new window, each window's JS realm is isolated, menu
-  events route to the focused window via `app.emit_to(label, …)`,
-  autosave is per-window-label, last-window close quits the app.
-  Remaining polish:
-  - OS-level "Open With" / double-click currently routes to whichever
-    window is focused. Smarter rule: open in a new window if the
-    focused window's doc is dirty, else replace in-place. Needs the
-    Rust side to query the focused window's dirty state — likely via
-    a window-tagged JS event back to Rust.
-  - Window state (size, position) isn't restored across launches.
-    Tauri's `window-state` plugin handles this with a `<state-flags>`
-    config; small add when it matters.
-  - The `File → New Document` (Cmd+Shift+N) item reuses the current
-    window. Worth deciding the discard-confirmation behaviour when
-    that doc is dirty — currently delegates to `newFile` which prompts.
+- **LATER — Multi-window polish leftovers.** Core multi-window
+  landed 2026-05-19; dirty-aware Open-With routing + window state
+  persistence shipped 2026-05-21 in 0.1.15. Remaining bits when
+  they bite:
+  - `File → New Document` (Cmd+Shift+N) reuses the current window
+    and delegates to `newFile`, which prompts on dirty. Could route
+    to a new window on dirty like Open-With does for consistency.
+  - 3rd-window crash (KNOWN-ISSUES, no repro yet).
+  - Bring All to Front: replaced with custom handler in 0.1.11 —
+    keep an eye on edge cases with hidden / off-screen windows.
   _packages/website/src-tauri/src/lib.rs_
 
 ## Browser integration

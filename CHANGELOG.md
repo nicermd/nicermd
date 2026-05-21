@@ -10,6 +10,32 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.15 — 2026-05-21
+
+### Added
+- **Window size + position persist across launches.** Added
+  `tauri-plugin-window-state` — auto-saves on close, auto-restores
+  on window-ready, so every window (main + Cmd+N spawns + Duplicate
+  Window + Open Link in New Window) lands where the user last left
+  it. No per-window wiring needed; the plugin tracks each window by
+  label.
+- **OS Open-With routing is dirty-aware.** Picking "Open With →
+  Nicer.md" (or double-clicking a `.md` while the app is already
+  running) used to always spawn a new window. New rule: if the
+  focused window has unsaved edits → spawn a new window (preserve
+  the in-progress work); if the focused window is clean → replace
+  in-place (the "I'm done with this doc, opening another" flow).
+  Dirty state is tracked per window via a new `set_window_dirty`
+  command that doc-source calls on every dirty-flag transition.
+
+### Fixed
+- **Write mode (mode 2) find didn't scroll to the next match.**
+  Enter advanced the cursor but the editor stayed put — the PM
+  transaction `scrollIntoView` flag is a no-op when the editor
+  isn't focused (the find bar's input owns focus). Replaced with
+  native `Element.scrollIntoView` on the match's DOM node, mirroring
+  how the Read DOM walker scrolls.
+
 ## 0.1.14 — 2026-05-21
 
 ### Added

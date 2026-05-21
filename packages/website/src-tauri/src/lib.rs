@@ -65,6 +65,31 @@ struct PendingWindowPayloads {
     by_label: Mutex<HashMap<String, serde_json::Value>>,
 }
 
+// Per-window dirty flag, kept in sync with each window's JS-side
+// `isDirty()` via the `set_window_dirty` command. Used by the warm-
+// state `RunEvent::Opened` handler to decide whether an Open-With
+// file lands in the focused window (in-place replace, focused window
+// is clean — user is switching docs) or in a new window (focused
+// window has unsaved edits — preserve them). Without this, the
+// previous behaviour spawned a new window every time, which is fine
+// when dirty but unnecessary chrome when clean.
+struct WindowDirty {
+    by_label: Mutex<HashMap<String, bool>>,
+}
+
+#[tauri::command]
+fn set_window_dirty(
+    window: tauri::WebviewWindow,
+    state: tauri::State<'_, WindowDirty>,
+    dirty: bool,
+) {
+    state
+        .by_label
+        .lock()
+        .unwrap()
+        .insert(window.label().to_string(), dirty);
+}
+
 #[tauri::command]
 fn spawn_window_with_payload(
     app: AppHandle,
@@ -98,6 +123,12 @@ pub fn run() {
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_deep_link::init())
+        // Persist window size + position across launches. Auto-saves
+        // on close, auto-restores on window-ready — so every window
+        // (main + any spawned via Cmd+N / Duplicate Window / Open
+        // Link in New Window) lands where the user last left it
+        // without any per-window wiring on our side.
+        .plugin(tauri_plugin_window_state::Builder::default().build())
         .manage(PendingOpened {
             paths: Mutex::new(Vec::new()),
             drained: AtomicBool::new(false),
@@ -105,10 +136,14 @@ pub fn run() {
         .manage(PendingWindowPayloads {
             by_label: Mutex::new(HashMap::new()),
         })
+        .manage(WindowDirty {
+            by_label: Mutex::new(HashMap::new()),
+        })
         .invoke_handler(tauri::generate_handler![
             drain_pending_opened,
             spawn_window_with_payload,
             drain_window_payload,
+            set_window_dirty,
         ])
         .setup(|app| {
             if cfg!(debug_assertions) {
@@ -196,25 +231,60 @@ pub fn run() {
                     let was_drained = state.drained.load(Ordering::Acquire);
                     drop(paths_guard);
                     if was_drained {
-                        if let Err(err) = create_window(app_handle) {
-                            log::error!(
-                                "failed to spawn window for opened path: {err}; \
-                                 falling back to focused-window emit"
-                            );
-                            // Recover the path we just queued and emit
-                            // to the focused window — better than
-                            // silently losing it. If multiple paths
-                            // are queued from this batch, only the
-                            // most-recent one is recoverable here;
-                            // earlier ones get drained by whatever
-                            // window happens to boot next.
-                            let recovered = state.paths.lock().unwrap().pop();
-                            if let Some(p) = recovered {
+                        // Warm state. Two routes:
+                        //   • Focused window is DIRTY → spawn a new
+                        //     window so the user's unsaved edits stay
+                        //     untouched.
+                        //   • Focused window is CLEAN (or no focused
+                        //     window) → replace in-place by emitting
+                        //     menu:file-open-path. Avoids piling up
+                        //     windows for the "I'm done with this doc,
+                        //     opening another" flow.
+                        // Either way, drain the path we just pushed
+                        // off the queue ourselves since this is the
+                        // warm path — the cold-start drain in JS
+                        // never sees these.
+                        let recovered = state.paths.lock().unwrap().pop();
+                        let path = match recovered {
+                            Some(p) => p,
+                            None => continue,
+                        };
+                        let focused_label = focused_window_label(app_handle);
+                        let focused_dirty = focused_label
+                            .as_deref()
+                            .map(|l| is_window_dirty(app_handle, l))
+                            .unwrap_or(false);
+                        if focused_dirty {
+                            if let Err(err) =
+                                spawn_window_for_path(app_handle, &path)
+                            {
+                                log::error!(
+                                    "spawn-for-path failed: {err}; \
+                                     falling back to focused-window emit"
+                                );
                                 emit_to_focused_or_all(
                                     app_handle,
                                     "menu:file-open-path",
-                                    p,
+                                    path,
                                 );
+                            }
+                        } else if let Some(label) = focused_label {
+                            if let Err(err) = app_handle.emit_to(
+                                label.as_str(),
+                                "menu:file-open-path",
+                                path.clone(),
+                            ) {
+                                log::error!("emit_to {label} failed: {err}");
+                                // Last-resort fallback: spawn a window.
+                                let _ = spawn_window_for_path(app_handle, &path);
+                            }
+                        } else {
+                            // No focused window — spawn one and feed
+                            // it the path via the pending queue.
+                            if let Err(err) =
+                                spawn_window_for_path(app_handle, &path)
+                            {
+                                log::error!("spawn-for-path failed: {err}");
                             }
                         }
                     }
@@ -231,15 +301,48 @@ pub fn run() {
         // Close Window (no special handling); when they close the
         // FINAL window, we exit so the app doesn't linger headless.
         tauri::RunEvent::WindowEvent {
+            label,
             event: tauri::WindowEvent::Destroyed,
             ..
         } => {
+            // Drop the per-window dirty entry — stale entries would
+            // confuse future Open-With routing if a label happened
+            // to be reused (it shouldn't with the WINDOW_COUNTER,
+            // but the cleanup is cheap defence).
+            let dirty_state = app_handle.state::<WindowDirty>();
+            dirty_state.by_label.lock().unwrap().remove(&label);
+
             if app_handle.webview_windows().is_empty() {
                 app_handle.exit(0);
             }
         }
         _ => {}
     });
+}
+
+fn focused_window_label(app: &AppHandle) -> Option<String> {
+    app.webview_windows()
+        .into_iter()
+        .find(|(_, w)| w.is_focused().unwrap_or(false))
+        .map(|(label, _)| label)
+}
+
+fn is_window_dirty(app: &AppHandle, label: &str) -> bool {
+    let state = app.state::<WindowDirty>();
+    let map = state.by_label.lock().unwrap();
+    map.get(label).copied().unwrap_or(false)
+}
+
+// Spawn a new window and queue `path` on the PendingOpened cache so
+// the new window's drain_pending_opened picks it up during boot.
+// We don't touch `drained` — drain_pending_opened collects whatever's
+// in the queue regardless, and resetting drained would just risk
+// confusing concurrent Opened events.
+fn spawn_window_for_path(app: &AppHandle, path: &str) -> tauri::Result<()> {
+    let state = app.state::<PendingOpened>();
+    state.paths.lock().unwrap().push(path.to_string());
+    create_window(app)?;
+    Ok(())
 }
 
 // Find the currently-focused window and emit an event to it alone. If

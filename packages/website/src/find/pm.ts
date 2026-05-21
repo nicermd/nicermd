@@ -112,15 +112,18 @@ export function createPmFindAdapter(editor: Editor): FindAdapter {
     const { matches, currentIdx } = getState()
     if (currentIdx < 0 || currentIdx >= matches.length) return
     const m = matches[currentIdx]!
-    // setTextSelection + scrollIntoView mirrors what cm-find does for
-    // the Code modes — cursor lands at the match and the editor
-    // scrolls to bring it into view. Tiptap focuses naturally because
-    // setTextSelection dispatches on the active editor view.
-    editor
-      .chain()
-      .setTextSelection({ from: m.from, to: m.to })
-      .scrollIntoView()
-      .run()
+    // Set the selection so the cursor lands at the match (matches
+    // CM's behaviour in Code mode). We deliberately DO NOT chain
+    // .scrollIntoView() here — PM's transaction-flag scrollIntoView
+    // is a no-op when the editor isn't focused, and we want the
+    // find bar's input to keep focus so subsequent Enter still
+    // advances. Native Element.scrollIntoView on the match DOM is
+    // the same approach the Read DOM walker uses; it works
+    // regardless of which element has focus.
+    editor.chain().setTextSelection({ from: m.from, to: m.to }).run()
+    const target = editor.view.domAtPos(m.from).node
+    const el = target instanceof Element ? target : target.parentElement
+    el?.scrollIntoView({ block: 'center', behavior: 'smooth' })
   }
 
   function stats(): SearchStats {

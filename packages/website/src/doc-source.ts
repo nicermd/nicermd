@@ -51,6 +51,32 @@ const SOURCE_CHANGED = 'nicermd:source-changed'
 
 function notifySourceChanged(): void {
   document.dispatchEvent(new CustomEvent(SOURCE_CHANGED))
+  // Sync the dirty flag to Rust so the warm-state RunEvent::Opened
+  // handler can route OS-level Open-With files smartly: clean focused
+  // window → replace in-place; dirty focused window → spawn a new
+  // window so unsaved edits stay put. No-op outside Tauri.
+  syncDirtyToTauri()
+}
+
+function syncDirtyToTauri(): void {
+  if (typeof window === 'undefined' || !('__TAURI_INTERNALS__' in window)) {
+    return
+  }
+  const isDirtyNow = dirty
+  // Fire-and-forget. The IPC is cheap and even if a race orders one
+  // invocation behind another by a frame, the dirty flag only flips
+  // a small number of times per session (load → edit → save loop),
+  // so the worst case is one stale value being briefly cached on
+  // the Rust side — corrected by the next setDocState or markDirty.
+  void (async () => {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      await invoke('set_window_dirty', { dirty: isDirtyNow })
+    } catch {
+      // Bridge not ready yet (very early boot) or command missing
+      // on older Tauri builds — silently ignore.
+    }
+  })()
 }
 
 // Identity setter — used by boot, open, save, drag-drop, new. Clears
