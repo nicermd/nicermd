@@ -10,6 +10,21 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.16 — 2026-05-21
+
+### Fixed
+- **Multi-window session now restores all open windows on relaunch.**
+  0.1.15 added the window-state plugin which persists geometry per
+  label, but nothing re-created the extra windows themselves at
+  launch — only the main window auto-spawned from tauri.conf.json,
+  so a 3-window arrangement came back as 1 window. Added a tiny
+  session manifest (`session.json` in the app's config dir) that
+  tracks currently-open labels and gets rewritten on every window
+  create / destroy. setup() reads it and spawns non-main labels
+  before user-visible boot; the window-state plugin restores each
+  one's geometry as they boot. Cmd+W'd windows still stay closed
+  (the manifest tracks open windows, not all-ever).
+
 ## 0.1.15 — 2026-05-21
 
 ### Added
