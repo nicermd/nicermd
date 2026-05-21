@@ -10,6 +10,22 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.17 — 2026-05-21
+
+### Fixed
+- **Session restore now actually preserves multi-window state on
+  Cmd+Q.** 0.1.16's single-file manifest worked for individual
+  Cmd+W (manifest correctly shrinks) but failed for app quit: each
+  window's destroy during the close cascade overwrote the manifest,
+  so by the time `app.exit(0)` fired, the file was empty —
+  relaunch saw an empty session and only spawned main. Split into
+  two files: a continuously-updated `session-live.json` (handles
+  Cmd+W + crash recovery) and a `session-at-quit.json` snapshot
+  written exactly once by the Cmd+Q menu handler BEFORE the
+  cascade fires. Startup prefers the quit snapshot (and consumes
+  it) over the live file, so the close cascade can rewrite live
+  freely without erasing the user's quit-time arrangement.
+
 ## 0.1.16 — 2026-05-21
 
 ### Fixed

@@ -100,7 +100,7 @@ fn spawn_window_with_payload(
     let label = format!("window-{n}");
     state.by_label.lock().unwrap().insert(label.clone(), payload);
     build_window(&app, &label).map_err(|e| e.to_string())?;
-    write_session(&app);
+    write_live_session(&app);
     Ok(label)
 }
 
@@ -342,11 +342,14 @@ pub fn run() {
             let dirty_state = app_handle.state::<WindowDirty>();
             dirty_state.by_label.lock().unwrap().remove(&label);
 
-            // Update session manifest so the next launch only re-
-            // spawns windows that are STILL open — explicitly closed
-            // windows stay closed (matches Mac conventions where a
-            // Cmd+W'd window doesn't resurrect on relaunch).
-            write_session(app_handle);
+            // Update live session manifest so the next launch only
+            // re-spawns windows that are STILL open — explicitly
+            // closed windows stay closed (matches Mac conventions
+            // where a Cmd+W'd window doesn't resurrect on relaunch).
+            // The quit-snapshot file (if present) takes priority on
+            // restore, so this update doesn't clobber a Cmd+Q-captured
+            // session when destroys fire during the close cascade.
+            write_live_session(app_handle);
 
             if app_handle.webview_windows().is_empty() {
                 app_handle.exit(0);
@@ -363,57 +366,102 @@ pub fn run() {
 // open labels ourselves and re-spawn them in setup() so the full
 // multi-window arrangement comes back, not just the focused window.
 //
-// Persistence is a single JSON file in the app's config directory,
-// rewritten on every window create / destroy. The file is tiny
-// (just a list of strings) and lookups happen exactly once at boot
-// so the I/O cost is negligible.
+// Two files, two purposes:
+//
+// • session-live.json — continuously updated on every window
+//   create + destroy. Represents the current set of open windows.
+//   Used as the fallback restore source for crashes / force-quits
+//   where no clean shutdown happened.
+// • session-at-quit.json — written exactly once per app-quit
+//   transaction, BEFORE the close cascade fires. Captures the
+//   "what was open when the user pressed Cmd+Q" state, which the
+//   subsequent destroys would otherwise overwrite as windows
+//   close one by one.
+//
+// On startup, prefer session-at-quit.json (and delete it after
+// reading) over session-live.json. This lets Cmd+W'd individual
+// windows update live.json normally without being resurrected on
+// the next clean quit cycle.
 
 #[derive(serde::Serialize, serde::Deserialize, Default)]
 struct SessionLabels {
     labels: Vec<String>,
 }
 
-fn session_file_path(app: &AppHandle) -> Option<std::path::PathBuf> {
+fn live_session_path(app: &AppHandle) -> Option<std::path::PathBuf> {
     app.path()
         .app_config_dir()
         .ok()
-        .map(|d| d.join("session.json"))
+        .map(|d| d.join("session-live.json"))
 }
 
-fn read_session(app: &AppHandle) -> SessionLabels {
-    let Some(path) = session_file_path(app) else {
-        return SessionLabels::default();
-    };
-    let Ok(text) = std::fs::read_to_string(&path) else {
-        return SessionLabels::default();
-    };
-    serde_json::from_str(&text).unwrap_or_default()
+fn quit_snapshot_path(app: &AppHandle) -> Option<std::path::PathBuf> {
+    app.path()
+        .app_config_dir()
+        .ok()
+        .map(|d| d.join("session-at-quit.json"))
 }
 
-fn write_session(app: &AppHandle) {
-    let Some(path) = session_file_path(app) else {
-        return;
-    };
+fn read_labels_from(path: &std::path::Path) -> Option<SessionLabels> {
+    let text = std::fs::read_to_string(path).ok()?;
+    serde_json::from_str(&text).ok()
+}
+
+fn write_labels_to(path: &std::path::Path, labels: SessionLabels) {
     if let Some(parent) = path.parent() {
         if let Err(err) = std::fs::create_dir_all(parent) {
             log::error!("session write: failed to mkdir {parent:?}: {err}");
             return;
         }
     }
-    let labels: Vec<String> = app
-        .webview_windows()
-        .into_iter()
-        .map(|(label, _)| label)
-        .collect();
-    let state = SessionLabels { labels };
-    match serde_json::to_string(&state) {
+    match serde_json::to_string(&labels) {
         Ok(text) => {
-            if let Err(err) = std::fs::write(&path, text) {
+            if let Err(err) = std::fs::write(path, text) {
                 log::error!("session write: failed to write {path:?}: {err}");
             }
         }
         Err(err) => log::error!("session write: serialise failed: {err}"),
     }
+}
+
+fn current_labels(app: &AppHandle) -> SessionLabels {
+    let labels: Vec<String> = app
+        .webview_windows()
+        .into_iter()
+        .map(|(label, _)| label)
+        .collect();
+    SessionLabels { labels }
+}
+
+fn write_live_session(app: &AppHandle) {
+    if let Some(path) = live_session_path(app) {
+        write_labels_to(&path, current_labels(app));
+    }
+}
+
+fn write_quit_snapshot(app: &AppHandle) {
+    if let Some(path) = quit_snapshot_path(app) {
+        write_labels_to(&path, current_labels(app));
+    }
+}
+
+// Resolve the session to restore on startup. Quit snapshot wins if
+// present (most recent clean shutdown); falls back to the live file
+// (handles crashes / force-quits). After reading, the quit snapshot
+// is consumed so a subsequent crash doesn't replay an old session.
+fn read_session(app: &AppHandle) -> SessionLabels {
+    if let Some(quit_path) = quit_snapshot_path(app) {
+        if let Some(prior) = read_labels_from(&quit_path) {
+            let _ = std::fs::remove_file(&quit_path);
+            return prior;
+        }
+    }
+    if let Some(live_path) = live_session_path(app) {
+        if let Some(prior) = read_labels_from(&live_path) {
+            return prior;
+        }
+    }
+    SessionLabels::default()
 }
 
 fn focused_window_label(app: &AppHandle) -> Option<String> {
@@ -488,7 +536,7 @@ fn create_window(app: &AppHandle) -> tauri::Result<String> {
     let n = WINDOW_COUNTER.fetch_add(1, Ordering::Relaxed);
     let label = format!("window-{n}");
     build_window(app, &label)?;
-    write_session(app);
+    write_live_session(app);
     Ok(label)
 }
 
@@ -685,6 +733,14 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
     // creates a fresh window regardless of which one was focused.
     match id {
         "app-quit" => {
+            // Snapshot the open windows BEFORE the close cascade
+            // overwrites the live session file. The next launch reads
+            // this snapshot to restore the multi-window arrangement;
+            // see read_session() priority order. If the user cancels
+            // a dirty prompt mid-cascade, the snapshot stays on disk
+            // until the next clean Cmd+Q rewrites it — acceptable
+            // staleness for a brief window.
+            write_quit_snapshot(app);
             // Close each window in turn. Each window's JS-side
             // `onCloseRequested` guard fires its own dirty check; if
             // the user cancels any window, that one stays open and the
