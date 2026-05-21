@@ -4,13 +4,24 @@
 // as "open in Safari", which sends the user out of the app — fine for
 // arbitrary links, frustrating for markdown URLs the reader could
 // render. We intercept right-click on loader-eligible anchors and
-// offer an "Open Link in New Window" entry that spawns another
-// Nicer.md window pointed at the same URL.
+// pop up a NATIVE Tauri menu (`@tauri-apps/api/menu`) offering an
+// "Open Link in New Window" entry that spawns another Nicer.md window
+// pointed at the same URL.
+//
+// Why a native popup instead of a custom div: a styled CSS menu
+// inevitably looks different from the system right-click menu the
+// user gets everywhere else (selected text → Copy, plain link →
+// system menu, etc.). The visual mismatch reads as broken even when
+// the affordance works. The Tauri `Menu.popup()` API renders through
+// the native AppKit menu machinery so our one extra entry looks
+// indistinguishable from the platform default.
 //
 // Scope: only intercepts when the right-click hits an anchor whose
-// href is something `parseGithubUrl` accepts (raw/blob+.md/tree/repo/
-// gist). Everything else falls through to the system context menu so
-// users can still copy / save-link-as / open-in-browser as usual.
+// effective target is loader-eligible (raw / blob+.md / tree / repo /
+// gist). Anchors using the `?url=` share-link form have their inner
+// URL extracted before validation. Everything else falls through to
+// the system context menu so users can still copy / save-link-as /
+// open-in-browser as usual.
 
 import { resolveLinkTarget } from './url-open'
 import { openUrlInNewWindow } from './tauri-bridge'
@@ -18,8 +29,6 @@ import { openUrlInNewWindow } from './tauri-bridge'
 function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
 }
-
-let menuEl: HTMLDivElement | null = null
 
 export function setupLinkContextMenu(): void {
   if (!isTauri()) return
@@ -30,61 +39,26 @@ export function setupLinkContextMenu(): void {
     if (!anchor) return
     const target = resolveLinkTarget(anchor)
     if (!target) return
+    // Suppress the WKWebView default menu and pop ours up at the
+    // cursor. preventDefault must run synchronously; the menu build
+    // is async (Tauri IPC) but races resolve before the cursor moves
+    // meaningfully — and even if the cursor drifts a few pixels,
+    // popup() without an explicit position uses the cursor's
+    // location at the time of the call, which still feels right
+    // (the menu appears under the pointer, not the click point).
     e.preventDefault()
-    showMenu(e.clientX, e.clientY, target)
+    void showNativeMenu(target)
   })
-
-  // Click anywhere else, scroll, resize, or Escape dismisses the menu.
-  // Capture phase so the dismiss runs before any in-menu click handler
-  // — except we also stop propagation inside the menu so the outside-
-  // click listener still fires on the doc and dismisses cleanly.
-  document.addEventListener('mousedown', (e) => {
-    if (!menuEl) return
-    if (e.target instanceof Node && menuEl.contains(e.target)) return
-    dismissMenu()
-  }, true)
-  document.addEventListener('keydown', (e) => {
-    if (menuEl && e.key === 'Escape') {
-      e.preventDefault()
-      dismissMenu()
-    }
-  })
-  window.addEventListener('scroll', dismissMenu, { capture: true, passive: true })
-  window.addEventListener('resize', dismissMenu)
 }
 
-function showMenu(x: number, y: number, href: string): void {
-  dismissMenu()
-  const el = document.createElement('div')
-  el.className = 'link-context-menu'
-  el.setAttribute('role', 'menu')
-  const btn = document.createElement('button')
-  btn.type = 'button'
-  btn.className = 'link-context-menu__item'
-  btn.textContent = 'Open Link in New Window'
-  btn.setAttribute('role', 'menuitem')
-  btn.addEventListener('click', () => {
-    void openUrlInNewWindow(href)
-    dismissMenu()
+async function showNativeMenu(target: string): Promise<void> {
+  const { Menu, MenuItem } = await import('@tauri-apps/api/menu')
+  const item = await MenuItem.new({
+    text: 'Open Link in New Window',
+    action: () => {
+      void openUrlInNewWindow(target)
+    },
   })
-  el.appendChild(btn)
-  // Position offscreen first so measurement doesn't flash a flicker.
-  el.style.visibility = 'hidden'
-  document.body.appendChild(el)
-  const rect = el.getBoundingClientRect()
-  const margin = 4
-  const left = Math.max(margin, Math.min(x, window.innerWidth - rect.width - margin))
-  const top = Math.max(margin, Math.min(y, window.innerHeight - rect.height - margin))
-  el.style.left = `${left}px`
-  el.style.top = `${top}px`
-  el.style.visibility = ''
-  menuEl = el
-  btn.focus()
-}
-
-function dismissMenu(): void {
-  if (menuEl) {
-    menuEl.remove()
-    menuEl = null
-  }
+  const menu = await Menu.new({ items: [item] })
+  await menu.popup()
 }
