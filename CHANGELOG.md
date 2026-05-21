@@ -10,6 +10,29 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.19 — 2026-05-21
+
+### Fixed
+- **Per-window source restore from 0.1.18 didn't actually restore
+  anything.** Two compounding bugs:
+  1. boot()'s `setDocState(bootMarkdown, null, null)` (used to set
+     the "Untitled" baseline) clears the persisted-source
+     localStorage slot via my 0.1.18 persistSource(null) wiring —
+     so by the time `restorePersistedSource` ran, the slot was
+     already empty. Snapshotted `bootPersistedSource` and
+     `bootPersistedMode` at the very top of boot() before any
+     setDocState fires; pass the snapshot through.
+  2. The `fs` scope is runtime-only (since 0.1.6). Paths previously
+     dialog-picked were auto-allowed THEN, but the allowance doesn't
+     survive a restart — so the restore path's `readTextFile` would
+     hit a permission error. Added an `allow_fs_path` Tauri command
+     that `openFromTauriPath` invokes before `readTextFile` (and
+     before save-back) so the restored path re-enters the live
+     scope. Idempotent — no-op on paths already in scope.
+- Added `per-window-state.test.ts` (11 cases) including a regression
+  test for "snapshot survives a follow-up persistSource(null)" so
+  the wipe bug can't recur silently.
+
 ## 0.1.18 — 2026-05-21
 
 ### Added

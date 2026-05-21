@@ -830,6 +830,14 @@ async function boot(): Promise<void> {
   // Inert in mode 3 (split scrolls inside panes, not the document).
   setupScrollStrip()
 
+  // Snapshot the persisted per-window state IMMEDIATELY, before any
+  // setDocState call (which the boot path makes a few lines down with
+  // a null source — that would wipe the persistedSource slot we need
+  // here). Mode is unaffected by setDocState but snapshot it together
+  // for symmetry.
+  const bootPersistedSource = readPersistedSource()
+  const bootPersistedMode = readPersistedMode()
+
   const host = document.createElement('div')
   host.className = 'mode-host'
   root.appendChild(host)
@@ -908,12 +916,13 @@ async function boot(): Promise<void> {
   // probably what they want to read, not their old draft. Cancelling
   // the gate falls through to the recovery banner naturally.
   processBootUrlParam(harness)
-  // Per-window source restore for relaunched Tauri windows. If the URL
-  // already carries an explicit ?url= / ?ext-pickup= we let
-  // processBootUrlParam handle that — the persisted source is the
-  // "last time" fallback, not an override. Skipped silently in the
-  // web shell unless the user has persisted source there too.
-  const restoredFromPersist = await restorePersistedSource(harness)
+  // Per-window source restore for relaunched Tauri windows. Uses the
+  // bootPersistedSource snapshot taken at the top of boot — by now
+  // the boot's setDocState(bootMarkdown, null, null) has already
+  // cleared the localStorage slot. An explicit ?url= / ?ext-pickup=
+  // in the address bar still wins (processBootUrlParam handled it
+  // above).
+  const restoredFromPersist = await restorePersistedSource(harness, bootPersistedSource)
   // Recovery banner compares against the doc that's actually mounted.
   // If we restored a persisted source, autosave should compare against
   // THAT text (so unsaved-edits-since-last-load surfaces correctly);
@@ -928,9 +937,8 @@ async function boot(): Promise<void> {
   // persisted mode here means we go straight from showcase-read into
   // the previously-active mode without flashing back through Read.
   // No-op when persisted mode is Read or absent.
-  const persistedMode = readPersistedMode()
-  if (persistedMode && persistedMode !== 1) {
-    harness.switchTo(persistedMode)
+  if (bootPersistedMode && bootPersistedMode !== 1) {
+    harness.switchTo(bootPersistedMode)
   }
 
   if (openPickerOnFirstLoad) {
@@ -942,13 +950,17 @@ async function boot(): Promise<void> {
 
 // Reload the doc that was loaded in this window when it last quit.
 // Returns true when something restored, false when nothing was
-// persisted or an explicit URL param takes priority.
-async function restorePersistedSource(harness: Harness): Promise<boolean> {
+// persisted or an explicit URL param takes priority. The caller is
+// responsible for snapshotting `persisted` BEFORE the boot setDocState
+// wipes the localStorage slot — see boot() for the snapshot.
+async function restorePersistedSource(
+  harness: Harness,
+  persisted: ReturnType<typeof readPersistedSource>,
+): Promise<boolean> {
   // Explicit URL params (share link, extension pickup) supersede the
   // "last time" fallback — processBootUrlParam already handled them.
   const params = new URLSearchParams(window.location.search)
   if (params.has('url') || params.has('ext-pickup')) return false
-  const persisted = readPersistedSource()
   if (!persisted) return false
   try {
     if (persisted.kind === 'tauri-path') {

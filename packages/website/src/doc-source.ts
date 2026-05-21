@@ -315,7 +315,21 @@ export async function openFile(harness: Harness): Promise<void> {
 // Open a file from an explicit path (no dialog). Used by Tauri's
 // 'Open With…' / double-click flow — macOS fires RunEvent::Opened
 // with the chosen file's URL, which lib.rs forwards as a string path.
+// Also used by per-window source restore on relaunch: the path was
+// previously dialog-picked (auto-allowed by the dialog plugin) but
+// fs scope is runtime-only since 0.1.6, so we re-allow before
+// readTextFile. Idempotent on paths already in scope, so harmless
+// on the cold-start Opened path where Rust pre-allowed.
 export async function openFromTauriPath(harness: Harness, path: string): Promise<void> {
+  try {
+    const { invoke } = await import('@tauri-apps/api/core')
+    await invoke('allow_fs_path', { path })
+  } catch (err) {
+    // Older builds without the command, or invoke unavailable —
+    // proceed and let readTextFile surface its own permission error
+    // (preserved behaviour for cold-Opened paths).
+    console.warn('[doc-source] allow_fs_path failed:', err)
+  }
   const { readTextFile } = await import('@tauri-apps/plugin-fs')
   const text = await readTextFile(path)
   const name = basename(path)
