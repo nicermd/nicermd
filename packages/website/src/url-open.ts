@@ -750,19 +750,12 @@ async function processExtensionPickup(
     // The text may be plain (no markdown) or HTML (the extension's
     // 0.4.2+ selection-as-HTML path). markdown-it passes inline
     // HTML through, so a rendered selection comes back styled in
-    // Read mode.
-    //
-    // Force Read mode regardless of the persisted mode for this
-    // tab — the user just asked to RENDER a selection, so dumping
-    // them into Code or Write mode (where the input shows as raw
-    // source) defeats the feature. processBootUrlParam runs before
-    // finish() applies persistedMode, so the switchTo here gets
-    // overridden if we just call it directly. Instead, set a global
-    // flag the boot path reads to skip its persistedMode pass.
+    // Read mode. Read mode is forced at the boot layer for any tab
+    // that arrived via ext-pickup — see boot()'s bootHasExtPickup
+    // snapshot in main.ts.
     const { setDocState } = await import('./doc-source')
     setDocState(picked.value, null, null)
     harness.replaceDoc(picked.value)
-    ;(window as unknown as { __nicermdForceReadMode?: boolean }).__nicermdForceReadMode = true
     return
   }
 

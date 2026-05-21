@@ -10,6 +10,24 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.21 — 2026-05-21
+
+### Fixed
+- **App hung/crashed on deep-link arrival in 0.1.20.** The new Rust
+  `on_open_url` handler called `WebviewWindowBuilder::build` directly
+  from the deep-link event callback, but Tauri's event-listener
+  callbacks run on the runtime thread — and macOS requires NSWindow
+  allocation on the main thread. Wrapped the spawn in
+  `handle.run_on_main_thread(…)` so the build dispatches correctly.
+- **Render-selection / ext-pickup arrivals didn't reliably force
+  Read mode.** The previous fix set a window-level flag in the
+  pickup's async handler, but boot's persistedMode pass ran before
+  that handler resolved — so the flag was always false at decision
+  time. Replaced with a synchronous `bootHasExtPickup` snapshot at
+  boot top (reading `?ext-pickup=` from the URL bar before any
+  handler strips it). Persisted mode is now skipped reliably for
+  every ext-pickup arrival.
+
 ## 0.1.20 — 2026-05-21
 
 ### Changed

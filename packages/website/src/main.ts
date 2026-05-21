@@ -837,6 +837,16 @@ async function boot(): Promise<void> {
   // for symmetry.
   const bootPersistedSource = readPersistedSource()
   const bootPersistedMode = readPersistedMode()
+  // Detect extension-pickup arrival synchronously: the ext-pickup
+  // param gets stripped from the URL bar a few lines later (by
+  // processExtensionPickup, well before the pickup async actually
+  // resolves), so we have to grab this BEFORE any of that runs.
+  // When set, the persistedMode application at the end of boot()
+  // is skipped — extension arrivals always render in Read mode so
+  // the user sees the doc they came to render, not Code/Split.
+  const bootHasExtPickup = new URLSearchParams(window.location.search).has(
+    'ext-pickup',
+  )
 
   const host = document.createElement('div')
   host.className = 'mode-host'
@@ -938,13 +948,12 @@ async function boot(): Promise<void> {
   // the previously-active mode without flashing back through Read.
   // No-op when persisted mode is Read or absent.
   //
-  // ext-pickup text overrides persisted mode (it sets a window flag
-  // in processExtensionPickup): the user just asked to RENDER a
-  // selection, so dropping them in Code mode would defeat the
+  // Extension-pickup arrivals (ext-pickup snapshotted at boot top)
+  // override persisted mode: the user asked to RENDER something —
+  // a URL via toolbar / right-click, or a selection via render-
+  // selection — so dropping them into Code mode would defeat the
   // feature even if Code was the last-used mode for this tab label.
-  const forceRead = (window as unknown as { __nicermdForceReadMode?: boolean })
-    .__nicermdForceReadMode === true
-  if (!forceRead && bootPersistedMode && bootPersistedMode !== 1) {
+  if (!bootHasExtPickup && bootPersistedMode && bootPersistedMode !== 1) {
     harness.switchTo(bootPersistedMode)
   }
 

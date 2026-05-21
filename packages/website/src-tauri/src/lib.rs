@@ -206,6 +206,15 @@ pub fn run() {
                 use tauri_plugin_deep_link::DeepLinkExt;
                 let handle = app.handle().clone();
                 app.deep_link().on_open_url(move |event| {
+                    // The deep-link callback runs on the Tauri
+                    // runtime thread, NOT the main thread. Creating
+                    // a WebviewWindow on macOS requires the main
+                    // thread (AppKit dispatches NSWindow allocation
+                    // there) — calling build_window directly here
+                    // hangs / crashes the app. Marshal each spawn
+                    // into the main thread via run_on_main_thread,
+                    // which is a no-op when already on main and
+                    // posts to the main runloop otherwise.
                     for url in event.urls() {
                         // nicermd://?url=<encoded-target> — pull the
                         // url query param and spawn for it. Anything
@@ -218,31 +227,40 @@ pub fn run() {
                         else {
                             continue;
                         };
-                        let payload = serde_json::json!({
-                            "kind": "fresh-url",
-                            "url": target,
+                        let handle_for_spawn = handle.clone();
+                        let _ = handle.run_on_main_thread(move || {
+                            let payload = serde_json::json!({
+                                "kind": "fresh-url",
+                                "url": target,
+                            });
+                            let payloads =
+                                handle_for_spawn.state::<PendingWindowPayloads>();
+                            let n =
+                                WINDOW_COUNTER.fetch_add(1, Ordering::Relaxed);
+                            let label = format!("window-{n}");
+                            payloads
+                                .by_label
+                                .lock()
+                                .unwrap()
+                                .insert(label.clone(), payload);
+                            if let Err(err) =
+                                build_window(&handle_for_spawn, &label)
+                            {
+                                log::error!(
+                                    "deep-link: failed to spawn window: {err}"
+                                );
+                                // Drop the orphan payload so it
+                                // doesn't accidentally drain into a
+                                // future window with this label.
+                                payloads
+                                    .by_label
+                                    .lock()
+                                    .unwrap()
+                                    .remove(&label);
+                            } else {
+                                write_live_session(&handle_for_spawn);
+                            }
                         });
-                        let payloads = handle.state::<PendingWindowPayloads>();
-                        let n = WINDOW_COUNTER.fetch_add(1, Ordering::Relaxed);
-                        let label = format!("window-{n}");
-                        payloads
-                            .by_label
-                            .lock()
-                            .unwrap()
-                            .insert(label.clone(), payload);
-                        if let Err(err) = build_window(&handle, &label) {
-                            log::error!(
-                                "deep-link: failed to spawn window for {target}: {err}"
-                            );
-                            // Drop the orphan payload so it doesn't
-                            // accidentally drain into the next created
-                            // window with this label (extremely
-                            // unlikely with monotonic counter, but
-                            // cheap defence).
-                            payloads.by_label.lock().unwrap().remove(&label);
-                        } else {
-                            write_live_session(&handle);
-                        }
                     }
                 });
             }
