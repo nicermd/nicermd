@@ -81,7 +81,13 @@ describe('per-window-state mode', () => {
   })
 })
 
-describe('per-window-state source', () => {
+describe('per-window-state source (Tauri context)', () => {
+  // All source-persistence tests run in Tauri context. The web-only
+  // behaviour is covered in the 'Tauri vs web' block further down.
+  beforeEach(() => {
+    setLabel('main')
+  })
+
   const TAURI_PATH_SOURCE: PersistedSource = {
     kind: 'tauri-path',
     value: '/path/to/file.md',
@@ -152,10 +158,71 @@ describe('per-window-state source', () => {
     // previous session. If a caller snapshots readPersistedSource()
     // BEFORE the null write, that snapshot must still hold the
     // pre-null value.
+    setLabel('main') // Need Tauri context for source persistence
     persistSource(TAURI_PATH_SOURCE)
     const snapshot = readPersistedSource()
     persistSource(null)
     expect(readPersistedSource()).toBeNull()
     expect(snapshot).toEqual(TAURI_PATH_SOURCE)
+  })
+})
+
+describe('per-window-state source: Tauri vs web', () => {
+  const TAURI_PATH_SOURCE: PersistedSource = {
+    kind: 'tauri-path',
+    value: '/path/to/file.md',
+    name: 'file.md',
+    contentKind: { kind: 'markdown' },
+  }
+
+  it('persistSource writes to localStorage when running in Tauri', () => {
+    ;(globalThis as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = {
+      metadata: { currentWindow: { label: 'main' } },
+    }
+    persistSource(TAURI_PATH_SOURCE)
+    expect(localStorage.getItem('nicermd:source:main')).toBeTruthy()
+  })
+
+  it('persistSource is a no-op in web (no __TAURI_INTERNALS__)', () => {
+    // beforeEach already deletes __TAURI_INTERNALS__, simulating web.
+    persistSource(TAURI_PATH_SOURCE)
+    expect(localStorage.getItem('nicermd:source:main')).toBeNull()
+  })
+
+  it('readPersistedSource returns null in web even if localStorage has a value', () => {
+    // Simulate a stale entry written by an older Tauri-on-web build:
+    localStorage.setItem(
+      'nicermd:source:main',
+      JSON.stringify(TAURI_PATH_SOURCE),
+    )
+    // No __TAURI_INTERNALS__ → web context.
+    expect(readPersistedSource()).toBeNull()
+  })
+
+  it('readPersistedSource returns the value in Tauri', () => {
+    ;(globalThis as { __TAURI_INTERNALS__?: unknown }).__TAURI_INTERNALS__ = {
+      metadata: { currentWindow: { label: 'main' } },
+    }
+    persistSource(TAURI_PATH_SOURCE)
+    expect(readPersistedSource()).toEqual(TAURI_PATH_SOURCE)
+  })
+
+  it('regression: in web, two extension pickups in a row do not see each other (cross-pickup race)', () => {
+    // The original bug: a previous extension URL pickup persisted
+    // source = pageUrl, then the NEXT pickup tab read that source
+    // and overrode the in-flight selection text. In web we explicitly
+    // never persist, so a setDocState({kind: 'url'}) followed by
+    // readPersistedSource() — emulating the next tab's boot — sees
+    // nothing left over.
+    // Step 1: pickup-1 sets a URL source.
+    persistSource({
+      kind: 'url',
+      value: 'https://example.com/a.md',
+      name: 'a.md',
+      contentKind: { kind: 'markdown' },
+    })
+    // Step 2: pickup-2 boots in a NEW tab. Same web context. Reads
+    // localStorage. Must be null (otherwise the race re-emerges).
+    expect(readPersistedSource()).toBeNull()
   })
 })

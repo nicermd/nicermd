@@ -30,6 +30,18 @@ function getWindowLabel(): string {
   return internals?.metadata?.currentWindow?.label ?? 'main'
 }
 
+// Source persistence is Tauri-only: each desktop window is a long-
+// running session that should resume where it left off, but each web
+// tab is a one-shot visit — restoring "last loaded doc" on every
+// nicer.md visit confuses extension flows (pickup tab inherits the
+// previous session's source and races the in-flight pickup) and
+// fights the user's expectation of a fresh start. Mode stays per-
+// window for both runtimes because it's a UI preference, not a
+// content state.
+function isTauri(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+}
+
 // --- Mode ----------------------------------------------------------------
 
 export function persistMode(mode: number): void {
@@ -66,6 +78,11 @@ export interface PersistedSource {
 }
 
 export function persistSource(source: PersistedSource | null): void {
+  // Skip in web — see isTauri() comment above. Note that we also
+  // don't *clear* the slot in web: legacy data from earlier builds
+  // simply stops being read (see readPersistedSource), and rewriting
+  // it would just thrash localStorage.
+  if (!isTauri()) return
   const key = `${SOURCE_PREFIX}:${getWindowLabel()}`
   try {
     if (source === null) {
@@ -79,6 +96,11 @@ export function persistSource(source: PersistedSource | null): void {
 }
 
 export function readPersistedSource(): PersistedSource | null {
+  // Web build never restores sources (each tab visit starts fresh).
+  // This also handles backward compat with users who have stale
+  // localStorage entries from 0.1.18 / 0.1.19 — we just stop reading
+  // them; they'll get garbage-collected if they bother anyone.
+  if (!isTauri()) return null
   try {
     const raw = localStorage.getItem(`${SOURCE_PREFIX}:${getWindowLabel()}`)
     if (!raw) return null

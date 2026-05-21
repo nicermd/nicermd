@@ -107,24 +107,33 @@ function openDesktop(url) {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
+  // Naming convention:
+  //   - Link context → "Open link" (the noun is the link target)
+  //   - Page context → "Open this page" (the noun is the whole tab)
+  //   - Selection context → "Render selection" (the noun is the highlight)
+  // The page item used to read "Open in Nicer.md" which collided
+  // visually with the selection item when text was selected (Chrome
+  // shows both because contexts are additive) — users could click
+  // the page item thinking it'd render their selection. Disambiguated
+  // here so each menu line maps unambiguously to a payload.
   chrome.contextMenus.create({
     id: 'open-in-nicermd-link',
-    title: 'Open in Nicer.md',
+    title: 'Open link in Nicer.md',
     contexts: ['link'],
   })
   chrome.contextMenus.create({
     id: 'open-in-nicermd-page',
-    title: 'Open in Nicer.md',
+    title: 'Open this page in Nicer.md',
     contexts: ['page'],
   })
   chrome.contextMenus.create({
     id: 'open-in-nicermd-desktop-link',
-    title: 'Open in Nicer.md desktop',
+    title: 'Open link in Nicer.md desktop',
     contexts: ['link'],
   })
   chrome.contextMenus.create({
     id: 'open-in-nicermd-desktop-page',
-    title: 'Open in Nicer.md desktop',
+    title: 'Open this page in Nicer.md desktop',
     contexts: ['page'],
   })
   // Render-selection: only appears when text is selected on the page.
