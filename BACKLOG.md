@@ -41,6 +41,15 @@ is prefixed with a status tag so its disposition is scannable:
   Hygiene only, not a priority vs feature work.
   _packages/website/src-tauri/tauri.conf.json + packages/website/public/_headers_
 
+- **LATER — Attribution for bundled Rust crates.** `pnpm licenses:gen`
+  only walks the JS dep tree (97 packages). The Tauri DMG also bundles
+  Rust crates (tauri, wry, muda, tauri-plugin-{fs,dialog,deep-link,
+  window-state}, …). Their license attribution lives in their crate
+  source but isn't surfaced anywhere in the repo. For a public release
+  we should generate a complementary file via `cargo about generate`
+  or similar. Permissive licenses across the tree so attribution
+  isn't legally fraught, but completeness is the standard.
+
 ## In-doc search
 
 - **LATER — Find polish.** v1 shipped 0.1.14 (DOM walker for Read,
@@ -56,12 +65,12 @@ is prefixed with a status tag so its disposition is scannable:
 
 - **LATER — Multi-window polish leftovers.** Core multi-window
   landed 2026-05-19; dirty-aware Open-With routing + window state
-  persistence shipped 2026-05-21 in 0.1.15. Remaining bits when
-  they bite:
+  persistence + session restore + per-window mode/source + deep-link
+  spawns new window — all shipped 2026-05-21 across 0.1.15–0.1.22.
+  Remaining bits when they bite:
   - `File → New Document` (Cmd+Shift+N) reuses the current window
     and delegates to `newFile`, which prompts on dirty. Could route
     to a new window on dirty like Open-With does for consistency.
-  - 3rd-window crash (KNOWN-ISSUES, no repro yet).
   - Bring All to Front: replaced with custom handler in 0.1.11 —
     keep an eye on edge cases with hidden / off-screen windows.
   _packages/website/src-tauri/src/lib.rs_
@@ -70,16 +79,20 @@ is prefixed with a status tag so its disposition is scannable:
 
 - **PARKED — Full Chrome extension (auto-render flavour).**
   _Gated on the lightweight extension showing real usage signal._
-  Bookmarklet shipped in the README on 2026-05-18 (single-line JS).
-  Tiny MV3 extension shipped at `packages/chrome-ext/` on 2026-05-18
-  with three invocation paths (toolbar icon, right-click menu,
-  optional user-assigned keyboard shortcut); `contextMenus` +
-  `activeTab` permissions only. Remaining: the originally-roadmapped
-  Chrome extension that **auto-detects** GitHub `.md` URLs /
-  `text/markdown` content-type and renders them inline in the same
-  tab (no nicer.md round-trip). Requires host permissions on the
-  GitHub family of domains plus a content script that replaces the
-  DOM. Biggest lift; biggest reach.
+  Bookmarklet shipped 2026-05-18; lightweight MV3 ext at v0.4.2
+  (toolbar / right-click on link / right-click on page / right-click
+  on selected text / Alt+Shift+N shortcut; `contextMenus` +
+  `activeTab` + `scripting`, no host permissions). Remaining for
+  the auto-render flavour: detect GitHub `.md` URLs /
+  `text/markdown` content-type and replace inline in the same tab.
+  Requires host permissions on the GitHub family of domains + a
+  content script that replaces the DOM. Biggest lift; biggest reach.
+- **LATER — Chrome Web Store listing.** Lightweight extension is
+  feature-complete and dogfooded. To publish: $5 developer account,
+  listing copy, screenshots (toolbar / context menu / render-
+  selection / deep-link in action), privacy policy markdown.
+  Listing artwork should highlight: GitHub URL one-click, render-
+  selection (the big differentiator), no host permissions.
 
 ## Distribution
 

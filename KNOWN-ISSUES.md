@@ -5,13 +5,6 @@ once they've been quiet for a release or two.
 
 ## Open
 
-- **App crashes when spawning a 3rd window.** Reported during 0.1.6
-  dogfood testing: two existing windows die when the third window is
-  opened. No repro steps captured yet. Suspected root causes to
-  investigate: WebKit shared-process GPU limit, multiple webviews
-  competing for an OS resource, or some lifecycle race in Tauri 2's
-  WebviewWindowBuilder when several windows boot in quick succession.
-  Reproducer needed.
 - **Dialog keyboard nav.** `ask()`-based discard dialogs
   (Cmd+R reload, Cmd+Q quit, file-new discard) accept Enter for the
   default button but Escape doesn't reliably cancel and Left/Right
@@ -21,6 +14,13 @@ once they've been quiet for a release or two.
   click the No button.
 
 ## Recently fixed
+
+- **3rd-window-crash (suspected).** Reported during 0.1.6 dogfood
+  ("two existing windows died when I opened a third"). Couldn't
+  reproduce on 0.1.10 / 0.1.15 / 0.1.18 / 0.1.22 across multiple
+  multi-window sessions. Dropping from Open since the symptom hasn't
+  recurred through 16 releases of multi-window dogfooding. If it
+  surfaces again, file fresh with a reproducer.
 
 - **Window → Bring All to Front did nothing.** The Tauri 2 / muda
   predefined `bring_all_to_front` item silently no-ops for windows
