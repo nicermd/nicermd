@@ -13,18 +13,13 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
-# index.html: short browser cache (so deploys roll out within minutes
-# of merge), long CF edge cache (so viral-spike pageviews hit the
-# edge instead of the origin). max-age=0 means the browser always
-# revalidates; s-maxage=3600 + stale-while-revalidate lets CF serve
-# the cached HTML for an hour and refresh in the background. The SW
-# is network-first for navigations and re-applies its own cache layer
-# on top — this header just keeps CF from acting as the origin on
-# every page view.
-/
-  Cache-Control: public, max-age=0, s-maxage=3600, stale-while-revalidate=86400
-/index.html
-  Cache-Control: public, max-age=0, s-maxage=3600, stale-while-revalidate=86400
+# index.html is forced to `max-age=0, must-revalidate` by CF Workers
+# Static Assets regardless of what we set here — by design, so stale
+# HTML can't point at deleted hashed assets. Verified 2026-05-21:
+# `curl -I https://nicer.md/` shows the CF default, not anything we
+# specify. Left intentionally without an override entry; CF's HTML
+# default IS the right behaviour for our SPA model (immutable assets
+# + always-fresh HTML reference).
 
 # Brand assets that rarely change. Tagged with the build by file
 # content but not content-hashed in the filename, so they get a
