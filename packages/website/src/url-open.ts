@@ -155,6 +155,38 @@ const REASON_NOT_GITHUB = 'Not a GitHub URL'
 const REASON_UNSUPPORTED_FILE =
   'Unsupported file — Nicer.md reads markdown, plain text (LICENSE/CHANGELOG/.txt), and common source files'
 
+// Resolve a rendered anchor to a loader-eligible URL, or null if the
+// anchor doesn't point at something we can render. Handles both shapes
+// the showcase / Markdown docs produce:
+//   1. Share-link form: `<a href="?url=<encoded>">` — anchor.href
+//      resolves to the absolute local URL (e.g.
+//      `tauri://localhost/?url=...`); we extract the `url` search
+//      parameter and validate it.
+//   2. Direct form: `<a href="https://github.com/u/r">` — anchor.href
+//      already points at a public GitHub URL; we validate as-is.
+// Used by the right-click "Open Link in New Window" context menu and
+// by Tauri Cmd-click handling in link-chain.ts. Returns null for
+// non-loadable links so callers can fall through to platform defaults.
+export function resolveLinkTarget(anchor: HTMLAnchorElement): string | null {
+  const href = anchor.href
+  if (!href) return null
+  let parsed: URL
+  try {
+    parsed = new URL(href)
+  } catch {
+    return null
+  }
+  // Share-link form first — the inner URL is the one we'd load.
+  const inner = parsed.searchParams.get('url')
+  if (inner) {
+    const innerParse = parseGithubUrl(inner)
+    return innerParse.ok ? inner : null
+  }
+  // Direct form — anchor points at the loader-eligible URL itself.
+  const direct = parseGithubUrl(href)
+  return direct.ok ? href : null
+}
+
 export function parseGithubUrl(input: string): ParseResult {
   let trimmed = input.trim()
   // Tolerate protocol-less inputs like "github.com/user/repo" — common
