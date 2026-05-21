@@ -18,6 +18,7 @@
 import { Compartment, EditorState, type Extension } from '@codemirror/state'
 import { EditorView, keymap, drawSelection, lineNumbers } from '@codemirror/view'
 import { defaultKeymap, history, historyKeymap } from '@codemirror/commands'
+import { search } from '@codemirror/search'
 import { markdown } from '@codemirror/lang-markdown'
 import { GFM } from '@lezer/markdown'
 import { syntaxHighlighting, HighlightStyle } from '@codemirror/language'
@@ -48,6 +49,10 @@ import { setupCommandPalette } from './command-palette'
 import { setupTouchSwipe } from './touch-swipe'
 import { cycleOption } from './option-flag'
 import type { FormatAction } from './wysiwyg-engine'
+import type { FindAdapter } from './find/types'
+import { createDomFindAdapter } from './find/dom-walker'
+import { createCmFindAdapter } from './find/cm'
+import { openFindBar, closeFindBar, isFindBarOpen } from './find-bar'
 import './main.css'
 
 const THEME_STORAGE_KEY = 'nicermd:theme'
@@ -64,6 +69,11 @@ interface ModeHandle {
   toggleFormat?: (action: FormatAction) => void
   isFormatActive?: (action: FormatAction) => boolean
   onFormatUpdate?: (cb: () => void) => () => void
+  // Per-mode Cmd+F adapter. Returns null when the mode's underlying
+  // surface isn't ready yet (Write mode while Tiptap is still
+  // lazy-loading); the find bar will simply not open in that case
+  // and the user can re-trigger Cmd+F a moment later.
+  createFindAdapter?(): FindAdapter | null
 }
 
 type OnChange = (markdown: string) => void
@@ -248,6 +258,12 @@ function codeMirrorExtensions(languageCompartment: Compartment): Extension[] {
         : [],
     ),
     editorTheme,
+    // search() installs the search-query state field + the match
+    // decoration view plugin (.cm-searchMatch). We deliberately
+    // don't add searchKeymap so CM's built-in panel (Cmd+F opens
+    // its own bar) doesn't compete with our app-level find bar
+    // for the same shortcut.
+    search(),
     keymap.of([...defaultKeymap, ...historyKeymap]),
   ]
 }
@@ -308,6 +324,7 @@ function mountRead(parent: HTMLElement, markdown: string): ModeHandle {
       current = md
       renderInto(md)
     },
+    createFindAdapter: () => createDomFindAdapter(div),
   }
 }
 
@@ -344,6 +361,14 @@ function mountWysiwyg(
   const pendingDetachers = new Set<() => void>()
 
   if (!wysiwygModule) wysiwygModule = import('./wysiwyg-engine')
+  // Warm-load the PM find module alongside the engine so Cmd+F in
+  // Write mode is ready by the time the editor finishes mounting.
+  // No-op if already loaded.
+  if (!pmFindModule) {
+    void import('./find/pm').then((m) => {
+      pmFindModule = m
+    })
+  }
 
   void wysiwygModule
     .then((mod) => {
@@ -390,8 +415,22 @@ function mountWysiwyg(
         pendingUpdateCallbacks.delete(cb)
       }
     },
+    createFindAdapter: () => {
+      // If the engine is still loading (or load failed) there's no
+      // editor to attach the find plugin to. Return null so the find
+      // bar opens with a no-op state rather than throwing; a moment
+      // later the user can re-trigger Cmd+F.
+      const editor = handle?.getEditor() ?? null
+      if (!editor || !pmFindModule) return null
+      return pmFindModule.createPmFindAdapter(editor)
+    },
   }
 }
+
+// PM find module is preloaded the first time mountWysiwyg runs (see
+// below). Cached at module scope so subsequent createFindAdapter
+// calls don't re-import.
+let pmFindModule: typeof import('./find/pm') | null = null
 
 function mountCodePlusPreview(
   parent: HTMLElement,
@@ -436,6 +475,12 @@ function mountCodePlusPreview(
       wrap.remove()
     },
     getMarkdown: () => view.state.doc.toString(),
+    // Split mode's find target is the editor pane: edits originate
+    // there and the preview reflects them live, so finding in the
+    // source is the more useful default. (A future iteration could
+    // composite a DOM walker on the preview, but the dual-current-
+    // match UX gets confusing fast — defer until asked.)
+    createFindAdapter: () => createCmFindAdapter(view),
   }
 }
 
@@ -467,6 +512,7 @@ function mountRawCode(
       wrap.remove()
     },
     getMarkdown: () => view.state.doc.toString(),
+    createFindAdapter: () => createCmFindAdapter(view),
   }
 }
 
@@ -539,6 +585,13 @@ export class Harness {
   // edits are included), otherwise falls back to the cached value.
   getMarkdown(): string {
     return this.currentHandle?.getMarkdown() ?? this.currentMarkdown
+  }
+
+  // Build a fresh find adapter against the current mode's surface.
+  // Returns null when the mode doesn't implement find or its surface
+  // isn't ready (Write mode mid-load). The caller is the find bar.
+  createFindAdapter(): FindAdapter | null {
+    return this.currentHandle?.createFindAdapter?.() ?? null
   }
 
   private readonly handleLocalChange = (md: string): void => {
@@ -821,7 +874,18 @@ async function boot(): Promise<void> {
 
   // Resurface the strip on mode change — user benefits from re-seeing
   // filename + active mode whenever the editing context shifts.
-  harness.onModeChange(() => showStrip())
+  harness.onModeChange(() => {
+    showStrip()
+    // If the find bar is open across a mode switch, refresh it with
+    // the new mode's adapter so highlights re-apply against the now-
+    // visible surface. The old adapter's close() runs inside
+    // openFindBar via the activeAdapter swap.
+    if (isFindBarOpen()) {
+      const adapter = harness.createFindAdapter()
+      if (adapter) openFindBar(adapter)
+      else closeFindBar()
+    }
+  })
   setupAutosave(harness)
   // Link chaining: intercept clicks on markdown-targeting links in
   // rendered docs so they load inside the reader instead of navigating
@@ -873,10 +937,22 @@ function finish(harness: Harness): void {
     }
     // Cmd/Ctrl + Alt/Option + F — open the font picker. Same rationale
     // as the theme key: Alt-modified to dodge browser-claimed
-    // Cmd+Shift / Cmd-only combos. Cmd+F is browser find-in-page.
+    // Cmd+Shift / Cmd-only combos. Cmd+F (no alt) is now the find bar.
     if (event.altKey && event.code === 'KeyF') {
       event.preventDefault()
       openFontPicker()
+      return
+    }
+    // Cmd/Ctrl + F — in-document find. Reclaims the shortcut from the
+    // browser's native find-in-page (which can't see into CM / Tiptap
+    // / mode-render DOM reliably) and routes through the harness's
+    // per-mode adapter. Re-pressing Cmd+F while the bar is open
+    // re-focuses + selects the input (same as browser behaviour).
+    if (!event.altKey && !event.shiftKey && event.code === 'KeyF') {
+      const adapter = harness.createFindAdapter()
+      if (!adapter) return
+      event.preventDefault()
+      openFindBar(adapter)
       return
     }
     // Cmd+Shift+Alt+O — cycle the iteration A/B flag. Tauri-friendly
