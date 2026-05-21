@@ -2305,37 +2305,3 @@ html {
   font-size: 1.05em;
 }
 
-/* --- Link right-click context menu (Tauri only) ---
-   Built and torn down per-open by link-context-menu.ts. A minimal
-   floating menu offering "Open Link in New Window" for anchors that
-   point at markdown URLs the loader can re-open. Styled to match the
-   command palette's surface so it doesn't feel like a foreign element. */
-.link-context-menu {
-  position: fixed;
-  z-index: 200;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
-  padding: 4px;
-  min-width: 180px;
-  font-family: var(--font-body);
-}
-.link-context-menu__item {
-  appearance: none;
-  background: transparent;
-  border: 0;
-  width: 100%;
-  text-align: left;
-  font: inherit;
-  color: var(--fg);
-  padding: 8px 12px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 13px;
-}
-.link-context-menu__item:hover,
-.link-context-menu__item:focus-visible {
-  background: color-mix(in srgb, var(--accent) 14%, transparent);
-  outline: 0;
-}

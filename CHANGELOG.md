@@ -10,6 +10,25 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.13 — 2026-05-21
+
+### Changed
+- **Right-click "Open Link in New Window" now uses Tauri's native
+  popup menu** instead of a CSS-styled floating div. The custom menu
+  worked but read as foreign next to the system context menus that
+  appear on plain right-clicks elsewhere (selected text, plain links,
+  background). Switching to `@tauri-apps/api/menu`'s `Menu.popup()`
+  routes through the platform's native menu machinery so our one
+  extra entry is visually indistinguishable from the system default.
+
+### Fixed
+- **Cmd-click on share-link form anchors (`?url=…`) now opens a new
+  window.** 0.1.12 handled modifier-click for direct GitHub URLs but
+  not for the share-link form most rendered showcase / README links
+  use. The chained-click handler now extracts the inner `url` query
+  parameter from share-link hrefs the same way the right-click
+  context menu does, so both entry points cover the same anchor set.
+
 ## 0.1.12 — 2026-05-21
 
 ### Fixed

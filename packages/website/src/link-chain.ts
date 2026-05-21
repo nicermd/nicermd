@@ -72,15 +72,30 @@ export function setupLinkChaining(harness: Harness, host: HTMLElement): void {
     // Only chain links that live inside a render surface we own.
     if (!anchor.closest(RENDER_CONTAINERS)) return
 
-    const href = anchor.getAttribute('href')
-    if (!href) return
+    const rawHref = anchor.getAttribute('href')
+    if (!rawHref) return
 
     // In-doc anchors stay default (browser scrolls to the heading).
-    if (href.startsWith('#')) return
+    if (rawHref.startsWith('#')) return
 
     // Alt+click = "save link as" in browsers; defer so the user can
     // still download a markdown file if they want the raw bytes.
     if (e.altKey) return
+
+    // Two link shapes in rendered docs:
+    //   - Direct: `<a href="https://github.com/...">` — the href IS
+    //     the loader target.
+    //   - Share-link: `<a href="?url=...">` — the loader target is the
+    //     `url` query param. anchor.href resolves to the absolute local
+    //     URL (`https://nicer.md/?url=...` or `tauri://localhost/...`);
+    //     pull the inner URL out of it.
+    let target = rawHref
+    try {
+      const innerUrl = new URL(anchor.href).searchParams.get('url')
+      if (innerUrl) target = innerUrl
+    } catch {
+      // anchor.href didn't parse — leave target = rawHref.
+    }
 
     // Eligibility = exactly the URL shapes the loader accepts.
     // - `not-github`: leave the default browser nav alone (the link
@@ -89,11 +104,11 @@ export function setupLinkChaining(harness: Harness, host: HTMLElement): void {
     //   chain, but its file type (e.g. Makefile, .rb, .go) isn't
     //   supported yet. Suppress the navigation and surface a discreet
     //   banner so the user knows why we didn't render it inline.
-    const parseResult = parseGithubUrl(href)
+    const parseResult = parseGithubUrl(target)
     if (!parseResult.ok) {
       if (parseResult.reasonCode === 'unsupported-file') {
         e.preventDefault()
-        const basename = new URL(href, window.location.href).pathname.split('/').pop() || href
+        const basename = new URL(target, window.location.href).pathname.split('/').pop() || target
         showNoticeBanner(`${basename} isn't a supported file type yet`)
       }
       return
@@ -105,7 +120,7 @@ export function setupLinkChaining(harness: Harness, host: HTMLElement): void {
     // as the share-link URL — copy-paste round-trips identically.
     const dest = new URL(window.location.href)
     dest.search = ''
-    dest.searchParams.set('url', href)
+    dest.searchParams.set('url', target)
     dest.hash = ''
     const destStr = dest.toString()
 
@@ -124,7 +139,7 @@ export function setupLinkChaining(harness: Harness, host: HTMLElement): void {
     //     click happened inside a trusted in-app doc, no gate needed.
     if (e.metaKey || e.ctrlKey || e.shiftKey) {
       if (isTauri()) {
-        void openUrlInNewWindow(href)
+        void openUrlInNewWindow(target)
       } else {
         window.open(destStr, '_blank')
       }
@@ -134,7 +149,7 @@ export function setupLinkChaining(harness: Harness, host: HTMLElement): void {
     // Plain click → same-tab chain. Dirty-edit guard if there are
     // unsaved changes in Write / Split / Code — same prompt as
     // File → New uses.
-    void chainSameTab(harness, href, destStr)
+    void chainSameTab(harness, target, destStr)
   })
 
   window.addEventListener('popstate', (e) => {
