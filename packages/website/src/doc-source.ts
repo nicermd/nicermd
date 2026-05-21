@@ -99,6 +99,51 @@ export function getCurrentSourceUrl(): string | null {
   return currentSource?.kind === 'url' ? currentSource.url : null
 }
 
+// JSON-safe snapshot of the current doc's identity for cross-window
+// duplication. FSA handles aren't transferable across windows (the
+// receiving JS realm can't reach into the originator's handle table)
+// and Tiptap-normalised text isn't a faithful re-serialisation, so the
+// snapshot returns only the source pointer (path / url) — the new
+// window re-reads from disk or re-fetches from the URL on boot. Files
+// opened via FSA (Chromium web shell) or scratch drop to source=null;
+// the new window opens with whatever content the caller provides
+// (typically the current text, treated as scratch).
+export interface DuplicateSnapshot {
+  // Where to re-load the doc from in the new window. Null = open
+  // with `text` as scratch content (caller-provided).
+  sourceKind: 'tauri-path' | 'url' | null
+  sourceValue: string | null
+  // Display name to keep title strip continuity.
+  name: string | null
+  // Current text content. Used when sourceKind is null (scratch open).
+  // For path / url sources the new window re-reads; this is kept as
+  // a fallback if the re-read fails (deleted file, offline).
+  text: string
+  // Content kind so the new window classifies correctly even for
+  // scratch source. Pass-through; JS-side shape only.
+  contentKind: ContentKind
+}
+
+export function getDuplicateSnapshot(text: string): DuplicateSnapshot {
+  const src = currentSource
+  let sourceKind: 'tauri-path' | 'url' | null = null
+  let sourceValue: string | null = null
+  if (src?.kind === 'tauri-path') {
+    sourceKind = 'tauri-path'
+    sourceValue = src.path
+  } else if (src?.kind === 'url') {
+    sourceKind = 'url'
+    sourceValue = src.url
+  }
+  return {
+    sourceKind,
+    sourceValue,
+    name: currentName,
+    text,
+    contentKind: currentContentKind,
+  }
+}
+
 // Reverse lookup language → primary extension. Lazy because
 // doc-source ↔ url-open is a cycle (url-open imports Harness from
 // main, main imports doc-source); evaluating SOURCE_EXT_TO_LANG at

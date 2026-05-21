@@ -27,6 +27,7 @@ import { render as renderMarkdown, renderPlain, renderSource } from 'nicermd-cor
 import showcase from './samples/showcase.md?raw'
 import { IS_MAC } from './platform'
 import { setupTauriBridge } from './tauri-bridge'
+import { setupLinkContextMenu } from './link-context-menu'
 import { setupFileDrop } from './file-drop'
 import { openFile, saveFile, newFile, setDocState, isDirty, markDirty, getCurrentSourceUrl, getContentKind } from './doc-source'
 import { setupAutosave, checkRecovery } from './autosave'
@@ -852,6 +853,7 @@ function finish(harness: Harness): void {
   // No-op outside Tauri. Inside Tauri, wires native menu events to the
   // harness so File / View / Cycle menu items dispatch the right action.
   void setupTauriBridge(harness)
+  setupLinkContextMenu()
 
   setupFileDrop(harness)
   void setupZoom()

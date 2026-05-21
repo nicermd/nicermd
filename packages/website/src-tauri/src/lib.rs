@@ -11,6 +11,7 @@
 // the window label. Menu events route to the focused window only, so
 // Cmd+S in window A doesn't trigger a save in window B.
 
+use std::collections::HashMap;
 use std::sync::atomic::{AtomicBool, AtomicU32, Ordering};
 use std::sync::Mutex;
 use tauri::menu::{MenuBuilder, MenuItemBuilder, PredefinedMenuItem, SubmenuBuilder};
@@ -49,6 +50,42 @@ fn drain_pending_opened(state: tauri::State<'_, PendingOpened>) -> Vec<String> {
     std::mem::take(&mut *paths_guard)
 }
 
+// Per-window initial-state queue. When the focused window invokes
+// `spawn_window_with_payload` (File → Duplicate Window, or right-click
+// → Open Link in New Window), we pre-assign the new window's label,
+// stash the payload under that label, and then build the window. The
+// new window calls `drain_window_payload` on boot to consume it. Mutex
+// serialises the insert vs. drain pairing across the cold→warm
+// transition — the payload is inserted BEFORE the window is built, so
+// even if the new window's `setupTauriBridge` raced ahead of every
+// other Tauri boot step, the payload would already be findable.
+// Payloads are opaque `serde_json::Value` so the Rust side stays
+// schema-agnostic; the JS side defines the shape (see tauri-bridge.ts).
+struct PendingWindowPayloads {
+    by_label: Mutex<HashMap<String, serde_json::Value>>,
+}
+
+#[tauri::command]
+fn spawn_window_with_payload(
+    app: AppHandle,
+    state: tauri::State<'_, PendingWindowPayloads>,
+    payload: serde_json::Value,
+) -> Result<String, String> {
+    let n = WINDOW_COUNTER.fetch_add(1, Ordering::Relaxed);
+    let label = format!("window-{n}");
+    state.by_label.lock().unwrap().insert(label.clone(), payload);
+    build_window(&app, &label).map_err(|e| e.to_string())?;
+    Ok(label)
+}
+
+#[tauri::command]
+fn drain_window_payload(
+    window: tauri::WebviewWindow,
+    state: tauri::State<'_, PendingWindowPayloads>,
+) -> Option<serde_json::Value> {
+    state.by_label.lock().unwrap().remove(window.label())
+}
+
 // Monotonic counter for new-window labels. Labels must be unique
 // across the app lifetime; the main window is "main", subsequent
 // windows are "window-2", "window-3", etc. Order doesn't matter for
@@ -65,7 +102,14 @@ pub fn run() {
             paths: Mutex::new(Vec::new()),
             drained: AtomicBool::new(false),
         })
-        .invoke_handler(tauri::generate_handler![drain_pending_opened])
+        .manage(PendingWindowPayloads {
+            by_label: Mutex::new(HashMap::new()),
+        })
+        .invoke_handler(tauri::generate_handler![
+            drain_pending_opened,
+            spawn_window_with_payload,
+            drain_window_payload,
+        ])
         .setup(|app| {
             if cfg!(debug_assertions) {
                 app.handle().plugin(
@@ -244,8 +288,17 @@ fn emit_to_focused_or_all<P: serde::Serialize + Clone>(
 fn create_window(app: &AppHandle) -> tauri::Result<String> {
     let n = WINDOW_COUNTER.fetch_add(1, Ordering::Relaxed);
     let label = format!("window-{n}");
+    build_window(app, &label)?;
+    Ok(label)
+}
+
+// Inner builder. Used by both `create_window` (label auto-assigned)
+// and `spawn_window_with_payload` (label pre-assigned so the payload
+// can be stashed under it BEFORE the new window's bridge has a chance
+// to drain).
+fn build_window(app: &AppHandle, label: &str) -> tauri::Result<()> {
     let url = WebviewUrl::App("index.html".into());
-    WebviewWindowBuilder::new(app, &label, url)
+    WebviewWindowBuilder::new(app, label, url)
         .title("Nicer.md")
         .inner_size(1100.0, 750.0)
         .min_inner_size(480.0, 320.0)
@@ -254,7 +307,7 @@ fn create_window(app: &AppHandle) -> tauri::Result<String> {
         .hidden_title(true)
         .decorations(true)
         .build()?;
-    Ok(label)
+    Ok(())
 }
 
 fn build_menu(
@@ -310,6 +363,12 @@ fn build_menu(
         .item(
             &MenuItemBuilder::with_id("file-open-url", "Open URL…")
                 .accelerator("CmdOrCtrl+Alt+O")
+                .build(app)?,
+        )
+        .separator()
+        .item(
+            &MenuItemBuilder::with_id("file-duplicate-window", "Duplicate Window")
+                .accelerator("CmdOrCtrl+Shift+D")
                 .build(app)?,
         )
         .separator()
@@ -387,7 +446,17 @@ fn build_menu(
         .item(&PredefinedMenuItem::minimize(app, None)?)
         .item(&PredefinedMenuItem::maximize(app, None)?)
         .separator()
-        .item(&PredefinedMenuItem::bring_all_to_front(app, None)?)
+        // Custom instead of PredefinedMenuItem::bring_all_to_front.
+        // Tauri 2 / muda's predefined item is broken for windows that
+        // use TitleBarStyle::Overlay: those windows aren't picked up by
+        // NSApp.arrangeInFront, so clicking the menu item silently does
+        // nothing. The custom handler iterates every webview window
+        // ourselves and explicitly unminimises + shows + focuses each,
+        // which matches user intent regardless of titlebar style.
+        .item(
+            &MenuItemBuilder::with_id("window-bring-all-to-front", "Bring All to Front")
+                .build(app)?,
+        )
         .separator()
         .item(&PredefinedMenuItem::close_window(app, None)?)
         .build()?;
@@ -436,8 +505,35 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
         "file-new" => emit_to_focused_or_all(app, "menu:file-new", ()),
         "file-open" => emit_to_focused_or_all(app, "menu:file-open", ()),
         "file-open-url" => emit_to_focused_or_all(app, "menu:file-open-url", ()),
+        "file-duplicate-window" => {
+            // Routed to the focused window so it can read its current
+            // doc state (text, name, source kind/value, content kind,
+            // dirty flag) and call spawn_window_with_payload itself —
+            // Rust has no view into the JS-side doc state.
+            emit_to_focused_or_all(app, "menu:file-duplicate-window", ())
+        }
         "file-save" => emit_to_focused_or_all(app, "menu:file-save", ()),
         "file-save-as" => emit_to_focused_or_all(app, "menu:file-save-as", ()),
+        "window-bring-all-to-front" => {
+            // Predefined::bring_all_to_front is a no-op for overlay-
+            // titlebar windows (they aren't part of the NSApp window
+            // group that arrangeInFront sweeps). Do it ourselves:
+            // unminimise hidden windows, show ordered, and focus the
+            // last one so the user lands somewhere predictable.
+            // Errors during the per-window calls are logged but don't
+            // abort — one failed window shouldn't strand the rest.
+            for (label, window) in app.webview_windows() {
+                if let Err(err) = window.unminimize() {
+                    log::error!("bring-all: unminimize {label} failed: {err}");
+                }
+                if let Err(err) = window.show() {
+                    log::error!("bring-all: show {label} failed: {err}");
+                }
+                if let Err(err) = window.set_focus() {
+                    log::error!("bring-all: set_focus {label} failed: {err}");
+                }
+            }
+        }
         "view-mode-1" => emit_to_focused_or_all(app, "menu:view-mode", 1),
         "view-mode-2" => emit_to_focused_or_all(app, "menu:view-mode", 2),
         "view-mode-3" => emit_to_focused_or_all(app, "menu:view-mode", 3),

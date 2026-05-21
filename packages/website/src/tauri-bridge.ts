@@ -33,7 +33,17 @@
 //                                 prompt before launching us.
 
 import type { Harness } from './main'
-import { openFile, saveFile, newFile, openFromTauriPath, isDirty } from './doc-source'
+import {
+  openFile,
+  saveFile,
+  newFile,
+  openFromTauriPath,
+  isDirty,
+  getDuplicateSnapshot,
+  setDocState,
+  kindForFilename,
+  type DuplicateSnapshot,
+} from './doc-source'
 import { loadFromUrl, openUrlPrompt } from './url-open'
 import { openPalette } from './command-palette'
 
@@ -93,6 +103,9 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
   await listenHere('menu:file-new', () => {
     void newFile(harness)
   })
+  await listenHere('menu:file-duplicate-window', () => {
+    void duplicateCurrentWindow(harness)
+  })
   await listenHere('menu:view-reload', async () => {
     // Cmd+R is right next to Cmd+T / Cmd+W on the keyboard and easy
     // to hit accidentally. Without a guard, a misfire wipes anything
@@ -122,14 +135,29 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
   // a harness. The command also flips the cache's `drained` flag so
   // subsequent Opened events emit live instead of caching. Mirrors
   // the deep-link getCurrent() pattern above.
+  const { invoke } = await import('@tauri-apps/api/core')
   try {
-    const { invoke } = await import('@tauri-apps/api/core')
     const pending = await invoke<string[]>('drain_pending_opened')
     for (const path of pending) {
       void openFromTauriPath(harness, path)
     }
   } catch (err) {
     console.error('[tauri-bridge] failed to drain pending opens:', err)
+  }
+
+  // Window-payload drain. When this window was spawned by
+  // `spawn_window_with_payload` (File → Duplicate Window, or right-
+  // click → Open Link in New Window from another window), the Rust
+  // side stashed an initial-state payload keyed by this window's
+  // label. Consume it AFTER drain_pending_opened so an explicit
+  // duplicate payload wins over any inherited cold-start file path.
+  try {
+    const payload = await invoke<WindowSpawnPayload | null>('drain_window_payload')
+    if (payload) {
+      await applySpawnPayload(harness, payload)
+    }
+  } catch (err) {
+    console.error('[tauri-bridge] failed to drain window payload:', err)
   }
 
   // Deep-link arrivals from `nicermd://` clicks (e.g. Chrome extension's
@@ -151,6 +179,98 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
     for (const url of cold) {
       void handleDeepLink(harness, url)
     }
+  }
+}
+
+// Initial-state payload shape for a window spawned via
+// `spawn_window_with_payload`. Two variants:
+//
+//   - 'snapshot' — File → Duplicate Window. Carries the originator's
+//     doc identity (sourceKind + sourceValue, or null=scratch) plus
+//     fallback text. Path / URL sources are re-loaded from authority
+//     in the new window; scratch falls back to replacing the doc with
+//     the carried text so the user keeps their unsaved buffer.
+//   - 'fresh-url' — right-click → Open Link in New Window. Loads the
+//     target URL directly, bypassing the phishing gate because the
+//     originating click happened inside a trusted Nicer.md window.
+type WindowSpawnPayload =
+  | { kind: 'snapshot'; snapshot: DuplicateSnapshot }
+  | { kind: 'fresh-url'; url: string }
+
+async function applySpawnPayload(
+  harness: Harness,
+  payload: WindowSpawnPayload,
+): Promise<void> {
+  if (payload.kind === 'fresh-url') {
+    try {
+      await loadFromUrl(harness, payload.url)
+    } catch (err) {
+      console.error('[tauri-bridge] open-link-in-new-window failed:', payload.url, err)
+    }
+    return
+  }
+  const snap = payload.snapshot
+  if (snap.sourceKind === 'tauri-path' && snap.sourceValue) {
+    try {
+      await openFromTauriPath(harness, snap.sourceValue)
+      return
+    } catch (err) {
+      console.error('[tauri-bridge] duplicate re-read failed:', snap.sourceValue, err)
+      // Fall through to scratch with the carried text — better to
+      // surface SOMETHING than to leave the new window empty.
+    }
+  } else if (snap.sourceKind === 'url' && snap.sourceValue) {
+    try {
+      await loadFromUrl(harness, snap.sourceValue)
+      return
+    } catch (err) {
+      console.error('[tauri-bridge] duplicate re-fetch failed:', snap.sourceValue, err)
+    }
+  }
+  // Scratch / FSA / failed re-load: replace the doc with the carried
+  // text. Source stays null so a later Cmd+S falls through to Save-As
+  // (the new window doesn't own the original file's write path).
+  setDocState(snap.text, snap.name, null, snap.contentKind)
+  harness.replaceDoc(snap.text)
+}
+
+// Spawn a new window seeded with the current window's doc state.
+// Reuses the Tauri `spawn_window_with_payload` command which builds
+// the window AFTER inserting the payload, so the new window's
+// `drain_window_payload` always finds it. Errors are logged but not
+// surfaced — the menu item is fire-and-forget.
+export async function duplicateCurrentWindow(harness: Harness): Promise<void> {
+  if (!isTauri()) return
+  const snapshot = getDuplicateSnapshot(harness.getMarkdown())
+  // Keep the snapshot's contentKind in sync with the name in case the
+  // user renamed mid-session and we want the new window to classify
+  // correctly. Name-driven classify wins when present.
+  if (snapshot.name) {
+    snapshot.contentKind = kindForFilename(snapshot.name)
+  }
+  const payload: WindowSpawnPayload = { kind: 'snapshot', snapshot }
+  try {
+    const { invoke } = await import('@tauri-apps/api/core')
+    await invoke<string>('spawn_window_with_payload', { payload })
+  } catch (err) {
+    console.error('[tauri-bridge] duplicate window failed:', err)
+  }
+}
+
+// Spawn a new window already pointed at a URL — used by the right-
+// click "Open Link in New Window" affordance on rendered anchors.
+// Trust model: the click happened inside an existing Nicer.md window,
+// which means the user trusts the originating doc; the new window
+// loads via `loadFromUrl` directly (no phishing gate) so it matches
+// the in-place chained-click flow.
+export async function openUrlInNewWindow(url: string): Promise<void> {
+  if (!isTauri()) return
+  const payload: WindowSpawnPayload = { kind: 'fresh-url', url }
+  try {
+    const { invoke } = await import('@tauri-apps/api/core')
+    await invoke<string>('spawn_window_with_payload', { payload })
+  } catch (err) {
+    console.error('[tauri-bridge] open-url-in-new-window failed:', err)
   }
 }
 
