@@ -738,10 +738,24 @@ async function processExtensionPickup(
   const newUrl = window.location.pathname + (remaining ? `?${remaining}` : '') + window.location.hash
   window.history.replaceState({}, '', newUrl)
 
-  const pickedUrl = await askExtensionForPickup(token)
-  if (!pickedUrl) return
+  const picked = await askExtensionForPickup(token)
+  if (!picked) return
 
-  const parsed = parseGithubUrl(pickedUrl)
+  if (picked.kind === 'text') {
+    // Render-selection flow: user highlighted text on some other
+    // page and chose "Render selection in Nicer.md". Land it as a
+    // scratch doc — no source identity to write back to (it isn't
+    // a file, isn't a URL we own), so a future Cmd+S becomes Save-As.
+    const { setDocState } = await import('./doc-source')
+    setDocState(picked.value, null, null)
+    harness.replaceDoc(picked.value)
+    return
+  }
+
+  // URL flow — existing behaviour. Re-validate just-in-case (defense
+  // against a forged extension response, though externally_connectable
+  // already restricts the channel to our domain).
+  const parsed = parseGithubUrl(picked.value)
   if (!parsed.ok) return
 
   // Rewrite the address bar to the canonical `?url=<picked>` shape
@@ -750,28 +764,33 @@ async function processExtensionPickup(
   // which is the right mental model: both are user-initiated, both
   // are trusted, and the page now reads as a copyable share link.
   const dest = new URL(window.location.href)
-  dest.searchParams.set('url', pickedUrl)
+  dest.searchParams.set('url', picked.value)
   dest.hash = ''
   window.history.replaceState(
-    { chainKind: 'chain', url: pickedUrl },
+    { chainKind: 'chain', url: picked.value },
     '',
     dest.toString(),
   )
 
   try {
-    await loadFromUrl(harness, pickedUrl)
+    await loadFromUrl(harness, picked.value)
   } catch (err) {
     console.error('[ext-pickup] load failed:', err)
   }
 }
 
-function askExtensionForPickup(token: string): Promise<string | null> {
+// Pickup payload returned by the extension. Two kinds:
+//   - 'url': existing flow (toolbar / right-click on link / shortcut)
+//   - 'text': new render-selection flow (right-click on selected text)
+type ExtPickup = { kind: 'url' | 'text'; value: string }
+
+function askExtensionForPickup(token: string): Promise<ExtPickup | null> {
   const chromeShim = (globalThis as unknown as { chrome?: ChromeRuntimeShim }).chrome
   const sendMessage = chromeShim?.runtime?.sendMessage
   if (!sendMessage) return Promise.resolve(null)
-  return new Promise<string | null>((resolve) => {
+  return new Promise<ExtPickup | null>((resolve) => {
     let settled = false
-    const finish = (val: string | null): void => {
+    const finish = (val: ExtPickup | null): void => {
       if (settled) return
       settled = true
       resolve(val)
@@ -786,16 +805,24 @@ function askExtensionForPickup(token: string): Promise<string | null> {
           // Chrome's "unchecked lastError" warning, then resolve null.
           const _err = chromeShim?.runtime?.lastError
           if (_err) return finish(null)
-          if (
-            typeof response === 'object' &&
-            response !== null &&
-            'url' in response &&
-            typeof (response as { url: unknown }).url === 'string'
-          ) {
-            finish((response as { url: string }).url)
-          } else {
-            finish(null)
+          if (typeof response !== 'object' || response === null) {
+            return finish(null)
           }
+          const r = response as { kind?: unknown; value?: unknown; url?: unknown }
+          // New protocol (0.4.0+): kind + value.
+          if (
+            (r.kind === 'url' || r.kind === 'text') &&
+            typeof r.value === 'string'
+          ) {
+            finish({ kind: r.kind, value: r.value })
+            return
+          }
+          // Legacy protocol (0.3.0): only `url` field. Treat as URL kind.
+          if (typeof r.url === 'string') {
+            finish({ kind: 'url', value: r.url })
+            return
+          }
+          finish(null)
         },
       )
       // Defensive timeout in case the callback never fires (extension
