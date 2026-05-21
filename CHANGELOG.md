@@ -10,6 +10,26 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.12 — 2026-05-21
+
+### Fixed
+- **Right-click → "Open Link in New Window" now resolves share-link
+  hrefs correctly.** 0.1.11's context menu used `anchor.href`, which
+  resolves to the absolute local URL (`tauri://localhost/?url=…`) and
+  failed every `parseGithubUrl` check before reaching the loader.
+  Added `resolveLinkTarget` that extracts the `?url=` query param (the
+  share-link form most showcase / README anchors use) or falls back
+  to the direct GitHub URL when the anchor points straight at one.
+
+### Added
+- **Cmd / Ctrl / Shift-click on rendered markdown links opens a new
+  window in Tauri.** On the web shell, modifier-click already opened
+  a new browser tab via `window.open`; inside Tauri `window.open` is
+  a no-op (WKWebView can't spawn a browser tab from inside the app),
+  so the click silently did nothing. Now routes through the same
+  `openUrlInNewWindow` helper File → Duplicate Window and the right-
+  click context menu use.
+
 ## 0.1.11 — 2026-05-21
 
 ### Added

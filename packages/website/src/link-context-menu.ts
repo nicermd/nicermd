@@ -12,7 +12,7 @@
 // gist). Everything else falls through to the system context menu so
 // users can still copy / save-link-as / open-in-browser as usual.
 
-import { parseGithubUrl } from './url-open'
+import { resolveLinkTarget } from './url-open'
 import { openUrlInNewWindow } from './tauri-bridge'
 
 function isTauri(): boolean {
@@ -28,16 +28,10 @@ export function setupLinkContextMenu(): void {
     if (!(e.target instanceof Element)) return
     const anchor = e.target.closest('a[href]') as HTMLAnchorElement | null
     if (!anchor) return
-    const href = anchor.href
-    if (!href || !/^https?:/i.test(href)) return
-    // Only intercept for URLs the in-app loader can re-open. For
-    // anything else (arbitrary https links, mailto:, etc.), defer to
-    // the platform's default context menu — that's the right place
-    // for "Copy Link" / "Open in Browser" affordances we don't ship.
-    const parsed = parseGithubUrl(href)
-    if (!parsed.ok) return
+    const target = resolveLinkTarget(anchor)
+    if (!target) return
     e.preventDefault()
-    showMenu(e.clientX, e.clientY, href)
+    showMenu(e.clientX, e.clientY, target)
   })
 
   // Click anywhere else, scroll, resize, or Escape dismisses the menu.

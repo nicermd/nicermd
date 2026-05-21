@@ -28,7 +28,12 @@
 
 import { parseGithubUrl, loadFromUrl } from './url-open'
 import { confirmDiscard, isDirty } from './doc-source'
+import { openUrlInNewWindow } from './tauri-bridge'
 import type { Harness } from './main'
+
+function isTauri(): boolean {
+  return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
+}
 
 // Mode 1 (Read) and Mode 3 (Split preview) render via `nicermd-core`
 // into innerHTML. Those are the only surfaces where chaining makes
@@ -104,13 +109,25 @@ export function setupLinkChaining(harness: Harness, host: HTMLElement): void {
     dest.hash = ''
     const destStr = dest.toString()
 
-    // Modifier keys (Cmd, Ctrl, Shift) → open in a new Nicer.md tab.
-    // We intentionally DON'T pass 'noopener' so the new tab's
-    // window.opener points back at us; processBootUrlParam there
-    // treats that as the trust signal to skip the phishing gate.
-    // Both tabs are same-origin so the cross-tab reference is safe.
+    // Modifier keys (Cmd, Ctrl, Shift) → open in a new Nicer.md
+    // surface. Two runtimes, two surfaces:
+    //   - Web: window.open('?url=…', '_blank') opens a new tab. We
+    //     intentionally DON'T pass 'noopener' so the new tab's
+    //     window.opener points back at us; processBootUrlParam there
+    //     treats that as the trust signal to skip the phishing gate.
+    //     Both tabs are same-origin so the cross-tab reference is safe.
+    //   - Tauri: window.open is a no-op (WKWebView can't spawn a
+    //     browser tab from inside the app), so route through the
+    //     openUrlInNewWindow helper that uses the same Rust command
+    //     File → Duplicate Window and the right-click context menu
+    //     use. Loads directly via loadFromUrl in the new window — the
+    //     click happened inside a trusted in-app doc, no gate needed.
     if (e.metaKey || e.ctrlKey || e.shiftKey) {
-      window.open(destStr, '_blank')
+      if (isTauri()) {
+        void openUrlInNewWindow(href)
+      } else {
+        window.open(destStr, '_blank')
+      }
       return
     }
 
