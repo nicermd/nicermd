@@ -48,7 +48,18 @@ const NICER_WEB_BASE = 'https://nicer.md/?ext-pickup='
 const NICER_DESKTOP_BASE = 'nicermd://?url='
 const PICKUP_TTL_MS = 30_000
 
-const pendingByToken = new Map() // token -> { url, expiresAt }
+// Pending pickup payloads keyed by random-UUID token.
+// Two kinds:
+//   - { kind: 'url', value: 'https://...', expiresAt }: the existing
+//     URL-pickup flow (toolbar click, right-click on link / page).
+//   - { kind: 'text', value: '...', expiresAt }: the render-selection
+//     flow — user highlighted text on any page and chose
+//     "Render selection in Nicer.md" from the right-click menu. The
+//     selection text is held in the worker's memory just long enough
+//     for the new tab to retrieve it. No host permissions; no
+//     content scripts — `contexts: ['selection']` gives us
+//     info.selectionText directly via activeTab.
+const pendingByToken = new Map() // token -> { kind, value, expiresAt }
 
 function gcExpired() {
   const now = Date.now()
@@ -60,7 +71,27 @@ function gcExpired() {
 function openWeb(url) {
   if (!url) return
   const token = crypto.randomUUID()
-  pendingByToken.set(token, { url, expiresAt: Date.now() + PICKUP_TTL_MS })
+  pendingByToken.set(token, {
+    kind: 'url',
+    value: url,
+    expiresAt: Date.now() + PICKUP_TTL_MS,
+  })
+  gcExpired()
+  chrome.tabs.create({ url: NICER_WEB_BASE + encodeURIComponent(token) })
+}
+
+// Open a new Nicer.md tab seeded with the given text as a scratch
+// markdown doc. Mirrors openWeb's pickup-token mechanism so the text
+// never lands in the URL bar (which would be ugly + length-limited
+// + leak content via referer headers downstream).
+function openWebText(text) {
+  if (!text) return
+  const token = crypto.randomUUID()
+  pendingByToken.set(token, {
+    kind: 'text',
+    value: text,
+    expiresAt: Date.now() + PICKUP_TTL_MS,
+  })
   gcExpired()
   chrome.tabs.create({ url: NICER_WEB_BASE + encodeURIComponent(token) })
 }
@@ -96,6 +127,15 @@ chrome.runtime.onInstalled.addListener(() => {
     title: 'Open in Nicer.md desktop',
     contexts: ['page'],
   })
+  // Render-selection: only appears when text is selected on the page.
+  // Lets users highlight any markdown snippet (forum, Discord-in-
+  // browser, GitHub issue comment, anywhere) and render it without
+  // copy-pasting into a temp file.
+  chrome.contextMenus.create({
+    id: 'render-selection-nicermd',
+    title: 'Render selection in Nicer.md',
+    contexts: ['selection'],
+  })
 })
 
 chrome.contextMenus.onClicked.addListener((info) => {
@@ -111,6 +151,12 @@ chrome.contextMenus.onClicked.addListener((info) => {
       return
     case 'open-in-nicermd-desktop-page':
       openDesktop(info.pageUrl)
+      return
+    case 'render-selection-nicermd':
+      // info.selectionText is provided directly by the contextMenus
+      // API when `contexts: ['selection']` triggers — no scripting
+      // injection needed.
+      openWebText(info.selectionText)
       return
   }
 })
@@ -128,22 +174,35 @@ chrome.action.onClicked.addListener((tab) => {
 // extension to do. Restricted to nicer.md by externally_connectable
 // in the manifest; defence-in-depth re-check on sender.url. Tokens
 // are one-time: once retrieved, immediately removed from the map.
+//
+// Response shape:
+//   { kind: 'url' | 'text', value: string }
+//
+// The legacy `{ url: string }` shape is preserved when kind='url' so
+// older nicer.md builds that only know about URL pickups still work
+// (they read response.url; the new field is ignored). New builds
+// read kind+value to also handle the text-pickup flow.
 chrome.runtime.onMessageExternal.addListener((message, sender, sendResponse) => {
   if (!sender?.url?.startsWith('https://nicer.md/')) {
-    sendResponse({ url: null, error: 'forbidden' })
+    sendResponse({ url: null, kind: null, value: null, error: 'forbidden' })
     return false
   }
   if (message?.type !== 'pickup-load' || typeof message.token !== 'string') {
-    sendResponse({ url: null, error: 'bad-request' })
+    sendResponse({ url: null, kind: null, value: null, error: 'bad-request' })
     return false
   }
   gcExpired()
   const entry = pendingByToken.get(message.token)
   if (!entry) {
-    sendResponse({ url: null })
+    sendResponse({ url: null, kind: null, value: null })
     return false
   }
   pendingByToken.delete(message.token)
-  sendResponse({ url: entry.url })
+  sendResponse({
+    kind: entry.kind,
+    value: entry.value,
+    // Backward compat for the 0.3.0 web protocol that only handled URLs.
+    url: entry.kind === 'url' ? entry.value : null,
+  })
   return false
 })

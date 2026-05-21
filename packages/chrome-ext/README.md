@@ -1,23 +1,32 @@
 # Nicer.md Chrome extension
 
-Send any GitHub markdown URL to [Nicer.md](https://nicer.md) without
-leaving the page you're on. Three invocation paths, one tiny extension.
+Render any markdown beautifully in [Nicer.md](https://nicer.md)
+without leaving the page you're on. Four invocation paths, one tiny
+extension.
 
 ## Use
 
 **Open in the web app** (`https://nicer.md`):
 
 - **Toolbar icon** — click the Nicer.md icon; the current page
-  opens in a new Nicer.md tab.
-- **Right-click menu** — *Open in Nicer.md* appears on links
-  (sends the link URL) and on empty page area (sends the current
-  page URL).
+  opens in a new Nicer.md tab. Best on raw GitHub URLs.
+- **Right-click on a link** — *Open in Nicer.md*. Sends the link
+  URL.
+- **Right-click on the page** — *Open in Nicer.md*. Sends the
+  current page URL.
+- **Right-click on selected text** — *Render selection in Nicer.md*
+  (NEW in 0.4.0). Highlight any markdown snippet anywhere on the
+  web — a forum, a Discord-in-browser channel, a GitHub issue
+  comment, a docs site, anywhere text lives — and render it as a
+  scratch doc in Nicer.md. The selection text is passed through a
+  one-time pickup token, same channel the URL paths use; nothing
+  ever lands in the URL bar.
 - **Keyboard shortcut** — `Alt+Shift+N` (Option+Shift+N on macOS)
   fires the toolbar action from any tab. Rebind at
   `chrome://extensions/shortcuts` under *Open this page in
   Nicer.md* if you'd prefer a different chord.
 
-These paths open a new tab at `https://nicer.md/?url=<encoded-url>`.
+URL paths open a new tab at `https://nicer.md/?url=<encoded-url>`.
 Nicer.md validates the URL (GitHub family only —
 `github.com`, `raw.githubusercontent.com`, `gist.github.com`,
 `gist.githubusercontent.com`), shows a one-time phishing-gate
@@ -66,30 +75,32 @@ with `nicer.md`:
 No host permissions. No content script. No page DOM access. No
 storage. No telemetry.
 
-## How the gate-skip works (web flow)
+## How the pickup token works
 
-Without messaging, a click on the extension's toolbar / right-click
-item would arrive at `nicer.md` looking identical to a share-link
-arrival, so the page would show its phishing-gate modal — friction
-on every click. To avoid that, the web flow uses a one-time pickup
-token:
+Two flavours of payload travel through the same one-time pickup
+token: a URL (toolbar / right-click on link / page / shortcut) or
+text (right-click on selection). The protocol:
 
-1. Click the toolbar / right-click item.
+1. Click the toolbar item or pick a right-click entry.
 2. The extension generates a random UUID, stashes
-   `token → <your URL>` in service-worker memory, opens
-   `nicer.md/?ext-pickup=<token>`.
+   `token → { kind: 'url' | 'text', value }` in service-worker
+   memory, opens `nicer.md/?ext-pickup=<token>`.
 3. Nicer.md sees the token, sends a `runtime.sendMessage` to this
-   extension's specific ID asking *"what URL do you have for this
-   token?"*.
+   extension's specific ID asking *"what payload do you have for
+   this token?"*.
 4. Extension consumes the token (one-time use) and replies with the
-   URL.
-5. Nicer.md loads that URL directly — no gate.
+   `{ kind, value }` pair.
+5. Nicer.md routes by kind: URL → load via the trusted-nav path
+   (no phishing gate, since the click was an explicit user gesture
+   on a trusted browser surface); text → drop into a scratch doc.
 
 A forged or copy-pasted token matches nothing in the extension's
 memory; nicer.md silently falls back to its default boot doc. Only
 nicer.md can ask the extension this question (cross-origin pages
 are blocked by `externally_connectable`). Tokens expire after 30
-seconds even if unused.
+seconds even if unused. The selection text never lands in the URL
+bar (which would be length-limited, leakable through referer
+headers, and ugly).
 
 ## Bookmarklet alternative
 
