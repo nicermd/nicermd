@@ -37,6 +37,11 @@ export interface WysiwygHandle {
   toggleFormat(action: FormatAction): void
   isFormatActive(action: FormatAction): boolean
   onFormatUpdate(cb: () => void): () => void
+  // Expose the underlying Tiptap Editor so find-bar (and any future
+  // chrome) can register PM plugins without going through this module.
+  // Returns null when the engine hasn't finished loading yet — callers
+  // should fall back gracefully (no-op the find bar, etc.).
+  getEditor(): Editor | null
 }
 
 // Sentinel info-string shared with nicermd-core's parkHtml. Block HTML
@@ -233,5 +238,6 @@ export function createWysiwyg(
         editor.off('update', cb)
       }
     },
+    getEditor: () => editor,
   }
 }

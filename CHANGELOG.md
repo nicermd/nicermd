@@ -10,6 +10,32 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.14 — 2026-05-21
+
+### Added
+- **`Cmd+F` find-in-document across all four modes.** Floating
+  pill anchored top-right with input, match-count badge, and
+  prev/next/close controls. Enter advances; Shift+Enter goes back;
+  Escape closes. Live highlights as you type. Per-mode adapters
+  share the same UI:
+  - **Read (mode 1)**: DOM walker wraps matches in
+    `<mark class="nicermd-find">` and scrolls the current match
+    into view.
+  - **Write (mode 2)**: ProseMirror plugin renders inline
+    decorations so Tiptap's reconciliation can't strip them; cursor
+    lands on the active match via `setTextSelection`.
+  - **Split (mode 3)**: drives the CodeMirror editor pane (most
+    edits happen there; the preview reflects live).
+  - **Code (mode 4)**: hands off to `@codemirror/search`'s match
+    decorations and selection-driven navigation — without opening
+    CM's separate built-in panel (we'd otherwise be showing two
+    find bars at once).
+
+  Reclaims the shortcut from the browser's native find-in-page,
+  which can't see into virtualised editor DOM reliably. Bar
+  refreshes automatically across mode switches so highlights stay
+  in sync with the currently-visible surface.
+
 ## 0.1.13 — 2026-05-21
 
 ### Changed

@@ -43,20 +43,14 @@ is prefixed with a status tag so its disposition is scannable:
 
 ## In-doc search
 
-- **NEXT — `Cmd+F` find-in-document.** Currently a no-op in both
-  web and Tauri shells — the browser's native find bar can't see
-  into the editor / renderer DOM reliably (CodeMirror has its own
-  search, Tiptap is virtualised, Reader is inert markup). Needs a
-  custom find UI: floating bar (top-right, dismissible with Escape),
-  next/previous (Enter / Shift+Enter), highlight matches, scroll into
-  view. Should integrate with each mode's content surface:
-  - Mode 1 (Read): plain DOM, walk text nodes
-  - Mode 2 (Write, Tiptap): use ProseMirror's search plugin if
-    available, otherwise text-node walker scoped to the editor view
-  - Mode 3 (Split): both panes
-  - Mode 4 (Code, CodeMirror): hand off to CodeMirror's built-in
-    `@codemirror/search` extension
-  User flagged this as a gap during 0.1.7 dogfooding.
+- **LATER — Find polish.** v1 shipped 0.1.14 (DOM walker for Read,
+  PM Decoration for Write, @codemirror/search for Code, CM editor
+  pane for Split). Outstanding niceties when there's demand:
+  - Cmd+G / Cmd+Shift+G to advance match without the bar focused
+  - Case-sensitive + whole-word + regex toggles
+  - Match count in document title / status strip
+  - Split's preview pane participation (composite adapter)
+  - Replace alongside find (would need a "Find & Replace" mode)
 
 ## Desktop features
 

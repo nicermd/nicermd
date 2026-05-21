@@ -2305,3 +2305,105 @@ html {
   font-size: 1.05em;
 }
 
+/* --- Find bar (Cmd+F) ---
+   Floating pill anchored top-right, below the scroll-strip area. One
+   bar across all modes; per-mode adapters drive content highlighting
+   beneath it. The match-count badge dims to muted when empty so the
+   'no matches yet' state reads as passive, not error. */
+.find-bar {
+  position: fixed;
+  top: 60px;
+  right: 18px;
+  z-index: 90;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+  padding: 6px 6px 6px 12px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  color: var(--fg);
+}
+.find-bar__input {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  outline: 0;
+  color: var(--fg);
+  font: inherit;
+  width: 180px;
+  padding: 4px 0;
+}
+.find-bar__input::placeholder {
+  color: var(--muted);
+}
+.find-bar__input::-webkit-search-cancel-button {
+  display: none;
+}
+.find-bar__count {
+  color: var(--muted);
+  font-size: 12px;
+  min-width: 56px;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.find-bar__count--empty {
+  opacity: 0.55;
+}
+.find-bar__btn {
+  appearance: none;
+  background: transparent;
+  border: 0;
+  color: var(--fg);
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.find-bar__btn:hover,
+.find-bar__btn:focus-visible {
+  background: color-mix(in srgb, var(--accent) 14%, transparent);
+  outline: 0;
+}
+.find-bar__btn--close {
+  font-size: 18px;
+  color: var(--muted);
+}
+
+/* --- Find highlights ---
+   Used by every mode's adapter — the DOM walker wraps text in
+   `<mark class="nicermd-find">`; CM applies its own searchMatch
+   decoration via @codemirror/search (themed below); PM applies the
+   same classnames as the DOM walker via inline Decoration so the
+   look matches across modes. The `--current` variant signals the
+   active match in the cycle so Cmd+G / prev / next have a visual
+   anchor. */
+.nicermd-find {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+.nicermd-find--current {
+  background: var(--accent);
+  color: var(--bg);
+}
+/* CodeMirror's @codemirror/search draws its own match decorations
+   with class `cm-searchMatch` (and `cm-searchMatch-selected` for the
+   active one). Mirror our colour scheme so the Code / Split-editor
+   panes look consistent with the other modes. */
+.cm-editor .cm-searchMatch {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+.cm-editor .cm-searchMatch-selected {
+  background: var(--accent);
+  color: var(--bg);
+}
