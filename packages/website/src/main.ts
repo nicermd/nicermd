@@ -53,6 +53,11 @@ import type { FindAdapter } from './find/types'
 import { createDomFindAdapter } from './find/dom-walker'
 import { createCmFindAdapter } from './find/cm'
 import { openFindBar, closeFindBar, isFindBarOpen } from './find-bar'
+import {
+  persistMode,
+  readPersistedMode,
+  readPersistedSource,
+} from './per-window-state'
 import './main.css'
 
 const THEME_STORAGE_KEY = 'nicermd:theme'
@@ -874,8 +879,12 @@ async function boot(): Promise<void> {
 
   // Resurface the strip on mode change — user benefits from re-seeing
   // filename + active mode whenever the editing context shifts.
-  harness.onModeChange(() => {
+  harness.onModeChange((key) => {
     showStrip()
+    // Persist per-window so a restored window comes back in the same
+    // mode the user left it. localStorage key includes the window
+    // label so different windows don't clobber each other.
+    persistMode(key)
     // If the find bar is open across a mode switch, refresh it with
     // the new mode's adapter so highlights re-apply against the now-
     // visible surface. The old adapter's close() runs inside
@@ -899,16 +908,71 @@ async function boot(): Promise<void> {
   // probably what they want to read, not their old draft. Cancelling
   // the gate falls through to the recovery banner naturally.
   processBootUrlParam(harness)
-  checkRecovery(harness, bootMarkdown)
+  // Per-window source restore for relaunched Tauri windows. If the URL
+  // already carries an explicit ?url= / ?ext-pickup= we let
+  // processBootUrlParam handle that — the persisted source is the
+  // "last time" fallback, not an override. Skipped silently in the
+  // web shell unless the user has persisted source there too.
+  const restoredFromPersist = await restorePersistedSource(harness)
+  // Recovery banner compares against the doc that's actually mounted.
+  // If we restored a persisted source, autosave should compare against
+  // THAT text (so unsaved-edits-since-last-load surfaces correctly);
+  // otherwise compare against the showcase / boot doc.
+  checkRecovery(harness, restoredFromPersist ? harness.getMarkdown() : bootMarkdown)
   setupCloseGuard(harness)
 
   finish(harness)
+
+  // Restore last-active mode AFTER finish() — finish calls
+  // harness.switchTo(1) for the initial Read mount, so applying the
+  // persisted mode here means we go straight from showcase-read into
+  // the previously-active mode without flashing back through Read.
+  // No-op when persisted mode is Read or absent.
+  const persistedMode = readPersistedMode()
+  if (persistedMode && persistedMode !== 1) {
+    harness.switchTo(persistedMode)
+  }
 
   if (openPickerOnFirstLoad) {
     // Defer one tick so the harness paints first; otherwise the picker
     // overlay can sit on top of an empty document for a frame.
     setTimeout(() => openThemePicker(), 0)
   }
+}
+
+// Reload the doc that was loaded in this window when it last quit.
+// Returns true when something restored, false when nothing was
+// persisted or an explicit URL param takes priority.
+async function restorePersistedSource(harness: Harness): Promise<boolean> {
+  // Explicit URL params (share link, extension pickup) supersede the
+  // "last time" fallback — processBootUrlParam already handled them.
+  const params = new URLSearchParams(window.location.search)
+  if (params.has('url') || params.has('ext-pickup')) return false
+  const persisted = readPersistedSource()
+  if (!persisted) return false
+  try {
+    if (persisted.kind === 'tauri-path') {
+      const { openFromTauriPath } = await import('./doc-source')
+      await openFromTauriPath(harness, persisted.value)
+      return true
+    }
+    if (persisted.kind === 'url') {
+      const { loadFromUrl } = await import('./url-open')
+      await loadFromUrl(harness, persisted.value)
+      return true
+    }
+  } catch (err) {
+    // Surface but don't block boot — the user lands on showcase as
+    // they would without the persisted source. Most common cause is
+    // a moved/deleted file or transient network blip on a URL.
+    console.error('[per-window-state] failed to restore source:', err)
+    showNoticeBanner(
+      persisted.kind === 'tauri-path'
+        ? `Couldn't reopen ${persisted.name ?? 'last file'} — it may have been moved or deleted.`
+        : `Couldn't refetch ${persisted.name ?? 'last URL'} — check your connection.`,
+    )
+  }
+  return false
 }
 
 function finish(harness: Harness): void {

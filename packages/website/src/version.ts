@@ -5,7 +5,7 @@
 // maturity we don't have.
 
 export const APP_NAME = 'Nicer.md'
-export const APP_VERSION = 'v0.1.17 alpha'
+export const APP_VERSION = 'v0.1.18 alpha'
 
 // Derived from APP_VERSION so the alpha flag never drifts out of sync
 // with the badge text. Flip by removing 'alpha' from APP_VERSION on GA.
