@@ -10,6 +10,28 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.18 — 2026-05-21
+
+### Added
+- **Mode persists per window across launches.** Which of Read /
+  Write / Split / Code was active when a window last quit now comes
+  back on relaunch, keyed on the Tauri window label via
+  `nicermd:mode:<label>` in localStorage. Different windows can
+  hold different modes without clobbering each other.
+- **Restored windows reopen the file or URL they had loaded.** A
+  window that quit with a saved file or fetched URL re-reads /
+  re-fetches that source on next boot — keyed by window label
+  alongside mode so each restored window comes back at its own
+  doc, not the showcase. Tauri-path + URL sources persist; FSA
+  handles (web-only) and scratch docs explicitly clear the slot
+  so they boot fresh.
+
+  Order: an explicit `?url=` / `?ext-pickup=` in the address bar
+  still wins (share-link / extension intents are deliberate user
+  actions). The autosave recovery banner now compares against the
+  restored source's text, so unsaved-edits-since-last-load still
+  surface correctly.
+
 ## 0.1.17 — 2026-05-21
 
 ### Fixed

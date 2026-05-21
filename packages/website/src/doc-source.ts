@@ -15,6 +15,7 @@
 
 import type { Harness } from './main'
 import { classifyPath, SOURCE_EXT_TO_LANG, type ContentKind } from './url-open'
+import { persistSource as persistSourceLs } from './per-window-state'
 
 type DocSource =
   | { kind: 'tauri-path'; path: string }
@@ -94,6 +95,27 @@ export function setDocState(
   currentName = name
   currentSource = source
   currentContentKind = contentKind
+  // Persist source for next-launch restore. FSA handles can't round-
+  // trip through localStorage (the handle table doesn't survive a
+  // page reload), so they fall through to null along with scratch
+  // docs — those windows boot fresh next time.
+  if (source?.kind === 'tauri-path') {
+    persistSourceLs({
+      kind: 'tauri-path',
+      value: source.path,
+      name,
+      contentKind,
+    })
+  } else if (source?.kind === 'url') {
+    persistSourceLs({
+      kind: 'url',
+      value: source.url,
+      name,
+      contentKind,
+    })
+  } else {
+    persistSourceLs(null)
+  }
   notifySourceChanged()
 }
 
