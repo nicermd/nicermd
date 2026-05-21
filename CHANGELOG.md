@@ -10,6 +10,32 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.11 — 2026-05-21
+
+### Added
+- **File → Duplicate Window** (`Cmd+Shift+D`). Spawns a second
+  window seeded with the current doc's source — re-reads from disk
+  for path-loaded files, re-fetches for URL-loaded docs, or carries
+  the scratch text for untitled buffers. The originating window is
+  unchanged, so users get an instant side-by-side comparison view
+  without having to re-open the file manually.
+- **Right-click → "Open Link in New Window"** on rendered anchors
+  whose href points at a loader-eligible markdown URL (raw / blob+md
+  / tree / bare-repo / gist). Fills the gap left by macOS WKWebView's
+  default "Open Link in New Window", which sends users to Safari
+  rather than another Nicer.md window. Non-markdown links still get
+  the default platform context menu so Copy Link / Open in Browser
+  remain available.
+
+### Fixed
+- **Window → Bring All to Front works again.** The Tauri 2 / muda
+  predefined `bring_all_to_front` item silently no-ops for windows
+  using `TitleBarStyle::Overlay` (Nicer.md's titlebar style) because
+  those windows aren't in the `NSApp.arrangeInFront` window group.
+  Replaced with a custom handler that iterates `webview_windows()`
+  and explicitly unminimises + shows + focuses each — works
+  regardless of titlebar style.
+
 ## 0.1.10 — 2026-05-20
 
 ### Added

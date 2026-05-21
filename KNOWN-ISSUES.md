@@ -12,20 +12,6 @@ once they've been quiet for a release or two.
   competing for an OS resource, or some lifecycle race in Tauri 2's
   WebviewWindowBuilder when several windows boot in quick succession.
   Reproducer needed.
-- **Window → Bring All to Front does nothing.** Predefined menu item
-  in `lib.rs:build_menu`. Restoring an individual minimised window
-  from the windowsMenu list works fine (confirmed on 0.1.10), so this
-  is specific to the multi-window-arrange action — likely a muda-on-
-  macOS quirk that needs deeper investigation, or possibly the
-  `TitleBarStyle::Overlay` excluding our windows from the standard
-  NSApp.arrangeInFront window set. Confirmed broken on 0.1.10.
-- **No way to duplicate a window / open a link in a new window from
-  the app.** During multi-window dogfooding the user wanted a quick
-  path to put the same doc — or a link inside the current doc — in a
-  second window for side-by-side comparison. Cmd+N opens an empty
-  showcase, OS Open-With spawns a new window with a *different* file.
-  Candidates: File → Duplicate Window (Cmd+Shift+D), and/or a webview
-  context-menu entry on links offering "Open Link in New Window".
 - **Dialog keyboard nav.** `ask()`-based discard dialogs
   (Cmd+R reload, Cmd+Q quit, file-new discard) accept Enter for the
   default button but Escape doesn't reliably cancel and Left/Right
@@ -35,6 +21,36 @@ once they've been quiet for a release or two.
   click the No button.
 
 ## Recently fixed
+
+- **Window → Bring All to Front did nothing.** The Tauri 2 / muda
+  predefined `bring_all_to_front` item silently no-ops for windows
+  using `TitleBarStyle::Overlay` because those windows aren't in
+  the `NSApp.arrangeInFront` group that macOS sweeps when the menu
+  item fires. Replaced with a custom menu item whose handler
+  iterates `webview_windows()` and explicitly unminimises + shows +
+  focuses each window — works regardless of titlebar style.
+  Confirmed broken on 0.1.6 through 0.1.10; fixed in 0.1.11.
+  _packages/website/src-tauri/src/lib.rs window_submenu +
+  handle_menu_event_
+
+- **No in-app way to duplicate a window or open a link in a new
+  window.** Multi-window dogfooding kept hitting the same friction:
+  `Cmd+N` opens an empty doc, OS Open-With spawns a new window with
+  a *different* file, and macOS WKWebView's "Open Link in New
+  Window" sends users to Safari. Two complementary entry points
+  added: File → Duplicate Window (`Cmd+Shift+D`) re-loads the
+  current source (path / URL / scratch text) in a fresh window;
+  right-click on a loader-eligible anchor offers "Open Link in New
+  Window" that opens the target URL in another Nicer.md window
+  without the phishing gate (the click happened inside a trusted
+  in-app doc). Both share a new `spawn_window_with_payload` Rust
+  command that pre-assigns the new window's label, stashes a
+  payload under it, then builds — the new window's
+  `drain_window_payload` always finds the payload because the
+  insert happens before the build.
+  _packages/website/src-tauri/src/lib.rs +
+  packages/website/src/tauri-bridge.ts +
+  packages/website/src/link-context-menu.ts (new)_
 
 - **Tauri shell was single-window only.** `Cmd+N` opened a new empty
   doc in the same window; `WindowEvent::CloseRequested` always called
