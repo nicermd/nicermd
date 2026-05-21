@@ -183,6 +183,70 @@ pub fn run() {
             let _ = window_submenu.set_as_windows_menu_for_nsapp();
             app.on_menu_event(handle_menu_event);
 
+            // Warm-state deep-link handling. The JS-side onOpenUrl fires
+            // in EVERY window's listener (the plugin uses an unscoped
+            // event), so every window would race to load the URL —
+            // confusing in multi-window mode. Handling here means
+            // exactly one handler fires per deep link.
+            //
+            // Behaviour: spawn a NEW window for each deep-link URL
+            // rather than replacing the focused window. Rationale:
+            // "Open in Nicer.md desktop" from the extension is the
+            // user reaching out FROM the browser; they don't expect
+            // their current desktop state to get clobbered. (Compare
+            // RunEvent::Opened which is dirty-aware — there the user
+            // IS in the OS file-open context and replacement is a
+            // reasonable default for clean windows.)
+            //
+            // Cold-start arrivals (app launch via deep link) still
+            // route through the JS-side getCurrent() in
+            // tauri-bridge.ts so the URL lands in the auto-spawned
+            // main window rather than creating a second one.
+            {
+                use tauri_plugin_deep_link::DeepLinkExt;
+                let handle = app.handle().clone();
+                app.deep_link().on_open_url(move |event| {
+                    for url in event.urls() {
+                        // nicermd://?url=<encoded-target> — pull the
+                        // url query param and spawn for it. Anything
+                        // else (e.g. unsupported deep-link shape) is
+                        // ignored silently.
+                        let Some(target) = url
+                            .query_pairs()
+                            .find(|(k, _)| k == "url")
+                            .map(|(_, v)| v.into_owned())
+                        else {
+                            continue;
+                        };
+                        let payload = serde_json::json!({
+                            "kind": "fresh-url",
+                            "url": target,
+                        });
+                        let payloads = handle.state::<PendingWindowPayloads>();
+                        let n = WINDOW_COUNTER.fetch_add(1, Ordering::Relaxed);
+                        let label = format!("window-{n}");
+                        payloads
+                            .by_label
+                            .lock()
+                            .unwrap()
+                            .insert(label.clone(), payload);
+                        if let Err(err) = build_window(&handle, &label) {
+                            log::error!(
+                                "deep-link: failed to spawn window for {target}: {err}"
+                            );
+                            // Drop the orphan payload so it doesn't
+                            // accidentally drain into the next created
+                            // window with this label (extremely
+                            // unlikely with monotonic counter, but
+                            // cheap defence).
+                            payloads.by_label.lock().unwrap().remove(&label);
+                        } else {
+                            write_live_session(&handle);
+                        }
+                    }
+                });
+            }
+
             // Session restore: re-spawn any extra windows the user
             // had open at last quit. Order matters here — we run
             // AFTER the main window is built by Tauri's bundled

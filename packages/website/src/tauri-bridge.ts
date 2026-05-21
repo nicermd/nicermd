@@ -160,24 +160,23 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
     console.error('[tauri-bridge] failed to drain window payload:', err)
   }
 
-  // Deep-link arrivals from `nicermd://` clicks (e.g. Chrome extension's
-  // "Open in Nicer.md desktop").
-  const deepLink = await import('@tauri-apps/plugin-deep-link')
-
-  // Warm state: app already running, browser fires a deep-link.
-  await deepLink.onOpenUrl((urls) => {
-    for (const url of urls) {
-      void handleDeepLink(harness, url)
-    }
-  })
-
-  // Cold start: the deep-link click is what launched the app. The
-  // plugin stashes those URLs during boot; we pull them out now that
-  // the frontend (and the harness) is ready to consume them.
-  const cold = await deepLink.getCurrent()
-  if (cold && cold.length > 0) {
-    for (const url of cold) {
-      void handleDeepLink(harness, url)
+  // Cold-start deep-link only. The warm-state `onOpenUrl` listener
+  // used to live here too, but the plugin emits the event unscoped
+  // so EVERY window's listener fired in parallel — multiple windows
+  // racing to load the same URL. Rust now owns warm-state deep links
+  // via `app.deep_link().on_open_url(…)` in lib.rs's setup, which
+  // spawns a fresh window for each arrival (rather than replacing
+  // the focused window). Cold-start arrivals continue here so the
+  // URL lands in the auto-spawned main window instead of creating a
+  // second one — and the focus check below makes sure only main
+  // actually loads it.
+  if (label === 'main') {
+    const deepLink = await import('@tauri-apps/plugin-deep-link')
+    const cold = await deepLink.getCurrent()
+    if (cold && cold.length > 0) {
+      for (const url of cold) {
+        void handleDeepLink(harness, url)
+      }
     }
   }
 }
