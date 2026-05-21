@@ -1,23 +1,27 @@
 // Nicer.md Chrome extension — background service worker.
 //
-// Ways to send a URL to Nicer.md:
+// Ways to send content to Nicer.md:
 //
-//   Web (https://nicer.md):
-//     1. Toolbar icon (action) — click sends the current page URL.
-//     2. Right-click menu — "Open in Nicer.md" on links or anywhere
-//        on the page; sends the link URL or the page URL respectively.
-//     3. Keyboard shortcut — Alt+Shift+N (Option+Shift+N on macOS) by
-//        default; rebind at chrome://extensions/shortcuts under
-//        "Open this page in Nicer.md" if your hands prefer a
-//        different chord. Fires the toolbar action — same outcome
-//        as a click.
+//   1. Toolbar icon — click sends the current page URL to
+//      https://nicer.md (or use Alt+Shift+N shortcut).
+//   2. Right-click "Nicer.md" submenu (consistent on every page):
+//        ├─ Open in browser   → page URL (or link URL if on a link)
+//        │                      to https://nicer.md
+//        ├─ Open in desktop   → same URL via `nicermd://` scheme
+//        │                      to the macOS app (if installed)
+//        └─ Render selection  → selected text/HTML to a scratch doc
+//                               at https://nicer.md
 //
-//   Desktop (Nicer.md macOS app, if installed):
-//     4. Right-click menu — "Open in Nicer.md desktop" on links or
-//        pages. Navigates the browser to `nicermd://?url=<encoded>`;
-//        the OS routes that to the installed app, which loads the
-//        markdown in its own window. The browser shows a one-time
-//        "Open Nicer.md?" confirmation the first time per origin.
+//      All three submenu items always appear, regardless of whether
+//      anything is selected. Render-selection is a silent no-op when
+//      nothing's selected (Chrome doesn't expose selection state to
+//      permissionless extensions until click time, so we can't grey
+//      out the item passively). Smart URL: Open-in-browser /
+//      Open-in-desktop use the link URL when the click landed on
+//      a link, otherwise the page URL.
+//
+//   Desktop arrivals via `nicermd://` show the standard browser
+//   "Open Nicer.md?" confirmation the first time per origin.
 //
 // Permissions:
 //   - contextMenus: required to register the right-click items.
@@ -112,61 +116,64 @@ function openDesktop(url) {
 }
 
 chrome.runtime.onInstalled.addListener(() => {
-  // Naming convention:
-  //   - Link context → "Open link" (the noun is the link target)
-  //   - Page context → "Open this page" (the noun is the whole tab)
-  //   - Selection context → "Render selection" (the noun is the highlight)
-  // The page item used to read "Open in Nicer.md" which collided
-  // visually with the selection item when text was selected (Chrome
-  // shows both because contexts are additive) — users could click
-  // the page item thinking it'd render their selection. Disambiguated
-  // here so each menu line maps unambiguously to a payload.
+  // Single "Nicer.md" submenu, three always-visible children. The
+  // earlier flat layout (separate page/link/selection contexts) gave
+  // users an inconsistent right-click — they'd see 2 items on a
+  // background, 2 on a link, 3 with text selected. Consolidating
+  // under one parent + always showing all three actions makes the
+  // affordance predictable: same shape on every right-click,
+  // grouped under the Nicer.md brand.
+  //
+  // The "Open in browser" / "Open in desktop" children use a
+  // smart-URL convention: if the click was on a link, use the link
+  // URL; otherwise use the page URL. Render-selection always shows
+  // but is a silent no-op when there's no text — Chrome's
+  // contextMenus API doesn't surface selection state until click
+  // time, so passive grey-out would require continuous tab/selection
+  // monitoring (i.e. host permissions + content script) which we
+  // deliberately don't ship.
   chrome.contextMenus.create({
-    id: 'open-in-nicermd-link',
-    title: 'Open link in Nicer.md',
-    contexts: ['link'],
+    id: 'nicermd-parent',
+    title: 'Nicer.md',
+    contexts: ['all'],
   })
   chrome.contextMenus.create({
-    id: 'open-in-nicermd-page',
-    title: 'Open this page in Nicer.md',
-    contexts: ['page'],
+    id: 'nicermd-open-web',
+    parentId: 'nicermd-parent',
+    title: 'Open in browser',
+    contexts: ['all'],
   })
   chrome.contextMenus.create({
-    id: 'open-in-nicermd-desktop-link',
-    title: 'Open link in Nicer.md desktop',
-    contexts: ['link'],
+    id: 'nicermd-open-desktop',
+    parentId: 'nicermd-parent',
+    title: 'Open in desktop',
+    contexts: ['all'],
   })
   chrome.contextMenus.create({
-    id: 'open-in-nicermd-desktop-page',
-    title: 'Open this page in Nicer.md desktop',
-    contexts: ['page'],
-  })
-  // Render-selection: only appears when text is selected on the page.
-  // Lets users highlight any markdown snippet (forum, Discord-in-
-  // browser, GitHub issue comment, anywhere) and render it without
-  // copy-pasting into a temp file.
-  chrome.contextMenus.create({
-    id: 'render-selection-nicermd',
-    title: 'Render selection in Nicer.md',
-    contexts: ['selection'],
+    id: 'nicermd-render-selection',
+    parentId: 'nicermd-parent',
+    title: 'Render selection',
+    contexts: ['all'],
   })
 })
 
 chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   switch (info.menuItemId) {
-    case 'open-in-nicermd-link':
-      openWeb(info.linkUrl)
+    case 'nicermd-open-web':
+      // Smart URL: if the right-click was on a link, open the link's
+      // target; otherwise open the page itself. Same convention for
+      // the desktop variant.
+      openWeb(info.linkUrl || info.pageUrl)
       return
-    case 'open-in-nicermd-page':
-      openWeb(info.pageUrl)
+    case 'nicermd-open-desktop':
+      openDesktop(info.linkUrl || info.pageUrl)
       return
-    case 'open-in-nicermd-desktop-link':
-      openDesktop(info.linkUrl)
-      return
-    case 'open-in-nicermd-desktop-page':
-      openDesktop(info.pageUrl)
-      return
-    case 'render-selection-nicermd': {
+    case 'nicermd-render-selection': {
+      // Silent no-op when nothing's selected. The menu item is
+      // always visible (we can't passively grey it out without
+      // continuous selection tracking, which would require host
+      // permissions across all sites).
+      if (!info.selectionText) return
       // info.selectionText is plain text — Chrome strips all the
       // web styling. To preserve formatting (bold, links, lists,
       // headings) we run a tiny scripting injection on the active
