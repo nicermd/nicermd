@@ -10,6 +10,22 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.22 — 2026-05-21
+
+### Fixed
+- **Deep-link arrivals now reliably open a new window.** 0.1.20
+  used a Rust-side `on_open_url` handler that called build_window
+  directly — crashed because the callback fires off the main thread
+  on macOS. 0.1.21 tried `run_on_main_thread` to dispatch back to
+  main — the task never ran in practice (deep-link arrival was
+  silently a no-op). Reverted to JS-side `onOpenUrl` registered
+  only in the main window (so the plugin's global emit doesn't
+  fan out to every window's listener), which calls the existing
+  `spawn_window_with_payload` IPC command — a proven path used by
+  Cmd+N, Duplicate Window, and Open Link in New Window. Spawn lands
+  on the main thread via Tauri's command runtime, no manual
+  marshalling needed.
+
 ## 0.1.21 — 2026-05-21
 
 ### Fixed

@@ -160,24 +160,54 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
     console.error('[tauri-bridge] failed to drain window payload:', err)
   }
 
-  // Cold-start deep-link only. The warm-state `onOpenUrl` listener
-  // used to live here too, but the plugin emits the event unscoped
-  // so EVERY window's listener fired in parallel — multiple windows
-  // racing to load the same URL. Rust now owns warm-state deep links
-  // via `app.deep_link().on_open_url(…)` in lib.rs's setup, which
-  // spawns a fresh window for each arrival (rather than replacing
-  // the focused window). Cold-start arrivals continue here so the
-  // URL lands in the auto-spawned main window instead of creating a
-  // second one — and the focus check below makes sure only main
-  // actually loads it.
+  // Deep-link arrivals from `nicermd://` clicks (Chrome ext "Open
+  // in Nicer.md desktop", external apps using the scheme). Two
+  // arrival modes, both handled here ONLY in the main window so
+  // that — even though the plugin emits its event globally to
+  // every window's listener — exactly one handler claims each
+  // event. Other windows skip the import entirely.
+  //
+  //   - Warm state: app already running, click fires onOpenUrl.
+  //     Spawn a fresh window via openUrlInNewWindow so existing
+  //     windows aren't clobbered. (Tried a Rust-side on_open_url in
+  //     0.1.20/0.1.21; the callback fires off-main-thread and
+  //     run_on_main_thread didn't reliably dispatch in practice —
+  //     0.1.20 hung, 0.1.21 silently no-op'd. Going through the
+  //     `spawn_window_with_payload` IPC command lands on the main
+  //     thread via Tauri's command runtime, which is the proven
+  //     path used by Cmd+N / Duplicate Window already.)
+  //   - Cold start: app launched via the deep link. The plugin
+  //     stashed the URL during init; we pull it out now and load
+  //     it into THIS (the auto-spawned main) window, since main is
+  //     fresh and creating a second window would be confusing on
+  //     launch.
   if (label === 'main') {
     const deepLink = await import('@tauri-apps/plugin-deep-link')
+    await deepLink.onOpenUrl((urls) => {
+      for (const url of urls) {
+        const target = extractDeepLinkTarget(url)
+        if (target) void openUrlInNewWindow(target)
+      }
+    })
     const cold = await deepLink.getCurrent()
     if (cold && cold.length > 0) {
       for (const url of cold) {
         void handleDeepLink(harness, url)
       }
     }
+  }
+}
+
+function extractDeepLinkTarget(deepLinkUrl: string): string | null {
+  // nicermd://?url=<encoded-target> → <decoded-target>. The plugin
+  // hands us either a string or a URL-like object across versions;
+  // normalise via the URL constructor.
+  try {
+    const parsed = new URL(deepLinkUrl)
+    if (parsed.protocol !== 'nicermd:') return null
+    return parsed.searchParams.get('url')
+  } catch {
+    return null
   }
 }
 
