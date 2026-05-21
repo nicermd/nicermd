@@ -6,25 +6,23 @@ extension.
 
 ## Use
 
-**Open in the web app** (`https://nicer.md`):
-
 - **Toolbar icon** — click the Nicer.md icon; the current page
   opens in a new Nicer.md tab. Best on raw GitHub URLs.
-- **Right-click on a link** — *Open in Nicer.md*. Sends the link
-  URL.
-- **Right-click on the page** — *Open in Nicer.md*. Sends the
-  current page URL.
-- **Right-click on selected text** — *Render selection in Nicer.md*
-  (NEW in 0.4.0). Highlight any markdown snippet anywhere on the
-  web — a forum, a Discord-in-browser channel, a GitHub issue
-  comment, a docs site, anywhere text lives — and render it as a
-  scratch doc in Nicer.md. The selection text is passed through a
-  one-time pickup token, same channel the URL paths use; nothing
-  ever lands in the URL bar.
+- **Right-click → Nicer.md** — a consistent three-item submenu
+  appears on every right-click, anywhere on any page:
+  - *Open in browser* — opens the link URL (if you right-clicked on
+    a link) or the page URL (otherwise) at `https://nicer.md`.
+  - *Open in desktop* — same URL, opened via the `nicermd://` scheme
+    if the macOS app is installed.
+  - *Render selection* — highlights anywhere on the web (forum,
+    Discord-in-browser, GitHub issue comment, docs site) become
+    a scratch doc in Nicer.md. The selection's HTML is preserved
+    (bold, links, lists carry over) via a tiny scripting injection
+    scoped to the active tab. No-op silently if nothing is
+    selected when you click.
 - **Keyboard shortcut** — `Alt+Shift+N` (Option+Shift+N on macOS)
   fires the toolbar action from any tab. Rebind at
-  `chrome://extensions/shortcuts` under *Open this page in
-  Nicer.md* if you'd prefer a different chord.
+  `chrome://extensions/shortcuts`.
 
 URL paths open a new tab at `https://nicer.md/?url=<encoded-url>`.
 Nicer.md validates the URL (GitHub family only —

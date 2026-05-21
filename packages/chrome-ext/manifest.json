@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Nicer.md",
-  "version": "0.4.2",
+  "version": "0.4.3",
   "description": "Render markdown beautifully: GitHub URLs from the toolbar, any selected text via right-click, or a keyboard shortcut. Web or desktop targets.",
   "homepage_url": "https://nicer.md",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAvyHXj3WwsOKktLew92kGWJ0rR+jlRiVuhgFgiJHdV2dTmwPSZo8WLgjYALMRDmuYgVWUla1PsC37IqekfrXzTCUdkgYYgqDUfLR83BYDHq1ASVl6KBFokmBggyWHDulmDAEoeTSqZdWNKPkueZ7AXwAMspR+Lc+jhD8FK85Q6NalqekG2u7GUGNJjW9xb3MPBCqIKVJOSmVRlOuOKAC+baiFeUtQcFv8A3fuDc7aQPSs2zsQyqboaR5cHZyBopgMULYtBGvfsno+c3EBm3UX1xpVytJleEFxxVAu4BOE8LAdPxcZk3NdtGbQ+vzQz0BiVK5NMJRu9UawO/NyxWTvxQIDAQAB",
