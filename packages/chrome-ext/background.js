@@ -25,6 +25,11 @@
 //     extension (click / shortcut). Lets us read the active tab's
 //     URL just then. We never read URLs unprompted; no host
 //     permissions, no content scripts, no storage, no telemetry.
+//   - scripting: gates the chrome.scripting namespace itself. Only
+//     used in the render-selection click handler, scoped to the
+//     active tab (which activeTab grants), to read the live
+//     selection as HTML for fidelity (preserves bold / links /
+//     lists when rendering web-styled text in Nicer.md).
 //
 // Web flows use a one-time "pickup" token (random UUID per click)
 // rather than putting the GitHub URL straight in the address bar.
@@ -147,7 +152,7 @@ chrome.runtime.onInstalled.addListener(() => {
   })
 })
 
-chrome.contextMenus.onClicked.addListener((info) => {
+chrome.contextMenus.onClicked.addListener(async (info, tab) => {
   switch (info.menuItemId) {
     case 'open-in-nicermd-link':
       openWeb(info.linkUrl)
@@ -161,14 +166,44 @@ chrome.contextMenus.onClicked.addListener((info) => {
     case 'open-in-nicermd-desktop-page':
       openDesktop(info.pageUrl)
       return
-    case 'render-selection-nicermd':
-      // info.selectionText is provided directly by the contextMenus
-      // API when `contexts: ['selection']` triggers — no scripting
-      // injection needed.
-      openWebText(info.selectionText)
+    case 'render-selection-nicermd': {
+      // info.selectionText is plain text — Chrome strips all the
+      // web styling. To preserve formatting (bold, links, lists,
+      // headings) we run a tiny scripting injection on the active
+      // tab to serialise the live selection to HTML. activeTab
+      // (granted to us by the right-click invocation) covers the
+      // permission; `scripting` is declared in the manifest as the
+      // API namespace gate. Falls back to plain text if the
+      // injection fails (e.g. on chrome:// / about: / blocked-CSP
+      // pages where executeScript can't run).
+      const payload = await getSelectionHtml(tab?.id) ?? info.selectionText
+      openWebText(payload)
       return
+    }
   }
 })
+
+async function getSelectionHtml(tabId) {
+  if (typeof tabId !== 'number') return null
+  try {
+    const results = await chrome.scripting.executeScript({
+      target: { tabId },
+      func: () => {
+        const sel = window.getSelection()
+        if (!sel || sel.rangeCount === 0) return null
+        const range = sel.getRangeAt(0)
+        const container = document.createElement('div')
+        container.appendChild(range.cloneContents())
+        return container.innerHTML
+      },
+    })
+    const html = results?.[0]?.result
+    return typeof html === 'string' && html.length > 0 ? html : null
+  } catch (err) {
+    console.warn('[nicermd-ext] selection-as-html failed:', err)
+    return null
+  }
+}
 
 // Both a toolbar click and the user-assigned keyboard shortcut
 // (via the manifest's `_execute_action` command) fire this event

@@ -746,9 +746,23 @@ async function processExtensionPickup(
     // page and chose "Render selection in Nicer.md". Land it as a
     // scratch doc — no source identity to write back to (it isn't
     // a file, isn't a URL we own), so a future Cmd+S becomes Save-As.
+    //
+    // The text may be plain (no markdown) or HTML (the extension's
+    // 0.4.2+ selection-as-HTML path). markdown-it passes inline
+    // HTML through, so a rendered selection comes back styled in
+    // Read mode.
+    //
+    // Force Read mode regardless of the persisted mode for this
+    // tab — the user just asked to RENDER a selection, so dumping
+    // them into Code or Write mode (where the input shows as raw
+    // source) defeats the feature. processBootUrlParam runs before
+    // finish() applies persistedMode, so the switchTo here gets
+    // overridden if we just call it directly. Instead, set a global
+    // flag the boot path reads to skip its persistedMode pass.
     const { setDocState } = await import('./doc-source')
     setDocState(picked.value, null, null)
     harness.replaceDoc(picked.value)
+    ;(window as unknown as { __nicermdForceReadMode?: boolean }).__nicermdForceReadMode = true
     return
   }
 

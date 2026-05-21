@@ -937,7 +937,14 @@ async function boot(): Promise<void> {
   // persisted mode here means we go straight from showcase-read into
   // the previously-active mode without flashing back through Read.
   // No-op when persisted mode is Read or absent.
-  if (bootPersistedMode && bootPersistedMode !== 1) {
+  //
+  // ext-pickup text overrides persisted mode (it sets a window flag
+  // in processExtensionPickup): the user just asked to RENDER a
+  // selection, so dropping them in Code mode would defeat the
+  // feature even if Code was the last-used mode for this tab label.
+  const forceRead = (window as unknown as { __nicermdForceReadMode?: boolean })
+    .__nicermdForceReadMode === true
+  if (!forceRead && bootPersistedMode && bootPersistedMode !== 1) {
     harness.switchTo(bootPersistedMode)
   }
 

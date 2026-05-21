@@ -10,6 +10,27 @@ next release.
 
 - See `git log` for the running list of changes on `main`.
 
+## 0.1.20 — 2026-05-21
+
+### Changed
+- **Deep-link arrivals (`nicermd://…` from the Chrome extension)
+  now spawn a fresh window** rather than replacing the focused
+  window's content. The previous JS-side `onOpenUrl` listener fired
+  in EVERY window in parallel (the plugin's event is unscoped), so
+  multiple windows raced to load the URL — and the user's expectation
+  of "Open in Nicer.md desktop" is "send this to the app, leave my
+  current state alone." Moved to a single Rust-side `on_open_url`
+  handler that spawns one new window per arrival. Cold-start deep
+  links still land in the auto-spawned main window via JS-side
+  `getCurrent()`.
+
+### Fixed
+- **Render-selection text now forces Read mode** regardless of the
+  tab's persisted mode. A tab whose last-used mode was Code or
+  Split would otherwise drop the rendered selection straight into
+  raw-source view — defeating the feature. ext-pickup text sets a
+  one-shot boot flag that overrides the persisted-mode restore.
+
 ## 0.1.19 — 2026-05-21
 
 ### Fixed
