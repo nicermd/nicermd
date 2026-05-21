@@ -13,6 +13,38 @@
 /assets/*
   Cache-Control: public, max-age=31536000, immutable
 
+# index.html: short browser cache (so deploys roll out within minutes
+# of merge), long CF edge cache (so viral-spike pageviews hit the
+# edge instead of the origin). max-age=0 means the browser always
+# revalidates; s-maxage=3600 + stale-while-revalidate lets CF serve
+# the cached HTML for an hour and refresh in the background. The SW
+# is network-first for navigations and re-applies its own cache layer
+# on top — this header just keeps CF from acting as the origin on
+# every page view.
+/
+  Cache-Control: public, max-age=0, s-maxage=3600, stale-while-revalidate=86400
+/index.html
+  Cache-Control: public, max-age=0, s-maxage=3600, stale-while-revalidate=86400
+
+# Brand assets that rarely change. Tagged with the build by file
+# content but not content-hashed in the filename, so they get a
+# medium-long cache rather than immutable. New favicons / og-image
+# can be pushed by changing the filename or waiting out the cache.
+/favicon.ico
+  Cache-Control: public, max-age=604800
+/favicon-32.png
+  Cache-Control: public, max-age=604800
+/favicon-192.png
+  Cache-Control: public, max-age=604800
+/favicon-256.png
+  Cache-Control: public, max-age=604800
+/favicon-512.png
+  Cache-Control: public, max-age=604800
+/sample-image.svg
+  Cache-Control: public, max-age=604800
+/manifest.webmanifest
+  Cache-Control: public, max-age=86400
+
 # Don't let CDNs (or browsers) sit on a stale SW. Updates have to ship
 # promptly so cache invalidation on activate actually fires.
 /sw.js
