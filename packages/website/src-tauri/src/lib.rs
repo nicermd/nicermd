@@ -100,6 +100,7 @@ fn spawn_window_with_payload(
     let label = format!("window-{n}");
     state.by_label.lock().unwrap().insert(label.clone(), payload);
     build_window(&app, &label).map_err(|e| e.to_string())?;
+    write_session(&app);
     Ok(label)
 }
 
@@ -167,6 +168,35 @@ pub fn run() {
             // body before.
             let _ = window_submenu.set_as_windows_menu_for_nsapp();
             app.on_menu_event(handle_menu_event);
+
+            // Session restore: re-spawn any extra windows the user
+            // had open at last quit. Order matters here — we run
+            // AFTER the main window is built by Tauri's bundled
+            // config, so the only labels we need to recreate are the
+            // non-"main" ones. The window-state plugin restores each
+            // window's geometry as it boots, so by the time the user
+            // sees them they're back in the same positions. Bump
+            // WINDOW_COUNTER past the highest restored label so a
+            // subsequent Cmd+N doesn't collide.
+            let prior = read_session(app.handle());
+            let mut highest: u32 = 1;
+            for label in &prior.labels {
+                if label == "main" {
+                    continue;
+                }
+                if let Some(n) = label
+                    .strip_prefix("window-")
+                    .and_then(|s| s.parse::<u32>().ok())
+                {
+                    highest = highest.max(n);
+                }
+                if let Err(err) = build_window(app.handle(), label) {
+                    log::error!("session restore: failed to spawn {label}: {err}");
+                }
+            }
+            if highest > 1 {
+                WINDOW_COUNTER.store(highest + 1, Ordering::Relaxed);
+            }
 
             // Deep-link handling is done entirely on the JS side via
             // `@tauri-apps/plugin-deep-link`'s `onOpenUrl` (warm state)
@@ -312,12 +342,78 @@ pub fn run() {
             let dirty_state = app_handle.state::<WindowDirty>();
             dirty_state.by_label.lock().unwrap().remove(&label);
 
+            // Update session manifest so the next launch only re-
+            // spawns windows that are STILL open — explicitly closed
+            // windows stay closed (matches Mac conventions where a
+            // Cmd+W'd window doesn't resurrect on relaunch).
+            write_session(app_handle);
+
             if app_handle.webview_windows().is_empty() {
                 app_handle.exit(0);
             }
         }
         _ => {}
     });
+}
+
+// Session persistence: which windows were open at last quit. The
+// tauri-plugin-window-state plugin handles per-label geometry, but
+// nothing re-creates the windows on launch — only the main window
+// auto-spawns from tauri.conf.json. We track the set of currently-
+// open labels ourselves and re-spawn them in setup() so the full
+// multi-window arrangement comes back, not just the focused window.
+//
+// Persistence is a single JSON file in the app's config directory,
+// rewritten on every window create / destroy. The file is tiny
+// (just a list of strings) and lookups happen exactly once at boot
+// so the I/O cost is negligible.
+
+#[derive(serde::Serialize, serde::Deserialize, Default)]
+struct SessionLabels {
+    labels: Vec<String>,
+}
+
+fn session_file_path(app: &AppHandle) -> Option<std::path::PathBuf> {
+    app.path()
+        .app_config_dir()
+        .ok()
+        .map(|d| d.join("session.json"))
+}
+
+fn read_session(app: &AppHandle) -> SessionLabels {
+    let Some(path) = session_file_path(app) else {
+        return SessionLabels::default();
+    };
+    let Ok(text) = std::fs::read_to_string(&path) else {
+        return SessionLabels::default();
+    };
+    serde_json::from_str(&text).unwrap_or_default()
+}
+
+fn write_session(app: &AppHandle) {
+    let Some(path) = session_file_path(app) else {
+        return;
+    };
+    if let Some(parent) = path.parent() {
+        if let Err(err) = std::fs::create_dir_all(parent) {
+            log::error!("session write: failed to mkdir {parent:?}: {err}");
+            return;
+        }
+    }
+    let labels: Vec<String> = app
+        .webview_windows()
+        .into_iter()
+        .map(|(label, _)| label)
+        .collect();
+    let state = SessionLabels { labels };
+    match serde_json::to_string(&state) {
+        Ok(text) => {
+            if let Err(err) = std::fs::write(&path, text) {
+                log::error!("session write: failed to write {path:?}: {err}");
+            }
+        }
+        Err(err) => log::error!("session write: serialise failed: {err}"),
+    }
 }
 
 fn focused_window_label(app: &AppHandle) -> Option<String> {
@@ -392,6 +488,7 @@ fn create_window(app: &AppHandle) -> tauri::Result<String> {
     let n = WINDOW_COUNTER.fetch_add(1, Ordering::Relaxed);
     let label = format!("window-{n}");
     build_window(app, &label)?;
+    write_session(app);
     Ok(label)
 }
 
