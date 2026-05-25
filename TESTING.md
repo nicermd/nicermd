@@ -1,4 +1,4 @@
-# Developer testing scenarios
+# Testing
 
 Quick links for exercising platform variants and other content paths
 without typing query strings into the address bar. Links here use
@@ -49,5 +49,5 @@ Only the built-in landing doc is touched; user-loaded markdown
 
 Drop another `## Section` here for any other content paths worth
 clicking through — error states, edge-case markdown, themes, etc.
-This file lives at `docs/dev-testing.md` in the nicermd repo and
-loads via `?url=…` from the homepage's footer.
+This file lives at `TESTING.md` in the nicermd repo root and loads
+via `?url=…` from the homepage's Project docs list.

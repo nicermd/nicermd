@@ -65,6 +65,7 @@ The project's own docs, all rendered in this very app:
 - [Backlog](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnicermd%2Fnicermd%2Fmain%2FBACKLOG.md) — deferred work, candidates for future commits
 - [Changelog](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnicermd%2Fnicermd%2Fmain%2FCHANGELOG.md) — version history
 - [Contributing](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnicermd%2Fnicermd%2Fmain%2FCONTRIBUTING.md) — how to file bugs and feature requests
+- [Testing](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnicermd%2Fnicermd%2Fmain%2FTESTING.md) — platform variants and other test scenarios
 - [License](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnicermd%2Fnicermd%2Fmain%2FLICENSE) — MIT
 - [Third-party licenses](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnicermd%2Fnicermd%2Fmain%2FTHIRD-PARTY-LICENSES.md) — every bundled dependency and its license
 
@@ -120,7 +121,3 @@ A horizontal rule —
 ## Make it yours
 
 Select all (`Cmd+A`), delete, and paste or write your own markdown. The canvas is yours.
-
----
-
-[Developer testing scenarios](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnicermd%2Fnicermd%2Ffeature%2Fplatform-homepage-variants%2Fdocs%2Fdev-testing.md) — platform variants and other content paths, for maintainers.
