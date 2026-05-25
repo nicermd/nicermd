@@ -123,4 +123,4 @@ Select all (`Cmd+A`), delete, and paste or write your own markdown. The canvas i
 
 ---
 
-[Developer testing scenarios](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnicermd%2Fnicermd%2Fmain%2Fdocs%2Fdev-testing.md) — platform variants and other content paths, for maintainers.
+[Developer testing scenarios](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnicermd%2Fnicermd%2Ffeature%2Fplatform-homepage-variants%2Fdocs%2Fdev-testing.md) — platform variants and other content paths, for maintainers.
