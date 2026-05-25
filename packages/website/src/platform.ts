@@ -6,7 +6,7 @@
 // a Windows VM. The override is read once at module load; URL changes
 // after boot don't take effect until reload.
 
-type PlatformKind = 'mac' | 'win' | 'linux'
+export type PlatformKind = 'mac' | 'win' | 'linux'
 
 function readOverride(): PlatformKind | null {
   if (typeof window === 'undefined') return null
@@ -16,20 +16,24 @@ function readOverride(): PlatformKind | null {
 
 const override = readOverride()
 
-function detectFromNavigator(): boolean {
-  if (typeof navigator === 'undefined') return false
-  const platform =
+function detectFromNavigator(): PlatformKind {
+  if (typeof navigator === 'undefined') return 'mac'
+  const raw = (
     (navigator as unknown as { userAgentData?: { platform?: string } }).userAgentData?.platform ??
     navigator.platform ??
     ''
-  return /(Mac|iPad|iPhone)/i.test(platform)
+  ).toLowerCase()
+  if (/mac|ipad|iphone/.test(raw)) return 'mac'
+  if (/win/.test(raw)) return 'win'
+  return 'linux'
 }
 
-export const IS_MAC: boolean = override ? override === 'mac' : detectFromNavigator()
+export const PLATFORM: PlatformKind = override ?? detectFromNavigator()
+export const IS_MAC: boolean = PLATFORM === 'mac'
 
-// Surface the override on <html> so downstream code (or future CSS)
-// can react without re-parsing the query string. Empty when no
-// override is active.
-if (typeof document !== 'undefined' && override) {
-  document.documentElement.dataset.platformOverride = override
+// Surface the active platform + override (if any) on <html> so CSS
+// and downstream code can react without re-detecting / re-parsing.
+if (typeof document !== 'undefined') {
+  document.documentElement.dataset.platform = PLATFORM
+  if (override) document.documentElement.dataset.platformOverride = override
 }

@@ -26,7 +26,8 @@ import { tags as t } from '@lezer/highlight'
 import { render as renderMarkdown, renderPlain, renderSource } from 'nicermd-core'
 
 import showcase from './samples/showcase.md?raw'
-import { IS_MAC } from './platform'
+import { IS_MAC, PLATFORM } from './platform'
+import { stripPlatformBlocks } from './platform-blocks'
 import { setupTauriBridge } from './tauri-bridge'
 import { setupLinkContextMenu } from './link-context-menu'
 import { setupFileDrop } from './file-drop'
@@ -852,13 +853,20 @@ async function boot(): Promise<void> {
   host.className = 'mode-host'
   root.appendChild(host)
 
-  // Showcase is authored Mac-side ('Cmd+1', 'Cmd+S', etc.). On non-Mac
-  // boots rewrite those tokens inside inline code spans only — prose
-  // outside backticks (if any) stays untouched. Only applies to the
-  // built-in landing doc; user-loaded markdown is rendered as-authored.
-  let bootMarkdown: string = IS_MAC
-    ? showcase
-    : showcase.replace(/`([^`]*)`/g, (_m, inner: string) => `\`${inner.replace(/\bCmd\+/g, 'Ctrl+')}\``)
+  // Showcase has two layers of platform tailoring:
+  //
+  //   1. `<!-- :platform mac --> ... <!-- :end -->` blocks let sections
+  //      (install CTA, "open in desktop" copy) target a subset of
+  //      platforms. Stripped at boot before anything renders.
+  //   2. Inline code spans containing 'Cmd+' get rewritten to 'Ctrl+'
+  //      on non-Mac boots — covers the keyboard shortcuts.
+  //
+  // Both only touch the built-in landing doc; user-loaded markdown is
+  // rendered as-authored regardless.
+  let bootMarkdown: string = stripPlatformBlocks(showcase, PLATFORM)
+  if (!IS_MAC) {
+    bootMarkdown = bootMarkdown.replace(/`([^`]*)`/g, (_m, inner: string) => `\`${inner.replace(/\bCmd\+/g, 'Ctrl+')}\``)
+  }
   let harness: Harness
   // Tree-shake gate: import.meta.env.DEV is a compile-time `false` in
   // `pnpm build`, so the entire branch (and ./dev-features) is dead-code-
