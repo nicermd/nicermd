@@ -87,15 +87,35 @@ is prefixed with a status tag so its disposition is scannable:
   `text/markdown` content-type and replace inline in the same tab.
   Requires host permissions on the GitHub family of domains + a
   content script that replaces the DOM. Biggest lift; biggest reach.
-- **LATER — Chrome Web Store listing.** Lightweight extension is
-  feature-complete and dogfooded. To publish: $5 developer account,
-  listing copy, screenshots (toolbar / context menu / render-
-  selection / deep-link in action), privacy policy markdown.
-  Listing artwork should highlight: GitHub URL one-click, render-
-  selection (the big differentiator), no host permissions.
+- **NEXT — Chrome Web Store listing.** In progress (maintainer pursuing
+  submission). Lightweight extension is feature-complete and dogfooded.
+  Needs: $5 developer account, listing copy, screenshots (toolbar /
+  context menu / render-selection / deep-link in action), privacy
+  policy markdown. Listing artwork should highlight: GitHub URL
+  one-click, render-selection (the big differentiator), no host
+  permissions.
+- **PARKED — Firefox Add-ons (AMO) listing.**
+  _Gated on Chrome Web Store traction first._ MV3 supported on AMO
+  but listing artwork + privacy disclosures duplicate work. Free to
+  publish. Revisit once Chrome listing is live and dogfooded.
+- **PARKED — Edge Add-ons listing.**
+  _Gated similarly._ Microsoft store, free, MV3-compatible. Marginal
+  reach beyond Chrome Web Store (Edge users can install from CWS).
+- **PARKED — Safari extension.**
+  _Gated on Apple Developer Program enrollment_ (also gates signed
+  Mac builds, listed below). Different format (App Extension bundled
+  in a Mac app). Real work, lower reach than the other browsers.
 
 ## Distribution
 
+- **DONE 2026-05-25 — Homebrew custom tap.** `brew install --cask nicermd/tap/nicermd`
+  via [`nicermd/homebrew-tap`](https://github.com/nicermd/homebrew-tap).
+  Pulls the universal DMG from the latest `tauri-v*` GitHub release;
+  livecheck scans the releases.atom for tauri-v* tags (so chrome-ext-v*
+  tags don't trip version detection). Works with unsigned builds — users
+  still hit the Gatekeeper right-click-Open prompt first run, same as
+  the direct DMG. Official `homebrew-cask` PR is blocked on signed
+  builds (parked below).
 - **PARKED — Layer 2: signed + notarized macOS builds.**
   _Gated on demand or personal-workflow need; see [parked decisions]
   memory entry._ Requires Apple Developer Program enrollment ($99/year),
