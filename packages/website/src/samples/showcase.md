@@ -16,6 +16,27 @@ A nicer, zero-server markdown reader. The page you're looking at is plain markdo
 - `Cmd+Alt+T` to switch theme. `Cmd+Alt+F` for fonts.
 - `Cmd+K` for command palette. The fastest way to find everything else.
 
+<!-- :platform mac -->
+## Take it with you
+
+Install the desktop app:
+
+```sh
+brew install --cask nicermd/tap/nicermd
+```
+
+Or grab the [universal DMG](https://github.com/nicermd/nicermd/releases/latest). Files open in their own window; drop a `.md` on the dock icon.
+<!-- :end -->
+
+<!-- :platform win linux -->
+## Take it with you
+
+A native desktop build for your platform isn't ready yet — [open an issue](https://github.com/nicermd/nicermd/issues) if you want one. Meanwhile:
+
+- Install the [Chrome extension](https://github.com/nicermd/nicermd/tree/main/packages/chrome-ext#install-unpacked) — works in Chrome, Edge, Brave, Vivaldi, Arc.
+- Pin this page or install it as a PWA from your browser's address-bar menu.
+<!-- :end -->
+
 ## Try it on a real document
 
 - [Markdown Cheatsheet](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fwiki%2Fadam-p%2Fmarkdown-here%2FMarkdown-Cheatsheet.md) — adam-p/markdown-here
