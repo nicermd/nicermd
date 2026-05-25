@@ -63,6 +63,23 @@ is prefixed with a status tag so its disposition is scannable:
 
 ## Desktop features
 
+- **LATER — Way back to the showcase / home doc.**
+  Once a file is open in a desktop window, there's no in-app
+  affordance for revisiting the original boot showcase
+  (`showcase.md`). Today the options are: open a new window
+  (`Cmd+N` — gives a blank doc, not the showcase) or open
+  https://nicer.md/ in a browser. Possible shapes when this
+  comes up:
+  - A "Home" or "Show welcome" menu item / shortcut that loads
+    the showcase as a fresh untitled doc, with the usual
+    dirty-discard prompt if the current doc has unsaved edits.
+  - A "Samples" submenu containing the showcase + the other
+    built-in sample docs (`kitchen-sink.md`, `stress.md`).
+  - Explicit "Visit nicer.md in browser" menu item as the
+    non-desktop fallback for users who want the web demo.
+  Decide once dogfooding surfaces which shape is wanted; users
+  who already have the file they want open don't need this.
+
 - **LATER — Multi-window polish leftovers.** Core multi-window
   landed 2026-05-19; dirty-aware Open-With routing + window state
   persistence + session restore + per-window mode/source + deep-link
