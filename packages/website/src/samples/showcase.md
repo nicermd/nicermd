@@ -120,3 +120,7 @@ A horizontal rule —
 ## Make it yours
 
 Select all (`Cmd+A`), delete, and paste or write your own markdown. The canvas is yours.
+
+---
+
+[Developer testing scenarios](?url=https%3A%2F%2Fraw.githubusercontent.com%2Fnicermd%2Fnicermd%2Fmain%2Fdocs%2Fdev-testing.md) — platform variants and other content paths, for maintainers.
