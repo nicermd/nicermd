@@ -128,10 +128,31 @@ is prefixed with a status tag so its disposition is scannable:
   with users to update._ `@tauri-apps/plugin-updater` reads a signed
   update manifest from GitHub Releases. Adds ~200 lines + a key-pair
   generation step.
-- **PARKED — Windows / Linux builds.**
-  _Gated on cross-platform user demand surfacing._ Mac-first today.
-  Windows would need a code-signing cert (~$300-500/year) for a
-  no-warning install; Linux AppImage / deb / rpm could ship unsigned.
+- **PARKED — Linux desktop builds + package channels.**
+  _Gated on Linux user demand surfacing._ Mac-first today. Tauri
+  produces `.deb`, `.appimage`, and `.rpm` artifacts natively; all
+  can ship unsigned. Recommended channel order when this lights up:
+  1. **AppImage** — zero packaging effort, portable across distros,
+     publish on GitHub Releases alongside the DMG.
+  2. **Flatpak (Flathub)** — modern cross-distro desktop format,
+     sandboxed. Requires a manifest + Flathub review.
+  3. **AUR** — easy ship-and-forget for Arch users; just a build
+     script in a community AUR repo. `yay -S nicermd`.
+  4. **Homebrew on Linux** (Linuxbrew) — same `brew install --cask`
+     path as macOS; reuses the existing tap. Unusual for Linux
+     desktop apps but works.
+  5. **apt / dnf** — distro-specific `.deb` / `.rpm`. Host on GitHub
+     Releases or a community PPA / Copr.
+- **PARKED — Windows desktop builds + package channels.**
+  _Gated on Windows user demand surfacing._ Tauri produces `.msi`
+  and `.exe` installers. A code-signing cert (~$300-500/year)
+  removes the SmartScreen warning at install. Recommended channels:
+  1. **winget** — Microsoft's official package manager, free to
+     publish. `winget install nicermd`. The canonical modern path.
+  2. **Scoop** — dev-oriented, brew-like. Community buckets;
+     publishing is a JSON manifest in a bucket repo.
+  3. **Chocolatey** — pre-winget veteran with a large install base.
+     `choco install nicermd`.
 
 ## Fonts
 
