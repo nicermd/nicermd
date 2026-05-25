@@ -4,6 +4,8 @@
 
 A nicer, zero-server markdown reader. The page you're looking at is plain markdown. Switch to Write mode Cmd+2 and edit it in place.
 
+![Nicer.md cycling Read, Write, Split and Code modes, then switching from a light to a dark theme](/media/screencap.gif)
+
 ## Try these first
 
 - `Cmd+1` to `Cmd+4` to Read / Write / Split / Code. Mode icons are top-right. (On Windows / Linux, substitute `Ctrl` for `Cmd`.)
