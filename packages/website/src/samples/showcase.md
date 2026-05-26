@@ -2,40 +2,27 @@
 
 > **Alpha release** — early days, expect rough edges. Your data stays on your device; there's no server. [Report a bug on GitHub](https://github.com/nicermd/nicermd/issues).
 
-A nicer, zero-server markdown reader. The page you're looking at is plain markdown. Switch to Write mode Cmd+2 and edit it in place.
+A nicer, zero-server markdown reader. The page you're looking at is plain markdown. Switch to Write mode (`Ctrl/Cmd+2`) and edit it in place.
 
-![Nicer.md cycling Read, Write, Split and Code modes, then switching from a light to a dark theme](/media/screencap.gif)
+![Nicer.md cycling Read, Write, Split and Code modes, then switching from a light to a dark theme](https://nicer.md/media/screencap.gif)
 
 ## Try these first
 
-- `Cmd+1` to `Cmd+4` to Read / Write / Split / Code. Mode icons are top-right. (On Windows / Linux, substitute `Ctrl` for `Cmd`.)
-- `Cmd+2` to enter Write mode, then click anywhere and type.
-- `Cmd+S` saves local files back to where the file came from.
-- `Cmd+O` to **O**pen a local file, or drop a `.md` / `.markdown` / `.mdx` file onto the window.
-- `Cmd+Alt+O` to **O**pen a URL, raw GitHub, gists, or `github.com/user/repo` for README.
-- `Cmd+Alt+T` to switch theme. `Cmd+Alt+F` for fonts.
-- `Cmd+K` for command palette. The fastest way to find everything else.
+- `Ctrl/Cmd+1`–`4` for Read / Write / Split / Code — or just click the mode icons, top-right.
+- `Ctrl/Cmd+2` to enter Write mode, then click anywhere and type.
+- `Ctrl/Cmd+S` saves local files back to where the file came from.
+- `Ctrl/Cmd+O` to **O**pen a local file, or drop a `.md` / `.markdown` / `.mdx` file onto the window.
+- `Ctrl/Cmd+Alt+O` to **O**pen a URL — raw GitHub, gists, or `github.com/user/repo` for the README.
+- `Ctrl/Cmd+Alt+T` to switch theme. `Ctrl/Cmd+Alt+F` for fonts.
+- `Ctrl/Cmd+K` for the command palette — the fastest way to find everything else.
 
-<!-- :platform mac -->
+In a browser tab, your browser may grab the number shortcuts for switching tabs — the mode icons and the command palette always work. The desktop app has every shortcut to itself.
+
 ## Take it with you
 
-Install the desktop app:
-
-```sh
-brew install --cask nicermd/tap/nicermd
-```
-
-Or grab the [universal DMG](https://github.com/nicermd/nicermd/releases/latest). Files open in their own window; drop a `.md` on the dock icon.
-<!-- :end -->
-
-<!-- :platform win linux -->
-## Take it with you
-
-A native desktop build for your platform isn't ready yet — [open an issue](https://github.com/nicermd/nicermd/issues) if you want one. Meanwhile:
-
-- Install the [Chrome extension](https://github.com/nicermd/nicermd/tree/main/packages/chrome-ext#install-unpacked) — works in Chrome, Edge, Brave, Vivaldi, Arc.
-- Pin this page or install it as a PWA from your browser's address-bar menu.
-<!-- :end -->
+- **macOS** — `brew install --cask nicermd/tap/nicermd`, or grab the [universal DMG](https://github.com/nicermd/nicermd/releases/latest).
+- **Any browser** — install the [Chrome extension](https://github.com/nicermd/nicermd/tree/main/packages/chrome-ext#install-unpacked) (Chrome, Edge, Brave, Vivaldi, Arc), or add this page as a PWA from your browser's address-bar menu.
+- **Windows / Linux** — native desktop builds aren't ready yet; [open an issue](https://github.com/nicermd/nicermd/issues) if you'd like one.
 
 ## Try it on a real document
 

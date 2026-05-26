@@ -1,49 +1,37 @@
 # Testing
 
-Quick links for exercising platform variants and other content paths
-without typing query strings into the address bar. Links here use
-relative `?param=…` form so they work against whatever host loaded
-this doc — production at nicer.md, preview deploys, or local dev.
+Quick links for exercising content paths without typing query strings
+into the address bar. Links here use relative `?param=…` form so they
+work against whatever host loaded this doc — production at nicer.md,
+preview deploys, or local dev.
 
-## Homepage platform variants
+## Platform detection
 
-The homepage (`/`) auto-detects platform from `navigator.userAgent`
-(or `userAgentData.platform`). The `?platform=` query param overrides
-that detection for testing.
+The homepage is **static plain markdown** — it no longer changes
+content by platform. Shortcuts are labelled `Ctrl/Cmd+…` (the mode
+handler accepts either modifier), and the install section lists every
+platform. So there's nothing platform-specific to preview on the
+showcase itself.
 
-- [Mac](?platform=mac) — `Cmd` shortcuts, `brew install --cask` + DMG CTA
-- [Windows](?platform=win) — `Ctrl` shortcuts, Chrome extension + PWA CTA
-- [Linux](?platform=linux) — `Ctrl` shortcuts, Chrome extension + PWA CTA
-- [Auto-detect](/) — clears the override; takes you back to the
-  clean homepage with default detection
+`?platform=mac|win|linux` still overrides detection for the in-app
+shortcut chips (command palette, format bar), which render `⌘` vs
+`Ctrl` glyphs:
 
-## How platform-conditional blocks work
+- [Mac](?platform=mac) — `⌘` glyphs in palette / format-bar chips
+- [Windows](?platform=win) — `Ctrl` glyphs
+- [Linux](?platform=linux) — `Ctrl` glyphs
+- [Auto-detect](/) — clears the override
 
-The boot doc (`packages/website/src/samples/showcase.md`) uses
-HTML-comment fences:
+Detection source: `userAgentData.platform` → `navigator.platform` →
+`linux` fallback (see `packages/website/src/platform.ts`).
 
-```md
-<!-- :platform mac -->
-Mac-only content.
-<!-- :end -->
+## Browser tab-switch caveat
 
-<!-- :platform win linux -->
-Non-Mac content.
-<!-- :end -->
-```
-
-`stripPlatformBlocks` in
-[`packages/website/src/platform-blocks.ts`](https://github.com/nicermd/nicermd/blob/main/packages/website/src/platform-blocks.ts)
-removes non-matching blocks before the markdown reaches the
-renderer. Tests live alongside in `platform-blocks.test.ts`.
-
-The boot pipeline (in `main.ts`) is:
-
-1. `stripPlatformBlocks(showcase, PLATFORM)` — drop other-platform sections.
-2. On non-Mac, rewrite `Cmd+` → `Ctrl+` inside inline code spans.
-
-Only the built-in landing doc is touched; user-loaded markdown
-(via `?url=…`, drag-drop, file-open) renders as-authored.
+In a browser, number+modifier shortcuts collide with tab switching:
+Mac browsers reserve `Cmd+1..8`, Windows/Linux browsers reserve
+`Ctrl+1..8`. So the `Ctrl/Cmd+1..4` mode shortcuts are reliable only
+in the **desktop app**; in the web shell the mode icons (top-right)
+and command palette (`Ctrl/Cmd+K`) are the always-works paths.
 
 ## Adding more test scenarios
 

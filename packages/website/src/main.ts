@@ -31,8 +31,6 @@ import showcase from './samples/showcase.md?raw'
 // The website renders that same file at /privacy so there's a single
 // source of truth and no drift between the GitHub file and the page.
 import privacyDoc from '../../chrome-ext/PRIVACY.md?raw'
-import { IS_MAC, PLATFORM } from './platform'
-import { stripPlatformBlocks } from './platform-blocks'
 import { setupTauriBridge } from './tauri-bridge'
 import { setupLinkContextMenu } from './link-context-menu'
 import { setupFileDrop } from './file-drop'
@@ -865,25 +863,16 @@ async function boot(): Promise<void> {
   host.className = 'mode-host'
   root.appendChild(host)
 
-  // Showcase has two layers of platform tailoring:
-  //
-  //   1. `<!-- :platform mac --> ... <!-- :end -->` blocks let sections
-  //      (install CTA, "open in desktop" copy) target a subset of
-  //      platforms. Stripped at boot before anything renders.
-  //   2. Inline code spans containing 'Cmd+' get rewritten to 'Ctrl+'
-  //      on non-Mac boots — covers the keyboard shortcuts.
-  //
-  // Both only touch the built-in landing doc; user-loaded markdown is
-  // rendered as-authored regardless.
-  let bootMarkdown: string
+  // The showcase is static plain markdown — no per-platform boot
+  // transform. Keyboard shortcuts are labelled `Ctrl/Cmd+…` (both fire
+  // the mode handler, which accepts either modifier) so a single
+  // authored file reads correctly on every OS and renders identically
+  // on GitHub, the website, and in-app source view. /privacy swaps in
+  // the privacy policy instead.
+  let bootMarkdown: string = showcase
   if (isPrivacyRoute) {
     bootMarkdown = privacyDoc
     document.title = 'Privacy — Nicer.md'
-  } else {
-    bootMarkdown = stripPlatformBlocks(showcase, PLATFORM)
-    if (!IS_MAC) {
-      bootMarkdown = bootMarkdown.replace(/`([^`]*)`/g, (_m, inner: string) => `\`${inner.replace(/\bCmd\+/g, 'Ctrl+')}\``)
-    }
   }
   let harness: Harness
   // Tree-shake gate: import.meta.env.DEV is a compile-time `false` in
