@@ -26,6 +26,11 @@ import { tags as t } from '@lezer/highlight'
 import { render as renderMarkdown, renderPlain, renderSource } from 'nicermd-core'
 
 import showcase from './samples/showcase.md?raw'
+// The privacy policy is authored once, in the chrome extension package
+// (its canonical home — it's required for the Chrome Web Store listing).
+// The website renders that same file at /privacy so there's a single
+// source of truth and no drift between the GitHub file and the page.
+import privacyDoc from '../../chrome-ext/PRIVACY.md?raw'
 import { IS_MAC, PLATFORM } from './platform'
 import { stripPlatformBlocks } from './platform-blocks'
 import { setupTauriBridge } from './tauri-bridge'
@@ -848,6 +853,13 @@ async function boot(): Promise<void> {
   const bootHasExtPickup = new URLSearchParams(window.location.search).has(
     'ext-pickup',
   )
+  // `/privacy` renders the privacy policy as a static page (the same
+  // file the Chrome extension ships, served through the app itself).
+  // It bypasses the showcase, platform tailoring, persisted-source
+  // restore, and persisted-mode restore so it always presents as a
+  // clean Read-mode document regardless of this tab's history.
+  const isPrivacyRoute =
+    window.location.pathname.replace(/\/+$/, '').toLowerCase() === '/privacy'
 
   const host = document.createElement('div')
   host.className = 'mode-host'
@@ -863,9 +875,15 @@ async function boot(): Promise<void> {
   //
   // Both only touch the built-in landing doc; user-loaded markdown is
   // rendered as-authored regardless.
-  let bootMarkdown: string = stripPlatformBlocks(showcase, PLATFORM)
-  if (!IS_MAC) {
-    bootMarkdown = bootMarkdown.replace(/`([^`]*)`/g, (_m, inner: string) => `\`${inner.replace(/\bCmd\+/g, 'Ctrl+')}\``)
+  let bootMarkdown: string
+  if (isPrivacyRoute) {
+    bootMarkdown = privacyDoc
+    document.title = 'Privacy — Nicer.md'
+  } else {
+    bootMarkdown = stripPlatformBlocks(showcase, PLATFORM)
+    if (!IS_MAC) {
+      bootMarkdown = bootMarkdown.replace(/`([^`]*)`/g, (_m, inner: string) => `\`${inner.replace(/\bCmd\+/g, 'Ctrl+')}\``)
+    }
   }
   let harness: Harness
   // Tree-shake gate: import.meta.env.DEV is a compile-time `false` in
@@ -940,7 +958,9 @@ async function boot(): Promise<void> {
   // cleared the localStorage slot. An explicit ?url= / ?ext-pickup=
   // in the address bar still wins (processBootUrlParam handled it
   // above).
-  const restoredFromPersist = await restorePersistedSource(harness, bootPersistedSource)
+  const restoredFromPersist = isPrivacyRoute
+    ? false
+    : await restorePersistedSource(harness, bootPersistedSource)
   // Recovery banner compares against the doc that's actually mounted.
   // If we restored a persisted source, autosave should compare against
   // THAT text (so unsaved-edits-since-last-load surfaces correctly);
@@ -961,7 +981,7 @@ async function boot(): Promise<void> {
   // a URL via toolbar / right-click, or a selection via render-
   // selection — so dropping them into Code mode would defeat the
   // feature even if Code was the last-used mode for this tab label.
-  if (!bootHasExtPickup && bootPersistedMode && bootPersistedMode !== 1) {
+  if (!isPrivacyRoute && !bootHasExtPickup && bootPersistedMode && bootPersistedMode !== 1) {
     harness.switchTo(bootPersistedMode)
   }
 
