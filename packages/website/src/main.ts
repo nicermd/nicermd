@@ -515,10 +515,29 @@ function mountCodePlusPreview(
   const lerp = (x: number, x0: number, x1: number, y0: number, y1: number): number =>
     x1 <= x0 ? y0 : y0 + ((x - x0) / (x1 - x0)) * (y1 - y0)
 
-  const editorTopLine = (): number => {
+  // Fractional source line at the editor's viewport top. Integer line
+  // numbers stair-step (the line stays put for a full line-height as you
+  // scroll, then flips), so we add the fraction of the top block already
+  // scrolled past the fold — giving continuous motion the follower can
+  // track smoothly.
+  const editorTopFractionalLine = (): number => {
     const r = editorScroller.getBoundingClientRect()
     const pos = view.posAtCoords({ x: r.left + 4, y: r.top + 1 })
-    return pos == null ? 1 : view.state.doc.lineAt(pos).number
+    if (pos == null) return 1
+    const lineNo = view.state.doc.lineAt(pos).number
+    const block = view.lineBlockAt(pos)
+    const blockScreenTop = block.top + view.documentTop
+    const frac = block.height > 0 ? (r.top - blockScreenTop) / block.height : 0
+    return lineNo + Math.min(1, Math.max(0, frac))
+  }
+
+  // Inverse: place a fractional source line at the editor's viewport top.
+  const scrollEditorToLine = (fLine: number): void => {
+    const total = view.state.doc.lines
+    const whole = Math.max(1, Math.min(total, Math.floor(fLine)))
+    const block = view.lineBlockAt(view.state.doc.line(whole).from)
+    const frac = Math.min(1, Math.max(0, fLine - whole))
+    editorScroller.scrollTop = block.top + frac * block.height
   }
 
   const proportional = (driver: HTMLElement, follower: HTMLElement): void => {
@@ -530,7 +549,7 @@ function mountCodePlusPreview(
   const syncPreviewToEditor = (): void => {
     const map = anchors()
     if (map.length === 0) { proportional(editorScroller, previewPane); return }
-    const line = editorTopLine()
+    const line = editorTopFractionalLine()
     let i = 0
     while (i < map.length - 1 && map[i + 1]!.line <= line) i++
     const a = map[i]!
@@ -546,9 +565,7 @@ function mountCodePlusPreview(
     while (i < map.length - 1 && map[i + 1]!.top <= y) i++
     const a = map[i]!
     const b = map[i + 1] ?? a
-    const line = Math.round(lerp(y, a.top, b.top, a.line, b.line))
-    const docLine = Math.max(1, Math.min(view.state.doc.lines, line))
-    editorScroller.scrollTop = view.lineBlockAt(view.state.doc.line(docLine).from).top
+    scrollEditorToLine(lerp(y, a.top, b.top, a.line, b.line))
   }
 
   const lockTo = (el: HTMLElement): void => {
