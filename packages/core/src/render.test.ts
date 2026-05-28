@@ -493,3 +493,34 @@ describe('renderSource', () => {
     expect(out).not.toMatch(/<b>(?!\w)/)
   })
 })
+
+// --- Source-line tagging (Split-mode scroll anchoring) -----------------
+
+describe('sourceLine option', () => {
+  it('omits data-source-line by default', () => {
+    const out = render('# Title\n\nA paragraph.\n')
+    expect(out).not.toContain('data-source-line')
+  })
+
+  it('stamps block elements with 1-based start lines when enabled', () => {
+    const out = render('# Title\n\nFirst paragraph.\n\nSecond paragraph.\n', { sourceLine: true })
+    const doc = new DOMParser().parseFromString(`<div id="root">${out}</div>`, 'text/html')
+    const h1 = doc.querySelector('h1')
+    expect(h1?.getAttribute('data-source-line')).toBe('1')
+    const paras = Array.from(doc.querySelectorAll('p'))
+    expect(paras.map((p) => p.getAttribute('data-source-line'))).toEqual(['3', '5'])
+  })
+
+  it('keeps line markers monotonic and parseable for an anchor map', () => {
+    const md = '# H\n\nlead\n\n- a\n- b\n\n> quote\n'
+    const out = render(md, { sourceLine: true })
+    const doc = new DOMParser().parseFromString(`<div id="root">${out}</div>`, 'text/html')
+    const lines = Array.from(doc.querySelectorAll('[data-source-line]')).map((el) =>
+      Number(el.getAttribute('data-source-line')),
+    )
+    expect(lines.length).toBeGreaterThan(0)
+    expect(lines.every((n) => Number.isFinite(n))).toBe(true)
+    const ascending = [...lines].sort((x, y) => x - y)
+    expect(lines).toEqual(ascending)
+  })
+})

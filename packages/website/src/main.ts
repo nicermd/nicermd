@@ -302,11 +302,14 @@ function applySourceLanguage(view: EditorView, languageCompartment: Compartment)
 // URL rewrite). Plain text and source files use the simpler dedicated
 // renderers in nicermd-core. The baseUrl is only meaningful for
 // markdown (relative <img src> resolution) so plain/source skip it.
-function renderForCurrentKind(text: string): string {
+function renderForCurrentKind(text: string, opts?: { sourceLine?: boolean }): string {
   const kind = getContentKind()
   if (kind.kind === 'plain') return renderPlain(text)
   if (kind.kind === 'source') return renderSource(text, kind.language)
-  return renderMarkdown(text, { baseUrl: getCurrentSourceUrl() ?? undefined })
+  return renderMarkdown(text, {
+    baseUrl: getCurrentSourceUrl() ?? undefined,
+    sourceLine: opts?.sourceLine,
+  })
 }
 
 function mountRead(parent: HTMLElement, markdown: string): ModeHandle {
@@ -455,8 +458,13 @@ function mountCodePlusPreview(
   wrap.append(editorPane, previewPane)
   parent.appendChild(wrap)
 
+  // Cache of [sourceLine, contentTop] anchors parsed from the rendered
+  // preview, rebuilt lazily after each render / resize (see scroll sync
+  // below). Null = stale.
+  let anchorCache: Array<{ line: number; top: number }> | null = null
   const renderTo = (text: string): void => {
-    previewPane.innerHTML = renderForCurrentKind(text)
+    previewPane.innerHTML = renderForCurrentKind(text, { sourceLine: true })
+    anchorCache = null
   }
   renderTo(markdown)
 
@@ -478,8 +486,114 @@ function mountCodePlusPreview(
   })
   applySourceLanguage(view, languageCompartment)
 
+  // Line-anchored scroll sync. The renderer stamps each block with
+  // `data-source-line`; we map the driver pane's top position to the
+  // matching source line, then place the follower so the same line sits
+  // at its top. Interpolating between adjacent anchors keeps it smooth
+  // within a block instead of snapping. A short driver-keyed lock
+  // swallows the echo `scroll` from our own programmatic write so the
+  // panes don't fight. Falls back to proportional when no anchors exist
+  // (plain / source content kinds carry none).
+  const editorScroller = view.scrollDOM
+  let activeScroller: HTMLElement | null = null
+  let releaseTimer: number | undefined
+
+  const anchors = (): Array<{ line: number; top: number }> => {
+    if (anchorCache) return anchorCache
+    const paneTop = previewPane.getBoundingClientRect().top - previewPane.scrollTop
+    const out: Array<{ line: number; top: number }> = []
+    previewPane.querySelectorAll<HTMLElement>('[data-source-line]').forEach((el) => {
+      const line = Number(el.dataset.sourceLine)
+      if (Number.isFinite(line)) {
+        out.push({ line, top: el.getBoundingClientRect().top - paneTop })
+      }
+    })
+    anchorCache = out
+    return out
+  }
+
+  const lerp = (x: number, x0: number, x1: number, y0: number, y1: number): number =>
+    x1 <= x0 ? y0 : y0 + ((x - x0) / (x1 - x0)) * (y1 - y0)
+
+  // Fractional source line at the editor's viewport top. Integer line
+  // numbers stair-step (the line stays put for a full line-height as you
+  // scroll, then flips), so we add the fraction of the top block already
+  // scrolled past the fold — giving continuous motion the follower can
+  // track smoothly.
+  const editorTopFractionalLine = (): number => {
+    const r = editorScroller.getBoundingClientRect()
+    const pos = view.posAtCoords({ x: r.left + 4, y: r.top + 1 })
+    if (pos == null) return 1
+    const lineNo = view.state.doc.lineAt(pos).number
+    const block = view.lineBlockAt(pos)
+    const blockScreenTop = block.top + view.documentTop
+    const frac = block.height > 0 ? (r.top - blockScreenTop) / block.height : 0
+    return lineNo + Math.min(1, Math.max(0, frac))
+  }
+
+  // Inverse: place a fractional source line at the editor's viewport top.
+  const scrollEditorToLine = (fLine: number): void => {
+    const total = view.state.doc.lines
+    const whole = Math.max(1, Math.min(total, Math.floor(fLine)))
+    const block = view.lineBlockAt(view.state.doc.line(whole).from)
+    const frac = Math.min(1, Math.max(0, fLine - whole))
+    editorScroller.scrollTop = block.top + frac * block.height
+  }
+
+  const proportional = (driver: HTMLElement, follower: HTMLElement): void => {
+    const dMax = driver.scrollHeight - driver.clientHeight
+    const fMax = follower.scrollHeight - follower.clientHeight
+    follower.scrollTop = dMax > 0 ? (driver.scrollTop / dMax) * fMax : 0
+  }
+
+  const syncPreviewToEditor = (): void => {
+    const map = anchors()
+    if (map.length === 0) { proportional(editorScroller, previewPane); return }
+    const line = editorTopFractionalLine()
+    let i = 0
+    while (i < map.length - 1 && map[i + 1]!.line <= line) i++
+    const a = map[i]!
+    const b = map[i + 1] ?? a
+    previewPane.scrollTop = lerp(line, a.line, b.line, a.top, b.top)
+  }
+
+  const syncEditorToPreview = (): void => {
+    const map = anchors()
+    if (map.length === 0) { proportional(previewPane, editorScroller); return }
+    const y = previewPane.scrollTop
+    let i = 0
+    while (i < map.length - 1 && map[i + 1]!.top <= y) i++
+    const a = map[i]!
+    const b = map[i + 1] ?? a
+    scrollEditorToLine(lerp(y, a.top, b.top, a.line, b.line))
+  }
+
+  const lockTo = (el: HTMLElement): void => {
+    activeScroller = el
+    clearTimeout(releaseTimer)
+    releaseTimer = window.setTimeout(() => { activeScroller = null }, 100)
+  }
+  const onEditorScroll = (): void => {
+    if (activeScroller && activeScroller !== editorScroller) return
+    lockTo(editorScroller)
+    syncPreviewToEditor()
+  }
+  const onPreviewScroll = (): void => {
+    if (activeScroller && activeScroller !== previewPane) return
+    lockTo(previewPane)
+    syncEditorToPreview()
+  }
+  const onResize = (): void => { anchorCache = null }
+  editorScroller.addEventListener('scroll', onEditorScroll, { passive: true })
+  previewPane.addEventListener('scroll', onPreviewScroll, { passive: true })
+  window.addEventListener('resize', onResize)
+
   return {
     destroy: () => {
+      clearTimeout(releaseTimer)
+      editorScroller.removeEventListener('scroll', onEditorScroll)
+      previewPane.removeEventListener('scroll', onPreviewScroll)
+      window.removeEventListener('resize', onResize)
       view.destroy()
       wrap.remove()
     },
