@@ -23,6 +23,11 @@ export interface RenderOptions {
   // Used for URL-loaded docs whose `images/foo.png` etc. would otherwise
   // 404 against the app origin instead of the source repo.
   baseUrl?: string
+  // Tag block-level elements with `data-source-line` (1-based start line)
+  // so Split mode can anchor preview scroll to the editor's top line.
+  // Off by default — Read mode and copy-as-HTML stay free of editor-only
+  // metadata.
+  sourceLine?: boolean
 }
 
 // Curated language set for fenced code blocks. ~8 grammars covers
@@ -103,6 +108,23 @@ md.renderer.rules.html_inline = (tokens, idx) => {
   const content = tokens[idx]!.content
   return INLINE_HTML_ALLOW.test(content) ? content : ''
 }
+
+// Source-line tagging for Split-mode scroll anchoring. Only runs when
+// `env.sourceLine` is set (render({ sourceLine: true })). Stamps each
+// block token that carries a parser source map with `data-source-line`
+// (1-based); the default renderToken emits the attr on the opening tag
+// and DOMPurify passes data-* through untouched. Closing tokens (-1) are
+// skipped — they render bare `</tag>`. Fences / raw html_block render via
+// custom paths without the attr, but the surrounding blocks bracket them
+// so the anchor map stays monotonic.
+md.core.ruler.push('source_line', (state) => {
+  if (!state.env.sourceLine) return
+  for (const token of state.tokens) {
+    if (token.map && token.nesting !== -1) {
+      token.attrSet('data-source-line', String(token.map[0] + 1))
+    }
+  }
+})
 
 // GitHub-flavoured slug for heading anchors. Real-world TOCs use
 // `[Headers](#headers)` patterns where the link target is the slugged
@@ -321,7 +343,10 @@ export function render(markdown: string, options: RenderOptions = {}): string {
   const normalised = normalizeHtml(markdown)
   // Per-render env isolates heading-slug collision counters so two
   // simultaneous renders don't share state (the `md` instance is global).
-  let html = md.render(normalised, { headingSlugs: new Map<string, number>() })
+  let html = md.render(normalised, {
+    headingSlugs: new Map<string, number>(),
+    sourceLine: options.sourceLine === true,
+  })
   if (options.baseUrl) {
     html = rewriteRelativeUrls(html, options.baseUrl)
   }
