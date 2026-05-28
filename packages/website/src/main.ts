@@ -478,8 +478,35 @@ function mountCodePlusPreview(
   })
   applySourceLanguage(view, languageCompartment)
 
+  // Proportional scroll sync. Whichever pane the user is actively
+  // scrolling becomes the driver; the other mirrors its scroll fraction.
+  // A short lock keyed to the driver swallows the echo `scroll` event
+  // fired by our own programmatic scrollTop write, so the two panes
+  // don't fight. This is position-ratio sync, not line-anchored — a tall
+  // fenced block renders short, so alignment drifts where content density
+  // differs; good enough to feel synced without touching the renderer.
+  const editorScroller = view.scrollDOM
+  let activeScroller: HTMLElement | null = null
+  let releaseTimer: number | undefined
+  const mirrorScroll = (driver: HTMLElement, follower: HTMLElement): void => {
+    if (activeScroller && activeScroller !== driver) return
+    activeScroller = driver
+    const driverMax = driver.scrollHeight - driver.clientHeight
+    const followerMax = follower.scrollHeight - follower.clientHeight
+    follower.scrollTop = driverMax > 0 ? (driver.scrollTop / driverMax) * followerMax : 0
+    clearTimeout(releaseTimer)
+    releaseTimer = window.setTimeout(() => { activeScroller = null }, 100)
+  }
+  const onEditorScroll = (): void => mirrorScroll(editorScroller, previewPane)
+  const onPreviewScroll = (): void => mirrorScroll(previewPane, editorScroller)
+  editorScroller.addEventListener('scroll', onEditorScroll, { passive: true })
+  previewPane.addEventListener('scroll', onPreviewScroll, { passive: true })
+
   return {
     destroy: () => {
+      clearTimeout(releaseTimer)
+      editorScroller.removeEventListener('scroll', onEditorScroll)
+      previewPane.removeEventListener('scroll', onPreviewScroll)
       view.destroy()
       wrap.remove()
     },
