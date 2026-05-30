@@ -177,7 +177,12 @@ function parseAttrs(s: string): Record<string, string> {
 }
 
 function escapeMdTitle(s: string): string {
-  return s.replace(/"/g, '\\"')
+  // Escape both `\` and `"` — markdown link/image title delimiters are
+  // double-quoted with backslash-escape, so a stray `\` in the input
+  // would let a later `\"` be reinterpreted as an escaped quote and
+  // close the title prematurely. End-to-end XSS is still blocked by
+  // DOMPurify, but the function should do what its name says.
+  return s.replace(/[\\"]/g, '\\$&')
 }
 
 // --- Predicate exposed for the banner UI --------------------------------

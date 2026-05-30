@@ -13,7 +13,7 @@
 // Usage: pnpm release:tauri              (uses tauri.conf.json version)
 //        pnpm release:tauri --dry-run    (build only, skip release)
 
-import { execSync } from 'node:child_process'
+import { execFileSync, execSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { resolve, dirname } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -67,8 +67,19 @@ console.log(`Publishing GitHub release ${tag}…`)
 // carry that asset. Keep the Chrome ext release as the latest pointer
 // so the install link stays evergreen; Tauri releases are discovered
 // via the `?q=tauri` filtered list linked from the README.
-execSync(`gh release create ${tag} ${JSON.stringify(dmgPath)} --title ${JSON.stringify(`${productName} v${version}`)} --notes ${JSON.stringify(notes)} --latest=false`, {
-  stdio: 'inherit',
-  cwd: root,
-})
+// execFileSync (no shell) instead of execSync with template-string +
+// JSON.stringify quoting: JSON quoting isn't shell-safe (doesn't escape
+// backticks / `$`), and the values here come from package.json / build
+// output rather than user input but the safe pattern is essentially
+// free, so don't carry the unsafe one. Each arg passes through as-is.
+execFileSync(
+  'gh',
+  [
+    'release', 'create', tag, dmgPath,
+    '--title', `${productName} v${version}`,
+    '--notes', notes,
+    '--latest=false',
+  ],
+  { stdio: 'inherit', cwd: root },
+)
 console.log('✓ Released.')

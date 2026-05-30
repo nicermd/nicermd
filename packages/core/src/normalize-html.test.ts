@@ -30,6 +30,16 @@ describe('img → markdown image', () => {
       .toBe('![a](https://x.test/a.png "t")\n')
   })
 
+  it('escapes backslash and quote in the title', () => {
+    // Markdown title delimiters use double-quotes with backslash-escape:
+    // an unescaped `\` in the input would let a later `\"` close the
+    // title delimiter prematurely. Both must be escaped so the resulting
+    // markdown round-trips back to the same literal value.
+    const input = `<img src="https://x.test/a.png" alt="a" title='a\\b"c'>\n`
+    expect(normalizeHtml(input))
+      .toBe(`![a](https://x.test/a.png "a\\\\b\\"c")\n`)
+  })
+
   it('passes through as raw HTML when width/height/loading/srcset/sizes are present', () => {
     // Markdown image syntax can't express dimensions or responsive
     // attributes, so the normaliser leaves the tag as raw HTML and
