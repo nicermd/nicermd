@@ -11,14 +11,14 @@ Re-run before each public release.
 
 ## Summary
 
-Total packages: **97**
+Total packages: **98**
 
 - **(MPL-2.0 OR Apache-2.0)** — 1 package
 - **Apache-2.0 OR MIT** — 1 package
 - **BSD-2-Clause** — 1 package
 - **BSD-3-Clause** — 1 package
 - **ISC** — 1 package
-- **MIT** — 88 packages
+- **MIT** — 89 packages
 - **MIT OR Apache-2.0** — 3 packages
 - **Python-2.0** — 1 package
 
@@ -1255,7 +1255,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@tiptap/core@3.23.4`
+#### `@tiptap/core@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1283,7 +1283,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-blockquote@3.23.4`
+#### `@tiptap/extension-blockquote@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1311,7 +1311,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-bold@3.23.4`
+#### `@tiptap/extension-bold@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1339,7 +1339,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-bullet-list@3.23.4`
+#### `@tiptap/extension-bullet-list@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1367,7 +1367,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-code@3.23.4`
+#### `@tiptap/extension-code@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1395,7 +1395,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-code-block@3.23.4`
+#### `@tiptap/extension-code-block@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1423,7 +1423,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-document@3.23.4`
+#### `@tiptap/extension-document@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1451,7 +1451,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-dropcursor@3.23.4`
+#### `@tiptap/extension-dropcursor@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1479,7 +1479,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-gapcursor@3.23.4`
+#### `@tiptap/extension-gapcursor@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1507,7 +1507,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-hard-break@3.23.4`
+#### `@tiptap/extension-hard-break@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1535,7 +1535,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-heading@3.23.4`
+#### `@tiptap/extension-heading@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1563,7 +1563,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-horizontal-rule@3.23.4`
+#### `@tiptap/extension-horizontal-rule@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1591,7 +1591,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-image@3.23.4`
+#### `@tiptap/extension-image@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1619,7 +1619,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-italic@3.23.4`
+#### `@tiptap/extension-italic@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1647,7 +1647,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-link@3.23.4`
+#### `@tiptap/extension-link@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1675,7 +1675,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-list@3.23.4`
+#### `@tiptap/extension-list@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1703,7 +1703,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-list-item@3.23.4`
+#### `@tiptap/extension-list-item@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1731,7 +1731,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-list-keymap@3.23.4`
+#### `@tiptap/extension-list-keymap@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1759,7 +1759,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-ordered-list@3.23.4`
+#### `@tiptap/extension-ordered-list@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1787,7 +1787,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-paragraph@3.23.4`
+#### `@tiptap/extension-paragraph@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1815,7 +1815,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-strike@3.23.4`
+#### `@tiptap/extension-strike@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1843,7 +1843,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table@3.23.4`
+#### `@tiptap/extension-table@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1871,7 +1871,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table-cell@3.23.4`
+#### `@tiptap/extension-table-cell@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1899,7 +1899,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table-header@3.23.4`
+#### `@tiptap/extension-table-header@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1927,7 +1927,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table-row@3.23.4`
+#### `@tiptap/extension-table-row@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1955,7 +1955,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-text@3.23.4`
+#### `@tiptap/extension-text@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1983,7 +1983,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-underline@3.23.4`
+#### `@tiptap/extension-underline@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2011,7 +2011,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extensions@3.23.4`
+#### `@tiptap/extensions@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2039,7 +2039,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/pm@3.23.4`
+#### `@tiptap/pm@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2067,7 +2067,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/starter-kit@3.23.4`
+#### `@tiptap/starter-kit@3.24.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2616,6 +2616,32 @@ THE SOFTWARE.
 #### `prosemirror-history@1.5.0`
 
 Homepage: <https://github.com/prosemirror/prosemirror-history#readme>
+
+```
+Copyright (C) 2015-2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+```
+
+#### `prosemirror-inputrules@1.5.1`
+
+Homepage: <https://github.com/prosemirror/prosemirror-inputrules#readme>
 
 ```
 Copyright (C) 2015-2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
