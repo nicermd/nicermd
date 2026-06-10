@@ -1633,7 +1633,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@tiptap/core@3.24.0`
+#### `@tiptap/core@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1661,7 +1661,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-blockquote@3.24.0`
+#### `@tiptap/extension-blockquote@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1689,7 +1689,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-bold@3.24.0`
+#### `@tiptap/extension-bold@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1717,7 +1717,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-bullet-list@3.24.0`
+#### `@tiptap/extension-bullet-list@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1745,7 +1745,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-code@3.24.0`
+#### `@tiptap/extension-code@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1773,7 +1773,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-code-block@3.24.0`
+#### `@tiptap/extension-code-block@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1801,7 +1801,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-document@3.24.0`
+#### `@tiptap/extension-document@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1829,7 +1829,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-dropcursor@3.24.0`
+#### `@tiptap/extension-dropcursor@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1857,7 +1857,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-gapcursor@3.24.0`
+#### `@tiptap/extension-gapcursor@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1885,7 +1885,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-hard-break@3.24.0`
+#### `@tiptap/extension-hard-break@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1913,7 +1913,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-heading@3.24.0`
+#### `@tiptap/extension-heading@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1941,7 +1941,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-horizontal-rule@3.24.0`
+#### `@tiptap/extension-horizontal-rule@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1969,7 +1969,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-image@3.24.0`
+#### `@tiptap/extension-image@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -1997,7 +1997,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-italic@3.24.0`
+#### `@tiptap/extension-italic@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2025,7 +2025,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-link@3.24.0`
+#### `@tiptap/extension-link@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2053,7 +2053,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-list@3.24.0`
+#### `@tiptap/extension-list@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2081,7 +2081,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-list-item@3.24.0`
+#### `@tiptap/extension-list-item@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2109,7 +2109,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-list-keymap@3.24.0`
+#### `@tiptap/extension-list-keymap@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2137,7 +2137,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-ordered-list@3.24.0`
+#### `@tiptap/extension-ordered-list@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2165,7 +2165,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-paragraph@3.24.0`
+#### `@tiptap/extension-paragraph@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2193,7 +2193,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-strike@3.24.0`
+#### `@tiptap/extension-strike@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2221,7 +2221,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table@3.24.0`
+#### `@tiptap/extension-table@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2249,7 +2249,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table-cell@3.24.0`
+#### `@tiptap/extension-table-cell@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2277,7 +2277,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table-header@3.24.0`
+#### `@tiptap/extension-table-header@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2305,7 +2305,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table-row@3.24.0`
+#### `@tiptap/extension-table-row@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2333,7 +2333,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-text@3.24.0`
+#### `@tiptap/extension-text@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2361,7 +2361,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-underline@3.24.0`
+#### `@tiptap/extension-underline@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2389,7 +2389,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extensions@3.24.0`
+#### `@tiptap/extensions@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2417,7 +2417,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/pm@3.24.0`
+#### `@tiptap/pm@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -2445,7 +2445,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/starter-kit@3.24.0`
+#### `@tiptap/starter-kit@3.26.0`
 
 Homepage: <https://tiptap.dev>
 
@@ -3095,7 +3095,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `prosemirror-model@1.25.7`
+#### `prosemirror-model@1.25.8`
 
 ```
 Copyright (C) 2015-2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
@@ -3223,7 +3223,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `prosemirror-view@1.41.8`
+#### `prosemirror-view@1.41.9`
 
 ```
 Copyright (C) 2015-2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
