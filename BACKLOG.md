@@ -197,3 +197,31 @@ is prefixed with a status tag so its disposition is scannable:
   static releases tagged on GitHub. Trade-off vs the current
   bundle-it-all approach: bundle-it-all is faster first-paint (no
   extra DNS), CDN-loaded is cheaper at scale.
+
+## CI / dev process
+
+- **NEXT — Automate licenses regen on Dependabot branches.** The
+  `Verify THIRD-PARTY-LICENSES.md is current` step in the build
+  workflow fails on every npm-dep bump because Dependabot doesn't
+  run `pnpm licenses:gen`. Observed failure rate across last two
+  sweeps: 4 of 9 npm PRs needed a manual checkout → install → regen
+  → commit → push → re-poll cycle (≈5 min each, plus Dependabot
+  force-push collisions). Options:
+  (a) GitHub Action triggered on `pull_request` from
+  `dependabot/**` that runs the generator and pushes the diff back
+  to the PR branch (needs a PAT or app token with `contents: write`
+  scoped to dependabot branches);
+  (b) Drop the gate entirely and treat `THIRD-PARTY-LICENSES.md` as
+  a release-time artifact instead of a per-commit invariant —
+  regen as part of the release script.
+  (a) preserves the always-current invariant; (b) accepts brief
+  drift on main between merges and a release. Lean (a).
+  _.github/workflows/ci.yml + scripts/generate-third-party-licenses.mjs_
+
+- **LATER — Enable GitHub auto-merge on the repo.** Repo-level
+  `enablePullRequestAutoMerge` is off, so `gh pr merge --auto`
+  fails and every Dependabot PR needs a manual poll-and-merge once
+  CI lands. One settings toggle (Repo Settings → General → Pull
+  Requests → "Allow auto-merge"). Combined with the licenses
+  automation above, would let the Dependabot pipeline run end-to-end
+  with zero touch for the trivial case.
