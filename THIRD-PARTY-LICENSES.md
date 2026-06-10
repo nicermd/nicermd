@@ -1287,7 +1287,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@codemirror/view@6.43.0`
+#### `@codemirror/view@6.43.1`
 
 Author: Marijn Haverbeke
 
@@ -1517,10 +1517,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@lezer/markdown@1.6.3`
+#### `@lezer/markdown@1.6.4`
 
-Author: Marijn Haverbeke  
-Homepage: <https://github.com/lezer-parser/markdown#readme>
+Author: Marijn Haverbeke
 
 ```
 MIT License
