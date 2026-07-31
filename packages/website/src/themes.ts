@@ -26,20 +26,15 @@ export interface Theme {
 }
 
 export const THEMES: readonly Theme[] = [
-  // First-party defaults — the product's voice. One accent colour,
-  // colourless headings, whisper markers (see main.css). System font
-  // stacks: zero-network, instant first paint, native feel. The rest
-  // of the catalogue is the louder gallery tier.
+  // First-party defaults — the product's voice. Three colour
+  // families with jobs: blue for headings/links, muted berry for
+  // inline code, ink for prose (see main.css). System font stacks:
+  // zero-network, instant first paint, native feel. The rest of the
+  // catalogue is the louder gallery tier — kept deliberately: loud
+  // themes suit some content, they're just not the quick-read
+  // default (user call, 2026-07-31).
   { slug: 'paper', name: 'Paper', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
   { slug: 'ink', name: 'Ink', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
-  // TEMP — colour round take 3 (2026-07-31): structure approved
-  // (3-4 colours with jobs); hue pairing open. Paper/Ink carry
-  // combo A (slate-blue + crimson); these compare alternative
-  // pairings. Winner's values land in Paper/Ink; entries deleted.
-  { slug: 'paper-plum', name: 'Paper Plum', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
-  { slug: 'ink-plum', name: 'Ink Plum', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
-  { slug: 'paper-indigo', name: 'Paper Indigo', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
-  { slug: 'ink-indigo', name: 'Ink Indigo', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
   // Gallery — Atom's One Light / One Dark. Polished, mature
   // palettes with balanced contrast, recognised across many editors.
   { slug: 'one-light', name: 'One Light', mode: 'light', inspiredBy: 'Atom', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },

@@ -53,12 +53,13 @@
   --cm-quote: #000000;
 }
 
-/* First-party defaults — Paper (light) and Ink (dark). Deliberate
-   restraint in the iA Writer / Typora tradition: ONE accent colour
-   in the whole palette, headings carry no colour (weight and size do
-   the work), markers are a whisper, code sits on a quiet chip. The
-   gallery themes below are louder by design; these two are the
-   product's voice. */
+/* First-party defaults — Paper (light) and Ink (dark). The
+   product's voice: three colour families, each with a job (decided
+   2026-07-31 after four dogfood rounds). Ink for prose; a blue
+   family for headings (deeper) and links (brighter) plus a wash of
+   the heading hue on furniture (bullets, rules, quote borders); a
+   muted berry for inline code. Markers stay a whisper. The gallery
+   themes below are louder by design. */
 [data-theme='paper'] {
   --bg: #ffffff;
   --fg: #1c1c1e;
@@ -121,116 +122,6 @@
 
   --flourish: color-mix(in srgb, #8ab8fa 28%, #17171a);
   --list-marker: #6fa8ef;
-}
-
-/* --- TEMP: Paper/Ink colour round, take 3 (2026-07-31) ---
-   Structure approved (3-4 colours with jobs: headings / links /
-   inline code / furniture wash); hue pairing still open. Paper/Ink
-   now carry combo A (slate-blue headings + crimson code). These two
-   alternative pairings compare against them; winner's values land in
-   Paper/Ink and these blocks go. */
-[data-theme='paper-plum'] {
-  --bg: #ffffff;
-  --fg: #1c1c1e;
-  --muted: #86868b;
-  --border: #e9e9ea;
-  --surface: #f6f6f7;
-  --link: #0b66c3;
-  --accent: #0b66c3;
-  --code-bg: #f6f6f7;
-  --code-fg: #1c1c1e;
-  --cm-bg: #ffffff;
-  --cm-fg: #1c1c1e;
-  --cm-caret: #0b66c3;
-  --cm-selection: rgba(11, 102, 195, 0.14);
-  --cm-gutter-bg: #ffffff;
-  --cm-gutter-fg: #c4c4c6;
-  --cm-marker: #b4b4b8;
-  --cm-heading: #1259a8;
-  --cm-link: #0b66c3;
-  --cm-url: #86868b;
-  --cm-monospace: #7c4d8f;
-  --cm-quote: #86868b;
-  --flourish: color-mix(in srgb, #1259a8 30%, #ffffff);
-  --list-marker: #1259a8;
-}
-
-[data-theme='ink-plum'] {
-  --bg: #17171a;
-  --fg: #d8d8d9;
-  --muted: #7c7c82;
-  --border: #2b2b30;
-  --surface: #1f1f23;
-  --link: #6fa8ef;
-  --accent: #6fa8ef;
-  --code-bg: #1f1f23;
-  --code-fg: #d8d8d9;
-  --cm-bg: #17171a;
-  --cm-fg: #d8d8d9;
-  --cm-caret: #6fa8ef;
-  --cm-selection: rgba(111, 168, 239, 0.2);
-  --cm-gutter-bg: #17171a;
-  --cm-gutter-fg: #46464c;
-  --cm-marker: #55555c;
-  --cm-heading: #8ab8fa;
-  --cm-link: #6fa8ef;
-  --cm-url: #7c7c82;
-  --cm-monospace: #c2a3e8;
-  --cm-quote: #7c7c82;
-  --flourish: color-mix(in srgb, #8ab8fa 28%, #17171a);
-  --list-marker: #6fa8ef;
-}
-
-[data-theme='paper-indigo'] {
-  --bg: #ffffff;
-  --fg: #1c1c1e;
-  --muted: #86868b;
-  --border: #e9e9ea;
-  --surface: #f6f6f7;
-  --link: #4756c4;
-  --accent: #4756c4;
-  --code-bg: #f6f6f7;
-  --code-fg: #1c1c1e;
-  --cm-bg: #ffffff;
-  --cm-fg: #1c1c1e;
-  --cm-caret: #4756c4;
-  --cm-selection: rgba(71, 86, 196, 0.14);
-  --cm-gutter-bg: #ffffff;
-  --cm-gutter-fg: #c4c4c6;
-  --cm-marker: #b4b4b8;
-  --cm-heading: #3f3d99;
-  --cm-link: #4756c4;
-  --cm-url: #86868b;
-  --cm-monospace: #067a57;
-  --cm-quote: #86868b;
-  --flourish: color-mix(in srgb, #3f3d99 28%, #ffffff);
-  --list-marker: #3f3d99;
-}
-
-[data-theme='ink-indigo'] {
-  --bg: #17171a;
-  --fg: #d8d8d9;
-  --muted: #7c7c82;
-  --border: #2b2b30;
-  --surface: #1f1f23;
-  --link: #92a3f8;
-  --accent: #92a3f8;
-  --code-bg: #1f1f23;
-  --code-fg: #d8d8d9;
-  --cm-bg: #17171a;
-  --cm-fg: #d8d8d9;
-  --cm-caret: #92a3f8;
-  --cm-selection: rgba(146, 163, 248, 0.18);
-  --cm-gutter-bg: #17171a;
-  --cm-gutter-fg: #46464c;
-  --cm-marker: #55555c;
-  --cm-heading: #b4bdfa;
-  --cm-link: #92a3f8;
-  --cm-url: #7c7c82;
-  --cm-monospace: #6fdcb0;
-  --cm-quote: #7c7c82;
-  --flourish: color-mix(in srgb, #b4bdfa 26%, #17171a);
-  --list-marker: #92a3f8;
 }
 
 /* Signature light + dark. Mature palettes (10+ years), balanced
