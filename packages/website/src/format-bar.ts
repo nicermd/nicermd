@@ -1,6 +1,6 @@
 // Format / command pill at the bottom-middle of the window. Always
-// visible at low opacity. In modes 1/3/4 the resting "⌘K" label is the
-// click target — opens the command palette. In mode 2 (WYSIWYG) it
+// visible at low opacity. In modes 1/2/4/5 the resting "⌘K" label is the
+// click target — opens the command palette. In mode 3 (WYSIWYG) it
 // expands to a format toolbar on mouse proximity to the bottom edge,
 // with a trailing "⌘K" button at the end so the palette stays one
 // click away even when formatting controls are showing.
@@ -133,8 +133,8 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   bar.setAttribute('aria-label', 'Commands and formatting')
   root.appendChild(bar)
 
-  // Resting label. In modes 1/3/4 it's just the cmdp glyph — clicking
-  // opens the palette. In mode 2 it's a hybrid: a styled "B I" hints
+  // Resting label. In modes 1/2/4/5 it's just the cmdp glyph — clicking
+  // opens the palette. In mode 3 it's a hybrid: a styled "B I" hints
   // at the format toolbar that proximity reveals, then a separator and
   // the cmdp glyph hint at the trailing palette button. Content is set
   // by setRestingLabel below, called whenever the active mode changes.
@@ -143,7 +143,7 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   bar.appendChild(dots)
 
   const setRestingLabel = (key: number): void => {
-    if (key === 2) {
+    if (key === 3) {
       dots.innerHTML =
         '<b class="format-bar__hint-b">B</b>' +
         '<i class="format-bar__hint-i">I</i>' +
@@ -185,7 +185,7 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   }
 
   // Trailing palette button — visible only when the format toolbar is
-  // expanded (mode 2 + proximity). Gives mouse users a "⌘K" target
+  // expanded (mode 3 + proximity). Gives mouse users a "⌘K" target
   // without having to leave the bottom strip first.
   const more = document.createElement('button')
   more.type = 'button'
@@ -199,11 +199,11 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   })
   buttonsWrap.appendChild(more)
 
-  // Pill click in modes 1/3/4 opens the palette. In mode 2 the bar is
+  // Pill click in modes 1/2/4/5 opens the palette. In mode 3 the bar is
   // expanded into format buttons via proximity, so clicks fall through
   // to per-button handlers (and the trailing ⌘K button handles cmdp).
   bar.addEventListener('click', (e) => {
-    if (harness.getCurrentMode().key === 2) return
+    if (harness.getCurrentMode().key === 3) return
     // Only the bar background or its resting label opens cmdp — don't
     // double-trigger when the user clicked a child control.
     if (e.target !== bar && e.target !== dots) return
@@ -232,7 +232,7 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   const applyMode = (key: number): void => {
     document.documentElement.dataset.activeMode = String(key)
     setRestingLabel(key)
-    if (key === 2) {
+    if (key === 3) {
       subscribe()
     } else {
       detach?.()
@@ -244,12 +244,12 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   harness.onModeChange((key) => applyMode(key))
 
   // Proximity reveal: mouse within PROXIMITY_PX of the bottom edge
-  // expands the toolbar in mode 2. In other modes the format buttons
+  // expands the toolbar in mode 3. In other modes the format buttons
   // are meaningless, so the listener bails out and ensures the bar
   // stays in its resting (collapsed, ⌘K) state.
   let isOpen = false
   window.addEventListener('mousemove', (e) => {
-    if (harness.getCurrentMode().key !== 2) {
+    if (harness.getCurrentMode().key !== 3) {
       if (isOpen) {
         isOpen = false
         bar.classList.remove('format-bar--open')

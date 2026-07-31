@@ -1,33 +1,22 @@
-// Mode switcher for the title strip — Read-primary shape. Top-right
-// of the window; three controls instead of the old four flat tabs:
+// Mode pill for the title strip — single-icon design (2026-07-31,
+// evolved from the segmented A/B round; the pill won and collapsed
+// to one control). Top-right of the window:
 //
-//   [Read]  [Edit]  [▾]
+//   [ <current-mode icon> ]
 //
-// Read is the resting state. Edit enters the remembered edit flavour
-// (Write / Split / Code — picker on first-ever use); while editing,
-// the Edit button shows the ACTIVE flavour's icon so you can see which
-// editor you're in at a glance. The chevron opens the flavour picker.
-// Cmd+1..4 direct jumps still exist as the power layer (see main.ts).
+// The pill shows the icon of the mode you're IN; clicking it opens
+// the mode picker (Read / Live / Write / Split / Code — see
+// edit-mode.ts). It hides on scroll-down and returns on scroll-up
+// exactly like the bottom ⌘K pill, via the same data-strip-hidden
+// flag. Keyboard: Cmd+1..5 direct jumps, Cmd+Return Read↔edit
+// toggle, Cmd+Alt+E opens this same picker.
 //
-// Icons are Lucide originals (MIT) inlined as SVG paths — book-open
-// for Read, pen-line for Edit at rest, and the flavour's own icon
-// while active. Inlining avoids pulling the whole lucide package.
+// Icons are Lucide originals (MIT) inlined as SVG paths — same
+// approach as format-bar.ts; avoids pulling the whole lucide package.
 
 import type { Harness } from './main'
 import { getContentKind } from './doc-source'
-import { getFlavour, isEditMode, toggleEdit, openEditPicker } from './edit-mode'
-import { getOption } from './option-flag'
-
-const READ_PATHS =
-  '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>' +
-  '<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'
-
-// pen-line — the Edit button's resting icon (no flavour active).
-const EDIT_PATHS =
-  '<path d="M12 20h9"/>' +
-  '<path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>'
-
-const CHEVRON_PATHS = '<path d="m6 9 6 6 6-6"/>'
+import { getFlavour, openEditPicker, READ_ENTRY } from './edit-mode'
 
 function svg(paths: string): string {
   return (
@@ -40,81 +29,31 @@ function svg(paths: string): string {
 export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   const wrap = document.createElement('div')
   wrap.className = 'mode-icons'
-  wrap.setAttribute('role', 'tablist')
-  // Iteration round (2026-07-31): ?option=1 wraps the controls in a
-  // segmented pill (same visual language as the bottom ⌘K pill);
-  // ?option=2 is the pill with text labels instead of icons. 0 =
-  // baseline bare icons. See option-flag.ts.
-  const option = getOption()
-  const useLabels = option === 2
-  if (option === 1 || option === 2) wrap.classList.add('mode-icons--pill')
-  if (useLabels) wrap.classList.add('mode-icons--labels')
   root.appendChild(wrap)
 
-  const readBtn = document.createElement('button')
-  readBtn.type = 'button'
-  readBtn.className = 'mode-icon'
-  readBtn.setAttribute('role', 'tab')
-  readBtn.setAttribute('aria-label', 'Read')
-  readBtn.title = 'Read — Cmd+1'
-  if (useLabels) readBtn.textContent = 'Read'
-  else readBtn.innerHTML = svg(READ_PATHS)
-  readBtn.addEventListener('click', () => harness.switchTo(1))
-  wrap.appendChild(readBtn)
-
-  const editBtn = document.createElement('button')
-  editBtn.type = 'button'
-  editBtn.className = 'mode-icon'
-  editBtn.setAttribute('role', 'tab')
-  editBtn.setAttribute('aria-label', 'Edit')
-  if (useLabels) editBtn.textContent = 'Edit'
-  else editBtn.innerHTML = svg(EDIT_PATHS)
-  editBtn.addEventListener('click', () => {
-    // From Read: enter the remembered flavour. While editing: clicking
-    // Edit again is a no-op (you're already editing) rather than an
-    // exit — exit lives on the Read button and Cmd+Return, so a stray
-    // second click can't bounce you out of your editor.
-    if (!isEditMode(harness.getCurrentMode().key)) toggleEdit(harness)
-  })
-  wrap.appendChild(editBtn)
-
-  const pickBtn = document.createElement('button')
-  pickBtn.type = 'button'
-  pickBtn.className = 'mode-icon mode-icon--chevron'
-  pickBtn.setAttribute('aria-label', 'Choose edit mode')
-  pickBtn.title = 'Choose edit mode — Cmd+Alt+E'
-  pickBtn.innerHTML = svg(CHEVRON_PATHS)
-  pickBtn.addEventListener('click', () => openEditPicker(harness))
-  wrap.appendChild(pickBtn)
+  const pill = document.createElement('button')
+  pill.type = 'button'
+  pill.className = 'mode-icon mode-icon--pill-toggle'
+  pill.setAttribute('aria-haspopup', 'listbox')
+  pill.addEventListener('click', () => openEditPicker(harness))
+  wrap.appendChild(pill)
 
   const update = (key: number): void => {
-    const editing = isEditMode(key)
-    readBtn.classList.toggle('mode-icon--active', key === 1)
-    readBtn.setAttribute('aria-selected', key === 1 ? 'true' : 'false')
-    editBtn.classList.toggle('mode-icon--active', editing)
-    editBtn.setAttribute('aria-selected', editing ? 'true' : 'false')
-    // Reflect the active flavour on the Edit button; revert to the
-    // pen (or the word "Edit") at rest. Tooltip names the flavour so
-    // hover answers "which editor am I in?" precisely. In the labels
-    // variant the button text itself becomes the flavour name.
-    const flavour = editing ? getFlavour(key) : null
-    if (useLabels) editBtn.textContent = flavour ? flavour.name : 'Edit'
-    else editBtn.innerHTML = svg(flavour ? flavour.paths : EDIT_PATHS)
-    editBtn.title = flavour
-      ? `Editing: ${flavour.name} — Cmd+Return returns to Read`
-      : 'Edit — Cmd+Return'
+    const entry = key === 1 ? READ_ENTRY : getFlavour(key)
+    pill.innerHTML = svg(entry ? entry.paths : READ_ENTRY.paths)
+    const name = entry?.name ?? 'Read'
+    pill.setAttribute('aria-label', `Mode: ${name} — choose mode`)
+    pill.title = `${name} — click or Cmd+Alt+E to change mode`
   }
 
-  // Write (2), Split (3) and Live (5) are markdown-only; harness.switchTo
+  // Live (2), Write (3) and Split (4) are markdown-only; harness.switchTo
   // enforces that and edit-mode routes non-markdown docs straight to
-  // Code, so the buttons themselves stay visible for every content
-  // kind. Only correction needed here: if a non-markdown doc loads
-  // while a markdown-only mode is active, kick back to Read.
+  // Code. Correction handled here: if a non-markdown doc loads while a
+  // markdown-only mode is active, kick back to Read.
   const onSourceChanged = (): void => {
-    const isMarkdown = getContentKind().kind === 'markdown'
-    if (!isMarkdown) {
+    if (getContentKind().kind !== 'markdown') {
       const current = harness.getCurrentMode().key
-      if (current === 2 || current === 3 || current === 5) harness.switchTo(1)
+      if (current === 2 || current === 3 || current === 4) harness.switchTo(1)
     }
   }
 

@@ -83,13 +83,22 @@ describe('flavour registry', () => {
     expect(isEditMode(4)).toBe(true)
   })
 
-  it('exactly one flavour survives for non-markdown docs', () => {
+  it('exactly one flavour survives for non-markdown docs (Code)', () => {
     const nonMarkdown = EDIT_FLAVOURS.filter((f) => !f.markdownOnly)
-    expect(nonMarkdown.map((f) => f.key)).toEqual([4])
+    expect(nonMarkdown.map((f) => f.key)).toEqual([5])
+  })
+
+  it('flavours run in closeness-to-Read order', () => {
+    expect(EDIT_FLAVOURS.map((f) => `${f.key}:${f.name}`)).toEqual([
+      '2:Live',
+      '3:Write',
+      '4:Split',
+      '5:Code',
+    ])
   })
 
   it('getFlavour resolves keys and rejects unknowns', () => {
-    expect(getFlavour(2)?.name).toBe('Write')
+    expect(getFlavour(3)?.name).toBe('Write')
     expect(getFlavour(7)).toBeNull()
   })
 })

@@ -43,52 +43,67 @@ export interface EditFlavour {
   markdownOnly: boolean
 }
 
+// Ordered (and numbered) by closeness to Read — rendered-ness
+// descending, each step reveals more raw source. This is also the
+// expected popularity order: live-preview editing dominates in
+// comparable tools (Obsidian, Typora), raw source is the power tail.
 export const EDIT_FLAVOURS: EditFlavour[] = [
-  // Live sits first — conceptually closest to Read (the rendered look
-  // stays; only the line you touch reveals its source). Its key is 5
-  // (appended after the original four) so Write/Split/Code keep their
-  // long-standing Cmd+2..4 bindings.
   {
-    key: 5,
+    key: 2,
     name: 'Live',
     hint: 'Rendered, reveals source at cursor',
-    shortcut: 'Cmd+5',
+    shortcut: 'Cmd+2',
     paths:
       '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/>' +
       '<path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>',
     markdownOnly: true,
   },
   {
-    key: 2,
+    key: 3,
     name: 'Write',
     hint: 'Rich text, markers hidden',
-    shortcut: 'Cmd+2',
+    shortcut: 'Cmd+3',
     paths:
       '<path d="M12 20h9"/>' +
       '<path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>',
     markdownOnly: true,
   },
   {
-    key: 3,
+    key: 4,
     name: 'Split',
     hint: 'Source beside live preview',
-    shortcut: 'Cmd+3',
+    shortcut: 'Cmd+4',
     paths:
       '<rect width="18" height="18" x="3" y="3" rx="2"/>' +
       '<path d="M12 3v18"/>',
     markdownOnly: true,
   },
   {
-    key: 4,
+    key: 5,
     name: 'Code',
     hint: 'Raw source, bytes preserved',
-    shortcut: 'Cmd+4',
+    shortcut: 'Cmd+5',
     paths:
       '<polyline points="16 18 22 12 16 6"/>' +
       '<polyline points="8 6 2 12 8 18"/>',
     markdownOnly: false,
   },
 ]
+
+// Read as a picker row — the mode picker (single-pill design) lists
+// every mode, not just edit flavours. Kept outside EDIT_FLAVOURS so
+// the edit-toggle logic (enterEdit / remembered preference) still
+// operates on edit flavours only.
+export const READ_ENTRY: EditFlavour = {
+  key: 1,
+  name: 'Read',
+  hint: 'Just the document',
+  shortcut: 'Cmd+1',
+  paths:
+    '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>' +
+    '<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
+  markdownOnly: false,
+}
 
 export function isEditMode(key: number): boolean {
   return EDIT_FLAVOURS.some((f) => f.key === key)
@@ -127,7 +142,7 @@ export function rememberEditFlavour(key: number): void {
 // to Code — the only flavour that can hold them.
 export function enterEdit(harness: Harness): void {
   if (getContentKind().kind !== 'markdown') {
-    harness.switchTo(4)
+    harness.switchTo(5)
     return
   }
   const remembered = readEditFlavour()
@@ -164,7 +179,11 @@ export function openEditPicker(harness: Harness): void {
   pickerOpen = true
 
   const isMarkdown = getContentKind().kind === 'markdown'
-  const flavours = EDIT_FLAVOURS.filter((f) => isMarkdown || !f.markdownOnly)
+  // Full mode list, Read first — the picker is the single pill's menu,
+  // so it must cover every destination, not just edit flavours.
+  const flavours = [READ_ENTRY, ...EDIT_FLAVOURS].filter(
+    (f) => isMarkdown || !f.markdownOnly,
+  )
 
   const backdrop = document.createElement('div')
   backdrop.className = 'edp__backdrop'
@@ -172,11 +191,11 @@ export function openEditPicker(harness: Harness): void {
   const panel = document.createElement('div')
   panel.className = 'edp__panel'
   panel.setAttribute('role', 'dialog')
-  panel.setAttribute('aria-label', 'Choose edit mode')
+  panel.setAttribute('aria-label', 'Choose mode')
 
   const title = document.createElement('div')
   title.className = 'edp__title'
-  title.textContent = 'Edit as'
+  title.textContent = 'Mode'
   panel.appendChild(title)
 
   const list = document.createElement('ul')
@@ -187,18 +206,19 @@ export function openEditPicker(harness: Harness): void {
   if (!isMarkdown) {
     const note = document.createElement('div')
     note.className = 'edp__note'
-    note.textContent = 'Write and Split are markdown-only.'
+    note.textContent = 'Live, Write and Split are markdown-only.'
     panel.appendChild(note)
   }
 
   backdrop.appendChild(panel)
   document.body.appendChild(backdrop)
 
-  // Preselect the remembered flavour (falling back to the current mode
-  // when it's an edit mode, then to the first entry) so Return with no
-  // arrowing repeats the usual choice.
+  // Preselect: from Read, the remembered edit flavour (Return with no
+  // arrowing enters your usual editor); from an edit mode, the current
+  // mode (the picker doubles as a "where am I" answer). Falls back to
+  // the first row.
   const current = harness.getCurrentMode().key
-  const preferred = readEditFlavour() ?? (isEditMode(current) ? current : null)
+  const preferred = isEditMode(current) ? current : readEditFlavour()
   let selectedIdx = Math.max(
     0,
     flavours.findIndex((f) => f.key === preferred),
@@ -226,6 +246,9 @@ export function openEditPicker(harness: Harness): void {
       const row = document.createElement('li')
       row.className = 'edp__row'
       if (idx === selectedIdx) row.classList.add('edp__row--selected')
+      // Mark the mode you're IN (distinct from the arrow-key selection)
+      // with a leading dot so the list answers "where am I" at a glance.
+      if (flavour.key === current) row.classList.add('edp__row--current')
       row.setAttribute('role', 'option')
       row.setAttribute('aria-selected', idx === selectedIdx ? 'true' : 'false')
 

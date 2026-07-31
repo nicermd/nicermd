@@ -2,14 +2,14 @@
 
 > **Alpha release** — early days, expect rough edges. Your data stays on your device; there's no server. [Report a bug on GitHub](https://github.com/nicermd/nicermd/issues).
 
-A nicer, zero-server markdown reader. The page you're looking at is plain markdown. Switch to Write mode (`Ctrl/Cmd+2`) and edit it in place.
+A nicer, zero-server markdown reader. The page you're looking at is plain markdown. Switch to Write mode (`Ctrl/Cmd+3`) and edit it in place.
 
 ![Nicer.md cycling Read, Write, Split and Code modes, then switching from a light to a dark theme](https://nicer.md/media/screencap.gif)
 
 ## Try these first
 
 - `Ctrl/Cmd+1`–`4` for Read / Write / Split / Code — or just click the mode icons, top-right.
-- `Ctrl/Cmd+2` to enter Write mode, then click anywhere and type.
+- `Ctrl/Cmd+3` to enter Write mode, then click anywhere and type.
 - `Ctrl/Cmd+S` saves local files back to where the file came from.
 - `Ctrl/Cmd+O` to **O**pen a local file, or drop a `.md` / `.markdown` / `.mdx` file onto the window.
 - `Ctrl/Cmd+Alt+O` to **O**pen a URL — raw GitHub, gists, or `github.com/user/repo` for the README.

@@ -793,7 +793,7 @@ html {
 .mode-icons {
   display: none;
   position: fixed;
-  top: 0;
+  top: 6px;
   right: 12px;
   height: 28px;
   z-index: 6;
@@ -829,59 +829,24 @@ html {
 .mode-icon--active:hover {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
-/* The edit-flavour chevron reads as an appendage of the Edit button,
-   not a fourth peer — narrower, and its glyph slightly smaller via
-   the svg scale so the row keeps a quiet visual weight. */
-.mode-icon--chevron {
-  width: 16px;
-}
-.mode-icon--chevron svg {
-  width: 12px;
-  height: 12px;
-}
-
-/* --- ?option=1|2 — segmented-pill variants (2026-07-31 round) ---
-   Same visual language as the bottom ⌘K pill: bg, hairline border,
-   full radius, soft shadow. The control reads as one object with two
-   segments rather than loose floating glyphs. Option 2 swaps icons
-   for text labels. Baseline (option 0) is untouched above. */
-.mode-icons--pill {
-  top: 8px;
-  height: 28px;
+/* Single-icon mode pill (2026-07-31 — the segmented A/B round
+   collapsed to this). One control showing the current mode's icon;
+   click opens the mode picker. Same visual language as the bottom
+   ⌘K pill: bg, hairline border, full radius, soft shadow. */
+.mode-icon--pill-toggle {
+  width: 34px;
+  height: 26px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 999px;
-  padding: 0 3px;
-  gap: 0;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  opacity: 0.9;
+  color: var(--fg);
 }
-.mode-icons--pill .mode-icon {
-  height: 22px;
-  border-radius: 999px;
-  opacity: 0.65;
-}
-.mode-icons--pill .mode-icon:hover {
+.mode-icon--pill-toggle:hover {
   opacity: 1;
-}
-.mode-icons--pill .mode-icon--active {
-  opacity: 1;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-}
-.mode-icons--pill .mode-icon--chevron {
-  width: 18px;
-}
-/* Text-label variant — words instead of icons; iA Writer restraint. */
-.mode-icons--labels .mode-icon {
-  width: auto;
-  padding: 0 10px;
-  font-family: var(--font-body);
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.01em;
-}
-.mode-icons--labels .mode-icon--chevron {
-  width: 18px;
-  padding: 0 2px 0 0;
+  background: var(--bg);
+  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
 }
 
 /* In macOS native fullscreen via Tauri the title strip area collapses;
@@ -908,7 +873,11 @@ html {
 }
 [data-strip-hidden="1"] .window-title,
 [data-strip-hidden="1"] .mode-icons {
-  transform: translateY(-100%);
+  /* The pill floats below the viewport edge with a drop shadow, so a
+     plain -100% leaves its bottom sliver + shadow peeking. Overshoot
+     far enough that both clear the edge completely — the mode pill
+     disappears and returns exactly like the bottom ⌘K pill. */
+  transform: translateY(calc(-100% - 24px));
 }
 /* Format / command pill is bottom-anchored, so it slides down out of
    view (translateX is preserved for centring; transform stacks via
@@ -1048,7 +1017,7 @@ html {
 /* In mode 2 clicking the bar background does nothing (proximity
    reveals format buttons; the trailing ⌘K button opens cmdp), so drop
    the pointer cursor to match. */
-[data-active-mode="2"] .format-bar {
+[data-active-mode="3"] .format-bar {
   cursor: default;
 }
 .format-bar__dots {
@@ -1279,6 +1248,20 @@ html {
 }
 .edp__row--selected {
   background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+/* The mode you're currently IN — distinct from the arrow-key
+   selection. A small accent dot in the row's left gutter. */
+.edp__row {
+  position: relative;
+}
+.edp__row--current::before {
+  content: '';
+  position: absolute;
+  left: 7px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent);
 }
 .edp__icon {
   display: flex;

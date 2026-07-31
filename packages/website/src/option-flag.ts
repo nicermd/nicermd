@@ -5,11 +5,10 @@
 // in main.ts. 0 = baseline (current build).
 
 const STORAGE_KEY = 'nicermd:option'
-// Current round (2026-07-31, top-right mode control):
-//   0 = baseline (bare icons)
-//   1 = segmented pill, icons
-//   2 = segmented pill, text labels
-const MAX_OPTION = 2 // bump as new variants land
+// No active round. (2026-07-31 top-right control round concluded:
+// the segmented pill won and evolved into the single-icon mode pill,
+// now the default in mode-icons.ts.)
+const MAX_OPTION = 0 // bump as new variants land
 
 let cached: number | null = null
 
