@@ -556,15 +556,20 @@ html {
   z-index: 1;
 }
 
-/* Option 2 — accent hairline frame: a 1px inset border around the
+/* Option 2 — accent frame: a rounded 2px inset border around the
    viewport in the theme's accent (same hue as the mode pill's hover
-   ring). Follows the active theme automatically via var(--accent).
-   Reads best in Tauri where the window edge is the app edge. */
+   ring); follows the active theme automatically via var(--accent).
+   The radius matches macOS window corners, so in the Tauri shell the
+   frame hugs the window edge. Currently visible in the web build so
+   the round can be judged without a desktop release — AT ROLLOUT
+   this gates to [data-shell='tauri'] only (browser tabs already
+   have chrome; the frame is a window affordance). */
 [data-option='2'] body::after {
   content: '';
   position: fixed;
   inset: 0;
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 10px;
   pointer-events: none;
   z-index: 200;
 }
