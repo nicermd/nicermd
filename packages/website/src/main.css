@@ -82,70 +82,6 @@
   /* Markers barely-there; headings inherit body ink (a hair darker
      for quiet hierarchy); code accents stay monochrome. */
   --cm-marker: #b4b4b8;
-  --cm-heading: #111113;
-  --cm-link: #0b66c3;
-  --cm-url: #86868b;
-  --cm-monospace: #1c1c1e;
-  --cm-quote: #86868b;
-}
-
-[data-theme='ink'] {
-  --bg: #17171a;
-  --fg: #d8d8d9;
-  --muted: #7c7c82;
-  --border: #2b2b30;
-  --surface: #1f1f23;
-
-  --link: #6fa8ef;
-  --accent: #6fa8ef;
-
-  --code-bg: #1f1f23;
-  --code-fg: #d8d8d9;
-
-  --cm-bg: #17171a;
-  --cm-fg: #d8d8d9;
-  --cm-caret: #6fa8ef;
-  --cm-selection: rgba(111, 168, 239, 0.2);
-  --cm-gutter-bg: #17171a;
-  --cm-gutter-fg: #46464c;
-
-  --cm-marker: #55555c;
-  --cm-heading: #ececee;
-  --cm-link: #6fa8ef;
-  --cm-url: #7c7c82;
-  --cm-monospace: #d8d8d9;
-  --cm-quote: #7c7c82;
-}
-
-/* --- TEMP: Paper/Ink colour round, take 2 (2026-07-31) ---
-   Brief from dogfooding: warm pair rejected; furniture-only accent
-   invisible. Target is the One Markdown balance - THREE to FOUR
-   colours, each with a job: ink for prose, one hue for headings,
-   one for links/accent, one for inline code. Furniture takes a soft
-   wash of the heading hue. Winner folds into Paper/Ink. */
-[data-theme='paper-ii'] {
-  --bg: #ffffff;
-  --fg: #1c1c1e;
-  --muted: #86868b;
-  --border: #e9e9ea;
-  --surface: #f6f6f7;
-
-  --link: #0b66c3;
-  --accent: #0b66c3;
-
-  --code-bg: #f6f6f7;
-  --code-fg: #1c1c1e;
-
-  --cm-bg: #ffffff;
-  --cm-fg: #1c1c1e;
-  --cm-caret: #0b66c3;
-  --cm-selection: rgba(11, 102, 195, 0.14);
-  --cm-gutter-bg: #ffffff;
-  --cm-gutter-fg: #c4c4c6;
-
-  /* The three working colours: deep slate-blue headings, blue
-     links, muted crimson inline code. Markers stay a whisper. */
-  --cm-marker: #b4b4b8;
   --cm-heading: #1d4c7f;
   --cm-link: #0b66c3;
   --cm-url: #86868b;
@@ -156,7 +92,7 @@
   --list-marker: #1d4c7f;
 }
 
-[data-theme='ink-ii'] {
+[data-theme='ink'] {
   --bg: #17171a;
   --fg: #d8d8d9;
   --muted: #7c7c82;
@@ -185,6 +121,116 @@
 
   --flourish: color-mix(in srgb, #9cc2f7 28%, #17171a);
   --list-marker: #6fa8ef;
+}
+
+/* --- TEMP: Paper/Ink colour round, take 3 (2026-07-31) ---
+   Structure approved (3-4 colours with jobs: headings / links /
+   inline code / furniture wash); hue pairing still open. Paper/Ink
+   now carry combo A (slate-blue headings + crimson code). These two
+   alternative pairings compare against them; winner's values land in
+   Paper/Ink and these blocks go. */
+[data-theme='paper-teal'] {
+  --bg: #ffffff;
+  --fg: #1c1c1e;
+  --muted: #86868b;
+  --border: #e9e9ea;
+  --surface: #f6f6f7;
+  --link: #0c7d74;
+  --accent: #0c7d74;
+  --code-bg: #f6f6f7;
+  --code-fg: #1c1c1e;
+  --cm-bg: #ffffff;
+  --cm-fg: #1c1c1e;
+  --cm-caret: #0c7d74;
+  --cm-selection: rgba(12, 125, 116, 0.14);
+  --cm-gutter-bg: #ffffff;
+  --cm-gutter-fg: #c4c4c6;
+  --cm-marker: #b4b4b8;
+  --cm-heading: #0f6862;
+  --cm-link: #0c7d74;
+  --cm-url: #86868b;
+  --cm-monospace: #b3541e;
+  --cm-quote: #86868b;
+  --flourish: color-mix(in srgb, #0f6862 28%, #ffffff);
+  --list-marker: #0f6862;
+}
+
+[data-theme='ink-teal'] {
+  --bg: #17171a;
+  --fg: #d8d8d9;
+  --muted: #7c7c82;
+  --border: #2b2b30;
+  --surface: #1f1f23;
+  --link: #5fb8ae;
+  --accent: #5fb8ae;
+  --code-bg: #1f1f23;
+  --code-fg: #d8d8d9;
+  --cm-bg: #17171a;
+  --cm-fg: #d8d8d9;
+  --cm-caret: #5fb8ae;
+  --cm-selection: rgba(95, 184, 174, 0.18);
+  --cm-gutter-bg: #17171a;
+  --cm-gutter-fg: #46464c;
+  --cm-marker: #55555c;
+  --cm-heading: #7fd4cb;
+  --cm-link: #5fb8ae;
+  --cm-url: #7c7c82;
+  --cm-monospace: #e5a072;
+  --cm-quote: #7c7c82;
+  --flourish: color-mix(in srgb, #7fd4cb 26%, #17171a);
+  --list-marker: #5fb8ae;
+}
+
+[data-theme='paper-indigo'] {
+  --bg: #ffffff;
+  --fg: #1c1c1e;
+  --muted: #86868b;
+  --border: #e9e9ea;
+  --surface: #f6f6f7;
+  --link: #4756c4;
+  --accent: #4756c4;
+  --code-bg: #f6f6f7;
+  --code-fg: #1c1c1e;
+  --cm-bg: #ffffff;
+  --cm-fg: #1c1c1e;
+  --cm-caret: #4756c4;
+  --cm-selection: rgba(71, 86, 196, 0.14);
+  --cm-gutter-bg: #ffffff;
+  --cm-gutter-fg: #c4c4c6;
+  --cm-marker: #b4b4b8;
+  --cm-heading: #3f3d99;
+  --cm-link: #4756c4;
+  --cm-url: #86868b;
+  --cm-monospace: #067a57;
+  --cm-quote: #86868b;
+  --flourish: color-mix(in srgb, #3f3d99 28%, #ffffff);
+  --list-marker: #3f3d99;
+}
+
+[data-theme='ink-indigo'] {
+  --bg: #17171a;
+  --fg: #d8d8d9;
+  --muted: #7c7c82;
+  --border: #2b2b30;
+  --surface: #1f1f23;
+  --link: #92a3f8;
+  --accent: #92a3f8;
+  --code-bg: #1f1f23;
+  --code-fg: #d8d8d9;
+  --cm-bg: #17171a;
+  --cm-fg: #d8d8d9;
+  --cm-caret: #92a3f8;
+  --cm-selection: rgba(146, 163, 248, 0.18);
+  --cm-gutter-bg: #17171a;
+  --cm-gutter-fg: #46464c;
+  --cm-marker: #55555c;
+  --cm-heading: #b4bdfa;
+  --cm-link: #92a3f8;
+  --cm-url: #7c7c82;
+  --cm-monospace: #6fdcb0;
+  --cm-quote: #7c7c82;
+  --flourish: color-mix(in srgb, #b4bdfa 26%, #17171a);
+  --list-marker: #92a3f8;
 }
 
 /* Signature light + dark. Mature palettes (10+ years), balanced

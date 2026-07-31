@@ -32,12 +32,14 @@ export const THEMES: readonly Theme[] = [
   // of the catalogue is the louder gallery tier.
   { slug: 'paper', name: 'Paper', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
   { slug: 'ink', name: 'Ink', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
-  // TEMP — colour round take 2 (2026-07-31): the One Markdown
-  // balance. 3-4 colours, each with a job (headings / links / inline
-  // code), furniture in a heading-hue wash. Winner folds into
-  // Paper/Ink and these entries get deleted.
-  { slug: 'paper-ii', name: 'Paper II', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
-  { slug: 'ink-ii', name: 'Ink II', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
+  // TEMP — colour round take 3 (2026-07-31): structure approved
+  // (3-4 colours with jobs); hue pairing open. Paper/Ink carry
+  // combo A (slate-blue + crimson); these compare alternative
+  // pairings. Winner's values land in Paper/Ink; entries deleted.
+  { slug: 'paper-teal', name: 'Paper Teal', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
+  { slug: 'ink-teal', name: 'Ink Teal', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
+  { slug: 'paper-indigo', name: 'Paper Indigo', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
+  { slug: 'ink-indigo', name: 'Ink Indigo', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
   // Gallery — Atom's One Light / One Dark. Polished, mature
   // palettes with balanced contrast, recognised across many editors.
   { slug: 'one-light', name: 'One Light', mode: 'light', inspiredBy: 'Atom', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
