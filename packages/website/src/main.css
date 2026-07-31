@@ -1403,6 +1403,13 @@ html {
   white-space: nowrap;
   letter-spacing: 0.02em;
 }
+/* Menu hand-off row — separated from the modes above it. */
+.edp__row--menu {
+  border-top: 1px solid var(--border);
+  margin-top: 6px;
+  padding-top: 10px;
+}
+
 .edp__note {
   padding: 8px 18px 12px;
   color: var(--muted);

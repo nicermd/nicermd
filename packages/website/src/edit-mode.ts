@@ -180,10 +180,23 @@ export function openEditPicker(harness: Harness): void {
 
   const isMarkdown = getContentKind().kind === 'markdown'
   // Full mode list, Read first — the picker is the single pill's menu,
-  // so it must cover every destination, not just edit flavours.
-  const flavours = [READ_ENTRY, ...EDIT_FLAVOURS].filter(
-    (f) => isMarkdown || !f.markdownOnly,
-  )
+  // so it must cover every destination, not just edit flavours. The
+  // trailing Menu row hands off to the command palette: the top-right
+  // pill is where browser-era instinct looks for "the menu", so the
+  // picker must be a complete entry point, not a modes dead-end.
+  const MENU_ROW: EditFlavour = {
+    key: 0,
+    name: 'Menu',
+    hint: 'Everything else',
+    shortcut: 'Cmd+K',
+    paths:
+      '<path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/>',
+    markdownOnly: false,
+  }
+  const flavours = [
+    ...[READ_ENTRY, ...EDIT_FLAVOURS].filter((f) => isMarkdown || !f.markdownOnly),
+    MENU_ROW,
+  ]
 
   const backdrop = document.createElement('div')
   backdrop.className = 'edp__backdrop'
@@ -234,6 +247,17 @@ export function openEditPicker(harness: Harness): void {
 
   const choose = (flavour: EditFlavour): void => {
     close()
+    // Sentinel key 0 = the Menu row — hand off to the command palette.
+    // Dynamic import: a static edge would drag command-palette's whole
+    // import chain (main.ts, nicermd-core) into anything that imports
+    // this module — including the unit tests, where DOMPurify can't
+    // initialise. The chunk is already loaded in any real session.
+    if (flavour.key === 0) {
+      queueMicrotask(() => {
+        void import('./command-palette').then((m) => m.openPalette())
+      })
+      return
+    }
     // rememberEditFlavour also fires via the onModeChange hook, but
     // switchTo can decline (e.g. a race with a content-kind change) —
     // remembering only on actual entry keeps the preference honest,
@@ -246,6 +270,7 @@ export function openEditPicker(harness: Harness): void {
     flavours.forEach((flavour, idx) => {
       const row = document.createElement('li')
       row.className = 'edp__row'
+      if (flavour.key === 0) row.classList.add('edp__row--menu')
       if (idx === selectedIdx) row.classList.add('edp__row--selected')
       // Mark the mode you're IN (distinct from the arrow-key selection)
       // with a leading dot so the list answers "where am I" at a glance.
