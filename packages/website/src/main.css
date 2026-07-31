@@ -46,6 +46,70 @@
   --cm-quote: #000000;
 }
 
+/* First-party defaults — Paper (light) and Ink (dark). Deliberate
+   restraint in the iA Writer / Typora tradition: ONE accent colour
+   in the whole palette, headings carry no colour (weight and size do
+   the work), markers are a whisper, code sits on a quiet chip. The
+   gallery themes below are louder by design; these two are the
+   product's voice. */
+[data-theme='paper'] {
+  --bg: #ffffff;
+  --fg: #1c1c1e;
+  --muted: #86868b;
+  --border: #e9e9ea;
+  --surface: #f6f6f7;
+
+  --link: #0b66c3;
+  --accent: #0b66c3;
+
+  --code-bg: #f6f6f7;
+  --code-fg: #1c1c1e;
+
+  --cm-bg: #ffffff;
+  --cm-fg: #1c1c1e;
+  --cm-caret: #0b66c3;
+  --cm-selection: rgba(11, 102, 195, 0.14);
+  --cm-gutter-bg: #ffffff;
+  --cm-gutter-fg: #c4c4c6;
+
+  /* Markers barely-there; headings inherit body ink (a hair darker
+     for quiet hierarchy); code accents stay monochrome. */
+  --cm-marker: #b4b4b8;
+  --cm-heading: #111113;
+  --cm-link: #0b66c3;
+  --cm-url: #86868b;
+  --cm-monospace: #1c1c1e;
+  --cm-quote: #86868b;
+}
+
+[data-theme='ink'] {
+  --bg: #17171a;
+  --fg: #d8d8d9;
+  --muted: #7c7c82;
+  --border: #2b2b30;
+  --surface: #1f1f23;
+
+  --link: #6fa8ef;
+  --accent: #6fa8ef;
+
+  --code-bg: #1f1f23;
+  --code-fg: #d8d8d9;
+
+  --cm-bg: #17171a;
+  --cm-fg: #d8d8d9;
+  --cm-caret: #6fa8ef;
+  --cm-selection: rgba(111, 168, 239, 0.2);
+  --cm-gutter-bg: #17171a;
+  --cm-gutter-fg: #46464c;
+
+  --cm-marker: #55555c;
+  --cm-heading: #ececee;
+  --cm-link: #6fa8ef;
+  --cm-url: #7c7c82;
+  --cm-monospace: #d8d8d9;
+  --cm-quote: #7c7c82;
+}
+
 /* Signature light + dark. Mature palettes (10+ years), balanced
    contrast for prose, recognisable across most editors. */
 [data-theme='one-light'] {
