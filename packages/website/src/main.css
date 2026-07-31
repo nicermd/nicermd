@@ -117,114 +117,74 @@
   --cm-quote: #7c7c82;
 }
 
-/* --- TEMP: Paper/Ink colour round (2026-07-31) ---
-   Four candidate answers to "the minimalist themes need a tiny bit
-   more colour". Accent pair keeps the grounds and colours only the
-   furniture; Warm pair shifts the whole ground temperature. The
-   winner folds into Paper/Ink and these blocks are deleted. */
-[data-theme='paper-accent'] {
+/* --- TEMP: Paper/Ink colour round, take 2 (2026-07-31) ---
+   Brief from dogfooding: warm pair rejected; furniture-only accent
+   invisible. Target is the One Markdown balance - THREE to FOUR
+   colours, each with a job: ink for prose, one hue for headings,
+   one for links/accent, one for inline code. Furniture takes a soft
+   wash of the heading hue. Winner folds into Paper/Ink. */
+[data-theme='paper-ii'] {
   --bg: #ffffff;
   --fg: #1c1c1e;
   --muted: #86868b;
   --border: #e9e9ea;
   --surface: #f6f6f7;
+
   --link: #0b66c3;
   --accent: #0b66c3;
+
   --code-bg: #f6f6f7;
   --code-fg: #1c1c1e;
+
   --cm-bg: #ffffff;
   --cm-fg: #1c1c1e;
   --cm-caret: #0b66c3;
   --cm-selection: rgba(11, 102, 195, 0.14);
   --cm-gutter-bg: #ffffff;
   --cm-gutter-fg: #c4c4c6;
+
+  /* The three working colours: deep slate-blue headings, blue
+     links, muted crimson inline code. Markers stay a whisper. */
   --cm-marker: #b4b4b8;
-  --cm-heading: #111113;
+  --cm-heading: #1d4c7f;
   --cm-link: #0b66c3;
   --cm-url: #86868b;
-  --cm-monospace: #1c1c1e;
+  --cm-monospace: #a8354f;
   --cm-quote: #86868b;
-  /* The dash of colour: furniture takes a soft accent. */
-  --flourish: color-mix(in srgb, #0b66c3 45%, #ffffff);
-  --list-marker: #0b66c3;
+
+  --flourish: color-mix(in srgb, #1d4c7f 30%, #ffffff);
+  --list-marker: #1d4c7f;
 }
 
-[data-theme='ink-accent'] {
+[data-theme='ink-ii'] {
   --bg: #17171a;
   --fg: #d8d8d9;
   --muted: #7c7c82;
   --border: #2b2b30;
   --surface: #1f1f23;
+
   --link: #6fa8ef;
   --accent: #6fa8ef;
+
   --code-bg: #1f1f23;
   --code-fg: #d8d8d9;
+
   --cm-bg: #17171a;
   --cm-fg: #d8d8d9;
   --cm-caret: #6fa8ef;
   --cm-selection: rgba(111, 168, 239, 0.2);
   --cm-gutter-bg: #17171a;
   --cm-gutter-fg: #46464c;
+
   --cm-marker: #55555c;
-  --cm-heading: #ececee;
+  --cm-heading: #9cc2f7;
   --cm-link: #6fa8ef;
   --cm-url: #7c7c82;
-  --cm-monospace: #d8d8d9;
+  --cm-monospace: #e08fa0;
   --cm-quote: #7c7c82;
-  --flourish: color-mix(in srgb, #6fa8ef 40%, #17171a);
+
+  --flourish: color-mix(in srgb, #9cc2f7 28%, #17171a);
   --list-marker: #6fa8ef;
-}
-
-[data-theme='paper-warm'] {
-  --bg: #faf7f2;
-  --fg: #2a2620;
-  --muted: #8f8578;
-  --border: #eae3d8;
-  --surface: #f3eee6;
-  --link: #b4592e;
-  --accent: #b4592e;
-  --code-bg: #f3eee6;
-  --code-fg: #2a2620;
-  --cm-bg: #faf7f2;
-  --cm-fg: #2a2620;
-  --cm-caret: #b4592e;
-  --cm-selection: rgba(180, 89, 46, 0.14);
-  --cm-gutter-bg: #faf7f2;
-  --cm-gutter-fg: #c8bfb1;
-  --cm-marker: #c8bfb1;
-  --cm-heading: #1f1b16;
-  --cm-link: #b4592e;
-  --cm-url: #8f8578;
-  --cm-monospace: #2a2620;
-  --cm-quote: #8f8578;
-  --flourish: color-mix(in srgb, #b4592e 40%, #faf7f2);
-  --list-marker: #b4592e;
-}
-
-[data-theme='ink-warm'] {
-  --bg: #1b1815;
-  --fg: #ddd5c9;
-  --muted: #8a8072;
-  --border: #342f28;
-  --surface: #232019;
-  --link: #d99a4e;
-  --accent: #d99a4e;
-  --code-bg: #232019;
-  --code-fg: #ddd5c9;
-  --cm-bg: #1b1815;
-  --cm-fg: #ddd5c9;
-  --cm-caret: #d99a4e;
-  --cm-selection: rgba(217, 154, 78, 0.18);
-  --cm-gutter-bg: #1b1815;
-  --cm-gutter-fg: #4d463c;
-  --cm-marker: #5c5347;
-  --cm-heading: #efe9de;
-  --cm-link: #d99a4e;
-  --cm-url: #8a8072;
-  --cm-monospace: #ddd5c9;
-  --cm-quote: #8a8072;
-  --flourish: color-mix(in srgb, #d99a4e 38%, #1b1815);
-  --list-marker: #d99a4e;
 }
 
 /* Signature light + dark. Mature palettes (10+ years), balanced
