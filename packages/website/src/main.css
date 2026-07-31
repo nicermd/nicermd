@@ -840,6 +840,50 @@ html {
   height: 12px;
 }
 
+/* --- ?option=1|2 — segmented-pill variants (2026-07-31 round) ---
+   Same visual language as the bottom ⌘K pill: bg, hairline border,
+   full radius, soft shadow. The control reads as one object with two
+   segments rather than loose floating glyphs. Option 2 swaps icons
+   for text labels. Baseline (option 0) is untouched above. */
+.mode-icons--pill {
+  top: 8px;
+  height: 28px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 0 3px;
+  gap: 0;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+}
+.mode-icons--pill .mode-icon {
+  height: 22px;
+  border-radius: 999px;
+  opacity: 0.65;
+}
+.mode-icons--pill .mode-icon:hover {
+  opacity: 1;
+}
+.mode-icons--pill .mode-icon--active {
+  opacity: 1;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.mode-icons--pill .mode-icon--chevron {
+  width: 18px;
+}
+/* Text-label variant — words instead of icons; iA Writer restraint. */
+.mode-icons--labels .mode-icon {
+  width: auto;
+  padding: 0 10px;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+}
+.mode-icons--labels .mode-icon--chevron {
+  width: 18px;
+  padding: 0 2px 0 0;
+}
+
 /* In macOS native fullscreen via Tauri the title strip area collapses;
    hide our title element and remove the 28px reserve so content fills
    the screen. Scoped to the Tauri shell because browsers don't set
@@ -964,12 +1008,38 @@ html {
   align-items: center;
   padding: 0 4px;
   gap: 2px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   transition: opacity 160ms ease, padding 160ms ease,
     transform 240ms ease, border-color 240ms ease,
     box-shadow 240ms ease;
-  opacity: 0.7;
+  opacity: 0.9;
   cursor: pointer;
+  /* One-shot settle pulse: a soft accent ring expands and fades after
+     the pill slides into place. Runs on first paint AND every return
+     from hide-on-scroll — [data-strip-hidden="1"] sets animation:none,
+     so removing the flag restarts the animation. The 300ms delay lets
+     the slide-in transition land first; `backwards` holds the 0% frame
+     (plain shadow) during the delay. Deliberately once-only per
+     appearance: an attention cue, not a decoration loop. */
+  animation: format-bar-settle 700ms ease-out 300ms 1 backwards;
+}
+@keyframes format-bar-settle {
+  0% {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1),
+      0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent);
+  }
+  100% {
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1),
+      0 0 0 14px transparent;
+  }
+}
+[data-strip-hidden="1"] .format-bar {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .format-bar {
+    animation: none;
+  }
 }
 .format-bar:hover,
 .format-bar--open {

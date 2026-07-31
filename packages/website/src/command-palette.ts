@@ -45,10 +45,10 @@ function buildCommands(harness: Harness): Command[] {
     { id: 'mode.read', label: 'Switch to Read', shortcut: 'Cmd+1', action: () => harness.switchTo(1) },
     { id: 'mode.edit', label: 'Edit', hint: 'Last-used edit mode', shortcut: 'Cmd+Return', action: () => toggleEdit(harness), available: () => !inEditMode() },
     { id: 'mode.editPicker', label: 'Choose edit mode…', shortcut: 'Cmd+Alt+E', action: () => openEditPicker(harness) },
-    { id: 'mode.live', label: 'Switch to Live', hint: 'Rendered, edits in place', shortcut: 'Cmd+5', action: () => harness.switchTo(5) },
-    { id: 'mode.write', label: 'Switch to Write', shortcut: 'Cmd+2', action: () => harness.switchTo(2) },
-    { id: 'mode.split', label: 'Switch to Split', shortcut: 'Cmd+3', action: () => harness.switchTo(3) },
-    { id: 'mode.code', label: 'Switch to Code', shortcut: 'Cmd+4', action: () => harness.switchTo(4) },
+    { id: 'mode.live', label: 'Edit in Live', hint: 'Rendered, edits in place', shortcut: 'Cmd+5', action: () => harness.switchTo(5) },
+    { id: 'mode.write', label: 'Edit in Write', shortcut: 'Cmd+2', action: () => harness.switchTo(2) },
+    { id: 'mode.split', label: 'Edit in Split', shortcut: 'Cmd+3', action: () => harness.switchTo(3) },
+    { id: 'mode.code', label: 'Edit in Code', shortcut: 'Cmd+4', action: () => harness.switchTo(4) },
     { id: 'mode.cycle', label: 'Cycle modes', shortcut: 'Cmd+Shift+M', action: () => harness.cycle() },
 
     // File

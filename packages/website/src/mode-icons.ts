@@ -16,6 +16,7 @@
 import type { Harness } from './main'
 import { getContentKind } from './doc-source'
 import { getFlavour, isEditMode, toggleEdit, openEditPicker } from './edit-mode'
+import { getOption } from './option-flag'
 
 const READ_PATHS =
   '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>' +
@@ -40,6 +41,14 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   const wrap = document.createElement('div')
   wrap.className = 'mode-icons'
   wrap.setAttribute('role', 'tablist')
+  // Iteration round (2026-07-31): ?option=1 wraps the controls in a
+  // segmented pill (same visual language as the bottom ⌘K pill);
+  // ?option=2 is the pill with text labels instead of icons. 0 =
+  // baseline bare icons. See option-flag.ts.
+  const option = getOption()
+  const useLabels = option === 2
+  if (option === 1 || option === 2) wrap.classList.add('mode-icons--pill')
+  if (useLabels) wrap.classList.add('mode-icons--labels')
   root.appendChild(wrap)
 
   const readBtn = document.createElement('button')
@@ -48,7 +57,8 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   readBtn.setAttribute('role', 'tab')
   readBtn.setAttribute('aria-label', 'Read')
   readBtn.title = 'Read — Cmd+1'
-  readBtn.innerHTML = svg(READ_PATHS)
+  if (useLabels) readBtn.textContent = 'Read'
+  else readBtn.innerHTML = svg(READ_PATHS)
   readBtn.addEventListener('click', () => harness.switchTo(1))
   wrap.appendChild(readBtn)
 
@@ -57,7 +67,8 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   editBtn.className = 'mode-icon'
   editBtn.setAttribute('role', 'tab')
   editBtn.setAttribute('aria-label', 'Edit')
-  editBtn.innerHTML = svg(EDIT_PATHS)
+  if (useLabels) editBtn.textContent = 'Edit'
+  else editBtn.innerHTML = svg(EDIT_PATHS)
   editBtn.addEventListener('click', () => {
     // From Read: enter the remembered flavour. While editing: clicking
     // Edit again is a no-op (you're already editing) rather than an
@@ -83,10 +94,12 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
     editBtn.classList.toggle('mode-icon--active', editing)
     editBtn.setAttribute('aria-selected', editing ? 'true' : 'false')
     // Reflect the active flavour on the Edit button; revert to the
-    // pen at rest. Tooltip names the flavour so hover answers "which
-    // editor am I in?" precisely.
+    // pen (or the word "Edit") at rest. Tooltip names the flavour so
+    // hover answers "which editor am I in?" precisely. In the labels
+    // variant the button text itself becomes the flavour name.
     const flavour = editing ? getFlavour(key) : null
-    editBtn.innerHTML = svg(flavour ? flavour.paths : EDIT_PATHS)
+    if (useLabels) editBtn.textContent = flavour ? flavour.name : 'Edit'
+    else editBtn.innerHTML = svg(flavour ? flavour.paths : EDIT_PATHS)
     editBtn.title = flavour
       ? `Editing: ${flavour.name} — Cmd+Return returns to Read`
       : 'Edit — Cmd+Return'
