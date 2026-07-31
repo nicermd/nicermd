@@ -556,14 +556,15 @@ html {
   z-index: 1;
 }
 
-/* Option 2 — hairline window frame (carried over from round 1):
-   a 1px inset border around the whole viewport. Maximally minimal;
-   reads best in Tauri where the window edge is the app edge. */
+/* Option 2 — accent hairline frame: a 1px inset border around the
+   viewport in the theme's accent (same hue as the mode pill's hover
+   ring). Follows the active theme automatically via var(--accent).
+   Reads best in Tauri where the window edge is the app edge. */
 [data-option='2'] body::after {
   content: '';
   position: fixed;
   inset: 0;
-  border: 1px solid color-mix(in srgb, var(--fg) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, transparent);
   pointer-events: none;
   z-index: 200;
 }

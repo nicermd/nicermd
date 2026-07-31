@@ -23,7 +23,7 @@ import { getContentKind } from './doc-source'
 import { getFlavour, openEditPicker, READ_ENTRY } from './edit-mode'
 import { IS_MAC } from './platform'
 
-const HINT_LABEL = IS_MAC ? '⌘⌥E' : 'Ctrl+Alt+E'
+const HINT_LABEL = IS_MAC ? '⌘E' : 'Ctrl+E'
 // How long the hint lingers after the pill (re)appears before the
 // icon returns. Mirrors the ⌘K settle pulse's ~2s presence.
 const HINT_LINGER_MS = 2000
@@ -110,7 +110,7 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
     iconPaths = entry?.paths ?? READ_ENTRY.paths
     const name = entry?.name ?? 'Read'
     pill.setAttribute('aria-label', `Mode: ${name} — choose mode`)
-    pill.title = `${name} — click or ${IS_MAC ? 'Cmd+Alt+E' : 'Ctrl+Alt+E'} to change mode`
+    pill.title = `${name} — click or ${IS_MAC ? 'Cmd+E' : 'Ctrl+E'} to change mode`
     render()
   }
 

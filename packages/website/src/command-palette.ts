@@ -44,7 +44,7 @@ function buildCommands(harness: Harness): Command[] {
     // with the direct per-flavour jumps kept for power users.
     { id: 'mode.read', label: 'Switch to Read', shortcut: 'Cmd+1', action: () => harness.switchTo(1) },
     { id: 'mode.edit', label: 'Edit', hint: 'Last-used edit mode', shortcut: 'Cmd+Return', action: () => toggleEdit(harness), available: () => !inEditMode() },
-    { id: 'mode.editPicker', label: 'Choose edit mode…', shortcut: 'Cmd+Alt+E', action: () => openEditPicker(harness) },
+    { id: 'mode.editPicker', label: 'Choose mode…', shortcut: 'Cmd+E', action: () => openEditPicker(harness) },
     { id: 'mode.live', label: 'Edit in Live', hint: 'Rendered, edits in place', shortcut: 'Cmd+2', action: () => harness.switchTo(2) },
     { id: 'mode.write', label: 'Edit in Write', shortcut: 'Cmd+3', action: () => harness.switchTo(3) },
     { id: 'mode.split', label: 'Edit in Split', shortcut: 'Cmd+4', action: () => harness.switchTo(4) },
@@ -111,7 +111,7 @@ function buildCommands(harness: Harness): Command[] {
     { id: 'format.bold', label: 'Bold', shortcut: 'Cmd+B', action: () => harness.toggleFormat('bold'), available: inWysiwyg },
     { id: 'format.italic', label: 'Italic', shortcut: 'Cmd+I', action: () => harness.toggleFormat('italic'), available: inWysiwyg },
     { id: 'format.strike', label: 'Strikethrough', action: () => harness.toggleFormat('strike'), available: inWysiwyg },
-    { id: 'format.code', label: 'Inline code', shortcut: 'Cmd+E', action: () => harness.toggleFormat('code'), available: inWysiwyg },
+    { id: 'format.code', label: 'Inline code', shortcut: 'Cmd+Shift+E', action: () => harness.toggleFormat('code'), available: inWysiwyg },
     { id: 'format.h1', label: 'Heading 1', shortcut: 'Cmd+Alt+1', action: () => harness.toggleFormat('h1'), available: inWysiwyg },
     { id: 'format.h2', label: 'Heading 2', shortcut: 'Cmd+Alt+2', action: () => harness.toggleFormat('h2'), available: inWysiwyg },
     { id: 'format.bulletList', label: 'Bullet list', shortcut: 'Cmd+Shift+8', action: () => harness.toggleFormat('bulletList'), available: inWysiwyg },

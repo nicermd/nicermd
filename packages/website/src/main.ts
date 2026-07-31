@@ -1263,6 +1263,15 @@ function finish(harness: Harness): void {
       void openFile(harness)
       return
     }
+    // Cmd+E — the mode picker. The two-glyph sibling of Cmd+K:
+    // ⌘K = commands, ⌘E = edit/mode. Tiptap's inline-code (the old
+    // Mod-e) moved to Cmd+Shift+E (see wysiwyg-engine's remap);
+    // Cmd+Alt+E stays as a working alias.
+    if (event.code === 'KeyE') {
+      event.preventDefault()
+      openEditPicker(harness)
+      return
+    }
     // Cmd+Return — toggle Read ↔ edit. From Read, enter the remembered
     // edit flavour (picker on first-ever use); from any edit flavour,
     // return to Read. See edit-mode.ts for the architecture.

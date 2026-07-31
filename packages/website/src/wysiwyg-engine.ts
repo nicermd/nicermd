@@ -4,6 +4,7 @@
 // a single chunk that's cached after the first fetch.
 
 import { Editor } from '@tiptap/core'
+import { Extension } from '@tiptap/core'
 import StarterKit from '@tiptap/starter-kit'
 import { CodeBlock } from '@tiptap/extension-code-block'
 import { Image } from '@tiptap/extension-image'
@@ -134,9 +135,27 @@ export function createWysiwyg(
   const parked = parkHtml(markdown)
   let isDirty = false
 
+  // Cmd+E belongs to the app-level mode picker (the "⌘E" story beside
+  // ⌘K — see main.ts). StarterKit's Code mark binds Mod-e for inline
+  // code; this remap swallows Mod-e inside the editor (no format
+  // action, event bubbles up to the window handler which opens the
+  // picker) and moves inline code to Mod-Shift-e. High priority so
+  // its keymap sits ahead of Code's.
+  const ShortcutRemap = Extension.create({
+    name: 'nicermdShortcutRemap',
+    priority: 1000,
+    addKeyboardShortcuts() {
+      return {
+        'Mod-e': () => true,
+        'Mod-Shift-e': () => this.editor.commands.toggleCode(),
+      }
+    },
+  })
+
   const editor = new Editor({
     element: parent,
     extensions: [
+      ShortcutRemap,
       StarterKit.configure({
         // Default opens links on click — fights editing. Off here so a
         // click-through happens via the format bar / keyboard later.
