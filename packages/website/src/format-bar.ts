@@ -243,6 +243,18 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   applyMode(harness.getCurrentMode().key)
   harness.onModeChange((key) => applyMode(key))
 
+  // Hover swap — the pill reveals its PURPOSE on mouse-over ("Menu"),
+  // the inverse of the mode pill which reveals its shortcut. Restored
+  // to the per-mode resting label on leave. In Write mode proximity
+  // expands the bar into buttons (dots hidden), so the swap is only
+  // ever visible in the collapsed state.
+  bar.addEventListener('mouseenter', () => {
+    dots.textContent = 'Menu'
+  })
+  bar.addEventListener('mouseleave', () => {
+    setRestingLabel(harness.getCurrentMode().key)
+  })
+
   // Proximity reveal: mouse within PROXIMITY_PX of the bottom edge
   // expands the toolbar in mode 3. In other modes the format buttons
   // are meaningless, so the listener bails out and ensures the bar

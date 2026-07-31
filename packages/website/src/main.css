@@ -969,7 +969,9 @@ html {
   padding: 0 8px;
   height: 28px;
   background: var(--bg);
-  border: 1px solid var(--border);
+  /* Accent ring — same 45% mix as the window frame so the floating
+     chrome (frame, mode pill, cmdk pill) reads as one family. */
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
   border-radius: 999px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   opacity: 0.9;
@@ -989,7 +991,7 @@ html {
 .mode-icon--pill-toggle:hover {
   opacity: 1;
   background: var(--bg);
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 75%, var(--border));
 }
 
 
@@ -1115,7 +1117,8 @@ html {
   transform: translateX(-50%);
   z-index: 5;
   background: var(--bg);
-  border: 1px solid var(--border);
+  /* Accent ring — matches the mode pill and window frame. */
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
   border-radius: 999px;
   height: 32px;
   align-items: center;
