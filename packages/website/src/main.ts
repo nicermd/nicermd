@@ -1,14 +1,19 @@
-// Hybrid-engine harness with hot-swapped editors across four modes.
+// Hybrid-engine harness with hot-swapped editors across five modes.
 //
-// Mode order (nicest → least nice):
+// Read (1) is the primary state; 2..5 are "edit flavours" behind the
+// Edit action — see edit-mode.ts for the Read-primary architecture.
+// Numbering runs in order of closeness to Read (rendered-ness
+// descending — each step reveals more raw source):
+//
 //   1 Read              nicermd-core HTML, no editor
-//   2 WYSIWYG           Tiptap (lazy-loaded on first enter)
-//   3 Code + preview    CM source + nicermd-core preview, live-updating
-//   4 Raw code          CM, syntax highlighting only
+//   2 Live              CM source with inline decorations (Obsidian-style)
+//   3 Write             Tiptap WYSIWYG (lazy-loaded on first enter)
+//   4 Split             CM source + nicermd-core preview, live-updating
+//   5 Code              CM raw source, syntax highlighting only
 //
 // Each mode is a function (parent, markdown) → ModeHandle. Switching:
 // capture text via getMarkdown(), destroy(), mount the next mode with the
-// captured text. Cmd/Ctrl + 1..4 jumps directly; Cmd/Ctrl+Shift+M cycles.
+// captured text. Cmd/Ctrl + 1..5 jumps directly; Cmd/Ctrl+Shift+M cycles.
 //
 // Dev-only aids (cross-tab broadcast sync, mode label pill, ?freeze=1,
 // stress.md as boot doc) live in ./dev-features. They're loaded lazily
@@ -50,6 +55,8 @@ import { registerServiceWorker } from './sw-register'
 import { setupScrollStrip, showStrip } from './scroll-strip'
 import { setupFormatBar } from './format-bar'
 import { setupCommandPalette } from './command-palette'
+import { setupEditMode, toggleEdit, openEditPicker } from './edit-mode'
+import { mountLive } from './live-engine'
 import { setupTouchSwipe } from './touch-swipe'
 import { cycleOption } from './option-flag'
 import type { FormatAction } from './wysiwyg-engine'
@@ -73,7 +80,7 @@ interface ModeHandle {
   // editing state implement this. Used by dev-features for cross-tab
   // updates; production code paths don't currently call it.
   setMarkdown?: (markdown: string) => void
-  // Optional — modes that support format commands (currently mode 2 /
+  // Optional — modes that support format commands (currently mode 3 /
   // WYSIWYG) implement these. The format bar is the only consumer.
   toggleFormat?: (action: FormatAction) => void
   isFormatActive?: (action: FormatAction) => boolean
@@ -170,7 +177,7 @@ const editorTheme = EditorView.theme({
 // markdown highlighter uses so a theme tunes ONE palette and every
 // language picks up the same per-token colours. Tag picks follow the
 // hljs mapping in main.css (which Read mode already uses), so the
-// editor side of mode 3 and mode 4 match the preview side's colouring:
+// editor side of mode 4 and mode 5 match the preview side's colouring:
 //   keyword / bool / atom / null → --cm-marker  (structural accent)
 //   string / regexp              → --cm-monospace (the "code" accent)
 //   comment / docComment         → --cm-quote   (muted, italic)
@@ -250,7 +257,7 @@ type ContentKindLocal =
 
 // Per-content-kind CodeMirror extensions. Markdown gets its language
 // parser + the markdown highlight palette synchronously (it's needed
-// by mode 2's hidden wrapper too). Source files start with an empty
+// by mode 3's hidden wrapper too). Source files start with an empty
 // language slot via the Compartment; loadLanguageExtensionsFor() then
 // reconfigures the slot with the per-language extension once its
 // dynamic-import chunk arrives. Plain text stays in the empty slot.
@@ -340,7 +347,7 @@ function mountRead(parent: HTMLElement, markdown: string): ModeHandle {
   }
 }
 
-// Cached after the first import so re-entering mode 2 is instant.
+// Cached after the first import so re-entering mode 3 is instant.
 let wysiwygModule: Promise<typeof import('./wysiwyg-engine')> | null = null
 
 function mountWysiwyg(
@@ -641,9 +648,10 @@ function mountRawCode(
 
 const MODES: ModeDef[] = [
   { key: 1, label: 'Read', mount: mountRead },
-  { key: 2, label: 'Write', mount: mountWysiwyg },
-  { key: 3, label: 'Split', mount: mountCodePlusPreview },
-  { key: 4, label: 'Code', mount: mountRawCode },
+  { key: 2, label: 'Live', mount: mountLive },
+  { key: 3, label: 'Write', mount: mountWysiwyg },
+  { key: 4, label: 'Split', mount: mountCodePlusPreview },
+  { key: 5, label: 'Code', mount: mountRawCode },
 ]
 
 // Mode-switching engine. Owns no UI chrome and no cross-tab sync — those
@@ -759,15 +767,15 @@ export class Harness {
     // they never reach this branch — meaning every caller that does is
     // a deliberate user action (Cmd+2, palette, click on hidden icon)
     // and deserves a discreet notice rather than a silent no-op.
-    // Modes 2 (Write/Tiptap) and 3 (Split: editor + live preview) are
-    // markdown-only. Tiptap's serialiser would mangle non-markdown text,
-    // and the Split preview has nothing transformative to show for code
-    // (it's the same hljs render as Read mode, just narrower) — the
-    // editor and preview show effectively the same content, so the
-    // split adds friction without adding value. Read (1) and Code (4)
-    // stay available; the notice points the user at those.
-    if ((key === 2 || key === 3) && getContentKind().kind !== 'markdown') {
-      showNoticeBanner('Markdown-only mode. Use mode 1 to read or mode 4 to edit.')
+    // Modes 2 (Live: inline markdown decorations), 3 (Write/Tiptap)
+    // and 4 (Split: editor + live preview) are markdown-only. Live's
+    // decorations only make sense over markdown syntax, Tiptap's
+    // serialiser would mangle non-markdown text, and the Split preview
+    // has nothing transformative to show for code (it's the same hljs
+    // render as Read mode, just narrower). Read (1) and Code (5) stay
+    // available; the notice points the user at those.
+    if ((key === 2 || key === 3 || key === 4) && getContentKind().kind !== 'markdown') {
+      showNoticeBanner('Markdown-only mode. Use mode 1 to read or mode 5 to edit.')
       return
     }
     const dir = direction ?? (key > this.currentMode ? 'forward' : 'backward')
@@ -841,7 +849,7 @@ export class Harness {
   }
 
   // Step forward/backward through modes, skipping ones that switchTo
-  // would refuse (Write/key=2 and Split/key=3 when the doc isn't
+  // would refuse (Live/Write/Split, keys 2-4, when the doc isn't
   // markdown). Without the skip, cycling past those modes on a non-
   // markdown doc would stall on the current mode because switchTo
   // would silently no-op + show a notice the cycle didn't intend.
@@ -849,14 +857,14 @@ export class Harness {
     let candidate = from
     for (let i = 0; i < MODES.length; i++) {
       candidate = ((candidate - 1 + step + MODES.length) % MODES.length) + 1
-      if ((candidate === 2 || candidate === 3) && getContentKind().kind !== 'markdown') continue
+      if ((candidate === 2 || candidate === 3 || candidate === 4) && getContentKind().kind !== 'markdown') continue
       return candidate
     }
     return from
   }
 
   // Format command surface — delegates to the active mode handle if it
-  // implements the optional methods (currently mode 2 / WYSIWYG).
+  // implements the optional methods (currently mode 3 / WYSIWYG).
   // Returns no-ops elsewhere so the format bar can call without
   // checking the active mode itself.
   toggleFormat(action: FormatAction): void {
@@ -945,7 +953,7 @@ async function boot(): Promise<void> {
   }
 
   // Hide title strip + mode icons on scroll-down, restore on scroll-up.
-  // Inert in mode 3 (split scrolls inside panes, not the document).
+  // Inert in mode 4 (split scrolls inside panes, not the document).
   setupScrollStrip()
 
   // Snapshot the persisted per-window state IMMEDIATELY, before any
@@ -1014,6 +1022,7 @@ async function boot(): Promise<void> {
   // edits. Set iteration follows insertion order.
   harness.onLocalChange(() => markDirty())
   setupTitle(harness, root)
+  setupEditMode(harness)
   setupModeIcons(harness, root)
   setupFormatBar(harness, root)
   setupCommandPalette(harness)
@@ -1188,6 +1197,15 @@ function finish(harness: Harness): void {
       cycleOption()
       return
     }
+    // Cmd/Ctrl + Alt/Option + E — open the edit-flavour picker. Same
+    // Alt-family rationale as theme/font: plain Cmd+E is Tiptap's
+    // inline-code binding in Write mode, so the picker takes the Alt
+    // slot and Cmd+Return handles the fast enter/exit toggle.
+    if (event.altKey && event.code === 'KeyE') {
+      event.preventDefault()
+      openEditPicker(harness)
+      return
+    }
     // Cmd/Ctrl + Alt/Option + O — open URL prompt. Slots into the
     // Cmd+Alt+letter picker family. Cmd+Shift+O is Chrome's bookmark
     // manager and Cmd+U is View-Source on most browsers (and not always
@@ -1217,15 +1235,16 @@ function finish(harness: Harness): void {
       }
       return
     }
-    // Cmd/Ctrl + 1..4 — direct mode jump. event.code over event.key so
+    // Cmd/Ctrl + 1..5 — direct mode jump. event.code over event.key so
     // the binding is stable across keyboard layouts. Mac users on
-    // Safari can't use Cmd+1..4 (Safari reserves them for tab switch);
-    // plain Ctrl+1..4 also fires our handler via the ctrlKey branch.
+    // Safari can't use Cmd+1..5 (Safari reserves them for tab switch);
+    // plain Ctrl+1..5 also fires our handler via the ctrlKey branch.
     if (
       event.code === 'Digit1' ||
       event.code === 'Digit2' ||
       event.code === 'Digit3' ||
-      event.code === 'Digit4'
+      event.code === 'Digit4' ||
+      event.code === 'Digit5'
     ) {
       event.preventDefault()
       harness.switchTo(Number(event.code.slice(5)))
@@ -1241,13 +1260,12 @@ function finish(harness: Harness): void {
       void openFile(harness)
       return
     }
-    // Cmd+Return — toggle Read ↔ Write. From Read, jump into Write;
-    // from Write, jump back to Read; from Split or Code, go to Write
-    // (treats Cmd+Return as "go to primary edit mode").
+    // Cmd+Return — toggle Read ↔ edit. From Read, enter the remembered
+    // edit flavour (picker on first-ever use); from any edit flavour,
+    // return to Read. See edit-mode.ts for the architecture.
     if (event.code === 'Enter') {
       event.preventDefault()
-      const cur = harness.getCurrentMode().key
-      harness.switchTo(cur === 2 ? 1 : 2)
+      toggleEdit(harness)
       return
     }
     // Cmd+\ — swap between the two most recently committed themes.
