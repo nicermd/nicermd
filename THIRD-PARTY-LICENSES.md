@@ -617,7 +617,7 @@ Exhibit B - "Incompatible With Secondary Licenses" Notice
 
 ### Apache-2.0 OR MIT
 
-#### `@tauri-apps/api@2.11.0`
+#### `@tauri-apps/api@2.11.1`
 
 Homepage: <https://github.com/tauri-apps/tauri#readme>
 
@@ -911,10 +911,9 @@ OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
 
 ### MIT
 
-#### `@codemirror/autocomplete@6.20.1`
+#### `@codemirror/autocomplete@6.20.3`
 
-Author: Marijn Haverbeke  
-Homepage: <https://github.com/codemirror/autocomplete#readme>
+Author: Marijn Haverbeke
 
 ```
 MIT License
@@ -940,10 +939,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@codemirror/commands@6.10.3`
+#### `@codemirror/commands@6.10.4`
 
-Author: Marijn Haverbeke  
-Homepage: <https://github.com/codemirror/commands#readme>
+Author: Marijn Haverbeke
 
 ```
 MIT License
@@ -1085,10 +1083,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@codemirror/lang-markdown@6.5.0`
+#### `@codemirror/lang-markdown@6.5.1`
 
-Author: Marijn Haverbeke  
-Homepage: <https://github.com/codemirror/lang-markdown#readme>
+Author: Marijn Haverbeke
 
 ```
 MIT License
@@ -1172,65 +1169,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@codemirror/language@6.12.3`
-
-Author: Marijn Haverbeke  
-Homepage: <https://github.com/codemirror/language#readme>
-
-```
-MIT License
-
-Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-```
-
-#### `@codemirror/lint@6.9.5`
-
-Author: Marijn Haverbeke  
-Homepage: <https://github.com/codemirror/lint#readme>
-
-```
-MIT License
-
-Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
-
-Permission is hereby granted, free of charge, to any person obtaining a copy
-of this software and associated documentation files (the "Software"), to deal
-in the Software without restriction, including without limitation the rights
-to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-copies of the Software, and to permit persons to whom the Software is
-furnished to do so, subject to the following conditions:
-
-The above copyright notice and this permission notice shall be included in
-all copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
-THE SOFTWARE.
-```
-
-#### `@codemirror/search@6.7.0`
+#### `@codemirror/language@6.12.4`
 
 Author: Marijn Haverbeke
 
@@ -1258,10 +1197,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@codemirror/state@6.6.0`
+#### `@codemirror/lint@6.9.7`
 
-Author: Marijn Haverbeke  
-Homepage: <https://github.com/codemirror/state#readme>
+Author: Marijn Haverbeke
 
 ```
 MIT License
@@ -1287,7 +1225,63 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@codemirror/view@6.43.1`
+#### `@codemirror/search@6.7.1`
+
+Author: Marijn Haverbeke
+
+```
+MIT License
+
+Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+```
+
+#### `@codemirror/state@6.7.1`
+
+Author: Marijn Haverbeke
+
+```
+MIT License
+
+Copyright (C) 2018-2021 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in
+all copies or substantial portions of the Software.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+THE SOFTWARE.
+```
+
+#### `@codemirror/view@6.43.7`
 
 Author: Marijn Haverbeke
 
@@ -1344,10 +1338,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@lezer/css@1.3.3`
+#### `@lezer/css@1.3.4`
 
-Author: Marijn Haverbeke  
-Homepage: <https://github.com/lezer-parser/css#readme>
+Author: Marijn Haverbeke
 
 ```
 MIT License
@@ -1517,7 +1510,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@lezer/markdown@1.6.4`
+#### `@lezer/markdown@1.7.2`
 
 Author: Marijn Haverbeke
 
@@ -1545,10 +1538,9 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@lezer/python@1.1.18`
+#### `@lezer/python@1.1.19`
 
-Author: Marijn Haverbeke  
-Homepage: <https://github.com/lezer-parser/python#readme>
+Author: Marijn Haverbeke
 
 ```
 MIT License
@@ -1603,10 +1595,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@marijn/find-cluster-break@1.0.2`
+#### `@marijn/find-cluster-break@1.0.3`
 
 Author: Marijn Haverbeke  
-Homepage: <https://github.com/marijnh/find-cluster-break#readme>
+Homepage: <https://code.haverbeke.berlin/marijn/find-cluster-break>
 
 ```
 MIT License
@@ -1632,7 +1624,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `@tiptap/core@3.26.1`
+#### `@tiptap/core@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1660,7 +1652,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-blockquote@3.26.1`
+#### `@tiptap/extension-blockquote@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1688,7 +1680,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-bold@3.26.1`
+#### `@tiptap/extension-bold@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1716,7 +1708,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-bullet-list@3.26.1`
+#### `@tiptap/extension-bullet-list@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1744,7 +1736,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-code@3.26.1`
+#### `@tiptap/extension-code@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1772,7 +1764,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-code-block@3.26.1`
+#### `@tiptap/extension-code-block@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1800,7 +1792,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-document@3.26.1`
+#### `@tiptap/extension-document@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1828,7 +1820,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-dropcursor@3.26.1`
+#### `@tiptap/extension-dropcursor@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1856,7 +1848,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-gapcursor@3.26.1`
+#### `@tiptap/extension-gapcursor@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1884,7 +1876,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-hard-break@3.26.1`
+#### `@tiptap/extension-hard-break@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1912,7 +1904,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-heading@3.26.1`
+#### `@tiptap/extension-heading@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1940,7 +1932,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-horizontal-rule@3.26.1`
+#### `@tiptap/extension-horizontal-rule@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1968,7 +1960,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-image@3.26.1`
+#### `@tiptap/extension-image@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -1996,7 +1988,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-italic@3.26.1`
+#### `@tiptap/extension-italic@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2024,7 +2016,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-link@3.26.1`
+#### `@tiptap/extension-link@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2052,7 +2044,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-list@3.26.1`
+#### `@tiptap/extension-list@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2080,7 +2072,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-list-item@3.26.1`
+#### `@tiptap/extension-list-item@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2108,7 +2100,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-list-keymap@3.26.1`
+#### `@tiptap/extension-list-keymap@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2136,7 +2128,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-ordered-list@3.26.1`
+#### `@tiptap/extension-ordered-list@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2164,7 +2156,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-paragraph@3.26.1`
+#### `@tiptap/extension-paragraph@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2192,7 +2184,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-strike@3.26.1`
+#### `@tiptap/extension-strike@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2220,7 +2212,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table@3.26.1`
+#### `@tiptap/extension-table@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2248,7 +2240,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table-cell@3.26.1`
+#### `@tiptap/extension-table-cell@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2276,7 +2268,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table-header@3.26.1`
+#### `@tiptap/extension-table-header@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2304,7 +2296,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-table-row@3.26.1`
+#### `@tiptap/extension-table-row@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2332,7 +2324,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-text@3.26.1`
+#### `@tiptap/extension-text@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2360,7 +2352,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extension-underline@3.26.1`
+#### `@tiptap/extension-underline@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2388,7 +2380,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/extensions@3.26.1`
+#### `@tiptap/extensions@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2416,7 +2408,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/pm@3.26.1`
+#### `@tiptap/pm@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2444,7 +2436,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 ```
 
-#### `@tiptap/starter-kit@3.26.1`
+#### `@tiptap/starter-kit@3.29.2`
 
 Homepage: <https://tiptap.dev>
 
@@ -2697,10 +2689,10 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `crelt@1.0.6`
+#### `crelt@1.0.7`
 
 Author: Marijn Haverbeke  
-Homepage: <https://github.com/marijnh/crelt#readme>
+Homepage: <https://code.haverbeke.berlin/marijn/crelt>
 
 ```
 Copyright (C) 2020 by Marijn Haverbeke <marijn@haverbeke.berlin>
@@ -2780,7 +2772,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `markdown-it@14.2.0`
+#### `markdown-it@14.3.0`
 
 Homepage: <https://github.com/markdown-it/markdown-it#readme>
 
@@ -2809,7 +2801,7 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 ```
 
-#### `mdurl@2.0.0`
+#### `mdurl@2.1.0`
 
 Homepage: <https://github.com/markdown-it/mdurl#readme>
 
@@ -2938,9 +2930,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `prosemirror-dropcursor@1.8.2`
-
-Homepage: <https://github.com/prosemirror/prosemirror-dropcursor#readme>
+#### `prosemirror-dropcursor@1.8.3`
 
 ```
 Copyright (C) 2015-2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
@@ -3068,9 +3058,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `prosemirror-markdown@1.13.4`
-
-Homepage: <https://github.com/prosemirror/prosemirror-markdown#readme>
+#### `prosemirror-markdown@1.13.5`
 
 ```
 Copyright (C) 2015-2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
@@ -3094,7 +3082,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `prosemirror-model@1.25.8`
+#### `prosemirror-model@1.25.11`
 
 ```
 Copyright (C) 2015-2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
@@ -3222,7 +3210,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `prosemirror-view@1.41.9`
+#### `prosemirror-view@1.42.2`
 
 ```
 Copyright (C) 2015-2017 by Marijn Haverbeke <marijn@haverbeke.berlin> and others
@@ -3440,7 +3428,7 @@ PackageDownloadLocation: git+ssh://github.com/tauri-apps/tauri.git
 Creator: Person: Daniel Thompson-Yvetot
 ```
 
-#### `@tauri-apps/plugin-dialog@2.7.1`
+#### `@tauri-apps/plugin-dialog@2.7.2`
 
 Homepage: <https://github.com/tauri-apps/plugins-workspace#readme>
 
