@@ -28,7 +28,7 @@ Total packages: **98**
 
 ### (MPL-2.0 OR Apache-2.0)
 
-#### `dompurify@3.4.10`
+#### `dompurify@3.4.12`
 
 Author: Dr.-Ing. Mario Heiderich, Cure53  
 Homepage: <https://github.com/cure53/DOMPurify>
@@ -2724,7 +2724,7 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 THE SOFTWARE.
 ```
 
-#### `linkify-it@5.0.1`
+#### `linkify-it@5.0.2`
 
 Homepage: <https://github.com/markdown-it/linkify-it#readme>
 
