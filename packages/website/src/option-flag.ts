@@ -5,10 +5,12 @@
 // in main.ts. 0 = baseline (current build).
 
 const STORAGE_KEY = 'nicermd:option'
-// No active round. (2026-07-31 framing rounds concluded: accent
-// window frame shipped as the Tauri default; page-card, titlebar
-// band and vignette rejected. Earlier: single-icon mode pill.)
-const MAX_OPTION = 0 // bump as new variants land
+// Active round (2026-08-01): Write-mode top toolbar. 1 = flat accent
+// tint, 2 = soft sheen gradient. 0 stays the shipped baseline (format
+// buttons in the bottom proximity pill). Previous rounds: accent
+// window frame (shipped); page-card, titlebar band, vignette
+// (rejected); single-icon mode pill (shipped).
+const MAX_OPTION = 2 // bump as new variants land
 
 let cached: number | null = null
 

@@ -54,6 +54,7 @@ import { openThemePicker } from './theme-picker'
 import { registerServiceWorker } from './sw-register'
 import { setupScrollStrip, showStrip } from './scroll-strip'
 import { setupFormatBar } from './format-bar'
+import { setupTopToolbar } from './top-toolbar'
 import { setupCommandPalette } from './command-palette'
 import { setupEditMode, toggleEdit, openEditPicker } from './edit-mode'
 import { mountLive } from './live-engine'
@@ -1028,6 +1029,7 @@ async function boot(): Promise<void> {
   setupEditMode(harness)
   setupModeIcons(harness, root)
   setupFormatBar(harness, root)
+  setupTopToolbar(harness, root)
   setupCommandPalette(harness)
   setupVersionBadge(root)
   // Touch swipe on the doc surface cycles modes. Scoped to .mode-host

@@ -16,9 +16,10 @@
 import type { Harness } from './main'
 import type { FormatAction } from './wysiwyg-engine'
 import { openPalette } from './command-palette'
+import { getOption } from './option-flag'
 import { IS_MAC } from './platform'
 
-interface FormatButtonDef {
+export interface FormatButtonDef {
   action: FormatAction
   label: string
   shortcut?: string
@@ -26,7 +27,9 @@ interface FormatButtonDef {
 }
 
 // 24×24 viewBox, stroke="currentColor", stroke-width=2, line-cap/join=round.
-const BUTTONS: FormatButtonDef[] = [
+// Exported for the top toolbar (top-toolbar.ts) so both surfaces render
+// the identical button set from one definition.
+export const FORMAT_BUTTONS: FormatButtonDef[] = [
   {
     action: 'bold',
     label: 'Bold',
@@ -127,6 +130,12 @@ const CMD_K_LABEL = IS_MAC ? '⌘K' : 'Ctrl+K'
 const CMD_K_TITLE = IS_MAC ? 'Command palette — ⌘K' : 'Command palette — Ctrl+K'
 
 export function setupFormatBar(harness: Harness, root: HTMLElement): void {
+  // 2026-08-01 round (?option=1|2): the Write-mode format buttons move
+  // to a top toolbar (top-toolbar.ts). When active, this pill stays a
+  // plain "Menu" in every mode — no proximity expansion, no hybrid
+  // B I hint — and clicking it opens the palette in mode 3 too.
+  const topToolbar = getOption() >= 1
+
   const bar = document.createElement('div')
   bar.className = 'format-bar'
   bar.setAttribute('role', 'toolbar')
@@ -151,7 +160,7 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
       dots.textContent = CMD_K_LABEL
       return
     }
-    if (harness.getCurrentMode().key === 3) {
+    if (!topToolbar && harness.getCurrentMode().key === 3) {
       dots.innerHTML =
         '<b class="format-bar__hint-b">B</b>' +
         '<i class="format-bar__hint-i">I</i>' +
@@ -192,7 +201,7 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
 
   const buttonsByAction = new Map<FormatAction, HTMLButtonElement>()
 
-  for (const def of BUTTONS) {
+  for (const def of FORMAT_BUTTONS) {
     const btn = document.createElement('button')
     btn.type = 'button'
     btn.className = 'format-bar__button'
@@ -233,7 +242,7 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   // expanded into format buttons via proximity, so clicks fall through
   // to per-button handlers (and the trailing ⌘K button handles cmdp).
   bar.addEventListener('click', (e) => {
-    if (harness.getCurrentMode().key === 3) return
+    if (!topToolbar && harness.getCurrentMode().key === 3) return
     // Only the bar background or its resting label opens cmdp — don't
     // double-trigger when the user clicked a child control.
     if (e.target !== bar && e.target !== dots) return
@@ -262,7 +271,7 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   const applyMode = (key: number): void => {
     document.documentElement.dataset.activeMode = String(key)
     setRestingLabel(key)
-    if (key === 3) {
+    if (key === 3 && !topToolbar) {
       subscribe()
     } else {
       detach?.()
@@ -303,7 +312,7 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   // stays in its resting (collapsed, ⌘K) state.
   let isOpen = false
   window.addEventListener('mousemove', (e) => {
-    if (harness.getCurrentMode().key !== 3) {
+    if (topToolbar || harness.getCurrentMode().key !== 3) {
       if (isOpen) {
         isOpen = false
         bar.classList.remove('format-bar--open')
