@@ -5,12 +5,10 @@
 // in main.ts. 0 = baseline (current build).
 
 const STORAGE_KEY = 'nicermd:option'
-// Current round (2026-07-31, desktop framing):
-//   0 = baseline (borderless canvas)
-//   1 = canvas-on-layer (reading column on a card over a tinted ground)
-//   2 = hairline window frame (1px inset border around the viewport)
-// (Previous round: top-right control -> single-icon mode pill, shipped.)
-const MAX_OPTION = 2 // bump as new variants land
+// No active round. (2026-07-31 framing rounds concluded: accent
+// window frame shipped as the Tauri default; page-card, titlebar
+// band and vignette rejected. Earlier: single-icon mode pill.)
+const MAX_OPTION = 0 // bump as new variants land
 
 let cached: number | null = null
 

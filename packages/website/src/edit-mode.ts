@@ -213,12 +213,13 @@ export function openEditPicker(harness: Harness): void {
   backdrop.appendChild(panel)
   document.body.appendChild(backdrop)
 
-  // Preselect: from Read, the remembered edit flavour (Return with no
-  // arrowing enters your usual editor); from an edit mode, the current
-  // mode (the picker doubles as a "where am I" answer). Falls back to
-  // the first row.
+  // Preselect makes Cmd+E + Return a round trip: from Read, the
+  // remembered edit flavour is selected (Return enters your usual
+  // editor); from any edit mode, READ is selected (Return goes home).
+  // The current-mode dot still shows where you are either way. Falls
+  // back to the first row.
   const current = harness.getCurrentMode().key
-  const preferred = isEditMode(current) ? current : readEditFlavour()
+  const preferred = isEditMode(current) ? 1 : readEditFlavour()
   let selectedIdx = Math.max(
     0,
     flavours.findIndex((f) => f.key === preferred),

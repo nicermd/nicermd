@@ -534,39 +534,19 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* --- ?option=1|2 — desktop framing round (2026-07-31) ---
-   The borderless canvas gets lost against the desktop, especially in
-   the Tauri shell. Two candidate framings, judged via CF preview and
-   the desktop app; baseline (option 0) is untouched.
-
-   Option 1 — canvas-on-layer: the page ground takes a subtle
-   fg-tinted layer and the reading column sits on a --bg card with a
-   hairline edge + soft shadow (Typora / Bear "page" feel). Applied
-   to Read mode first; Live and the workbench modes follow once a
-   direction wins. */
-[data-option='1'] body,
-[data-option='1'] html,
-[data-option='1'] #app {
-  background: color-mix(in srgb, var(--fg) 4%, var(--bg));
-}
-[data-option='1'] .mode-read {
-  background: var(--bg);
-  border: 1px solid color-mix(in srgb, var(--fg) 9%, var(--bg));
-  border-radius: 10px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  max-width: calc(var(--reading-width) + 4rem);
-  margin: 1.5rem auto 2.5rem;
-  padding: 3rem 3rem 4.5rem;
-}
-
-/* Option 2 — hairline window frame: a 1px inset border around the
-   whole viewport. The most minimal possible framing; reads best in
-   the Tauri shell where the window edge IS the app edge. */
-[data-option='2'] body::after {
+/* Desktop window frame (framing rounds concluded 2026-07-31: the
+   accent frame won; page-card, titlebar band and vignette rejected).
+   A rounded 2px inset border around the viewport in the theme's
+   accent — the same hue family as the pill rings, so frame + pills
+   read as one chrome family that re-tints with the theme. The radius
+   matches macOS window corners. Tauri-only: browser tabs already
+   have chrome; the frame is a window affordance. */
+[data-shell='tauri'] body::after {
   content: '';
   position: fixed;
   inset: 0;
-  border: 1px solid color-mix(in srgb, var(--fg) 16%, transparent);
+  border: 2px solid color-mix(in srgb, var(--accent) 45%, transparent);
+  border-radius: 10px;
   pointer-events: none;
   z-index: 200;
 }
@@ -949,60 +929,36 @@ html {
    click opens the mode picker. Same visual language as the bottom
    ⌘K pill: bg, hairline border, full radius, soft shadow. */
 .mode-icon--pill-toggle {
-  width: 38px;
+  min-width: 38px;
+  width: auto;
+  padding: 0 8px;
   height: 28px;
   background: var(--bg);
-  border: 1px solid var(--border);
+  /* Accent ring — same 45% mix as the window frame so the floating
+     chrome (frame, mode pill, cmdk pill) reads as one family. */
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
   border-radius: 999px;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
   opacity: 0.9;
   color: var(--fg);
 }
+/* In-pill shortcut hint — pill content swaps from the mode icon to
+   the shortcut text on hover and briefly on scroll-return (JS in
+   mode-icons.ts drives the swap). Typography matches the ⌘K pill's
+   resting label (.format-bar__dots): 12px, 500, 0.5px tracking. */
+.mode-icon--pill-toggle.mode-icon--hint {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  font-family: var(--font-body);
+  white-space: nowrap;
+}
 .mode-icon--pill-toggle:hover {
   opacity: 1;
   background: var(--bg);
-  border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+  border-color: color-mix(in srgb, var(--accent) 75%, var(--border));
 }
 
-/* Transient shortcut hint beside the pill — same appearance cadence
-   as the ⌘K settle pulse: animates on first paint and every return
-   from hide-on-scroll ([data-strip-hidden="1"] sets animation:none,
-   removal restarts it). Shows ~2s then fades; never loops. */
-.mode-pill-hint {
-  color: var(--muted);
-  font-size: 11px;
-  font-family: var(--font-code);
-  letter-spacing: 0.02em;
-  margin-right: 7px;
-  opacity: 0;
-  user-select: none;
-  pointer-events: none;
-  animation: mode-pill-hint-flash 2600ms ease 300ms 1 backwards;
-}
-@keyframes mode-pill-hint-flash {
-  0% {
-    opacity: 0;
-    transform: translateX(5px);
-  }
-  10% {
-    opacity: 1;
-    transform: none;
-  }
-  75% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-[data-strip-hidden='1'] .mode-pill-hint {
-  animation: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .mode-pill-hint {
-    animation: none;
-  }
-}
 
 /* In macOS native fullscreen via Tauri the title strip area collapses;
    hide our title element and remove the 28px reserve so content fills
@@ -1126,7 +1082,8 @@ html {
   transform: translateX(-50%);
   z-index: 5;
   background: var(--bg);
-  border: 1px solid var(--border);
+  /* Accent ring — matches the mode pill and window frame. */
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
   border-radius: 999px;
   height: 32px;
   align-items: center;

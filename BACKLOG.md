@@ -191,12 +191,12 @@ these three follow it.
   `reference/old-spike/` awaiting port. Distribution via GitHub
   raw/gist URLs; needs one CSP `connect-src` addition + a validator
   with discreet unsupported-key surfacing.
-- **NEXT — Desktop window framing.** The borderless canvas gets lost
-  against the desktop. A/B via `?option=1|2|3` CF preview: (1)
-  hairline window border, (2) canvas-on-layer (document column on a
-  subtly different background — Typora/Bear "page" feel; current
-  lean), (3) quiet titlebar treatment. Balance framing vs
-  minimalism; symmetric by default.
+- **DONE 2026-07-31 — Desktop window framing.** Two A/B rounds:
+  page-card rejected (wrong feel + long-doc background bug),
+  titlebar band and vignette rejected; winner is the accent window
+  frame — rounded 2px inset border in the theme accent, matching
+  the pill rings. Shipped as the Tauri-shell default (web tabs
+  already have chrome).
 - **NEXT — WYSIWYG format bar to top.** Bottom FAB/format-bar is a
   Milkdown-era port; users expect editing controls along the top.
   Persistent top toolbar while in Write mode, absent in Read —

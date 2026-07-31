@@ -133,27 +133,57 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   bar.setAttribute('aria-label', 'Commands and formatting')
   root.appendChild(bar)
 
-  // Resting label. In modes 1/2/4/5 it's just the cmdp glyph — clicking
-  // opens the palette. In mode 3 it's a hybrid: a styled "B I" hints
-  // at the format toolbar that proximity reveals, then a separator and
-  // the cmdp glyph hint at the trailing palette button. Content is set
-  // by setRestingLabel below, called whenever the active mode changes.
+  // Resting label — the pill's PURPOSE ("Menu"); the ⌘K shortcut shows
+  // on hover and flashes on (re)appearance, mirroring the mode pill's
+  // grammar (rest = what it is, hover/flash = how to key it). In mode
+  // 3 the resting label is a hybrid: a styled "B I" hints at the
+  // format toolbar that proximity reveals, then the Menu affordance.
   const dots = document.createElement('span')
   dots.className = 'format-bar__dots'
   bar.appendChild(dots)
 
-  const setRestingLabel = (key: number): void => {
-    if (key === 3) {
+  let hovered = false
+  let showingShortcut = false
+  let lingerTimer: number | null = null
+
+  const renderDots = (): void => {
+    if (showingShortcut) {
+      dots.textContent = CMD_K_LABEL
+      return
+    }
+    if (harness.getCurrentMode().key === 3) {
       dots.innerHTML =
         '<b class="format-bar__hint-b">B</b>' +
         '<i class="format-bar__hint-i">I</i>' +
         '<span class="format-bar__hint-sep">·</span>' +
-        '<span class="format-bar__hint-cmdp"></span>'
-      const cmdp = dots.querySelector('.format-bar__hint-cmdp')
-      if (cmdp) cmdp.textContent = CMD_K_LABEL
+        '<span class="format-bar__hint-cmdp">Menu</span>'
     } else {
-      dots.textContent = CMD_K_LABEL
+      dots.textContent = 'Menu'
     }
+  }
+  const showShortcut = (): void => {
+    if (showingShortcut) return
+    showingShortcut = true
+    renderDots()
+  }
+  const showRest = (): void => {
+    if (!showingShortcut || hovered) return
+    showingShortcut = false
+    renderDots()
+  }
+  // Flash the shortcut on (re)appearance, then settle back to "Menu"
+  // after the same ~2s linger the mode pill uses — the two pills flash
+  // their shortcuts together when the chrome returns.
+  const flashShortcut = (): void => {
+    showShortcut()
+    if (lingerTimer !== null) window.clearTimeout(lingerTimer)
+    lingerTimer = window.setTimeout(() => {
+      lingerTimer = null
+      showRest()
+    }, 2000)
+  }
+  const setRestingLabel = (_key: number): void => {
+    renderDots()
   }
 
   const buttonsWrap = document.createElement('div')
@@ -242,6 +272,30 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
 
   applyMode(harness.getCurrentMode().key)
   harness.onModeChange((key) => applyMode(key))
+
+  // Hover reveals the shortcut (rest = purpose, hover = key) — same
+  // grammar as the mode pill. In Write mode proximity expands the bar
+  // into buttons (dots hidden), so the swap only shows collapsed.
+  bar.addEventListener('mouseenter', () => {
+    hovered = true
+    showShortcut()
+  })
+  bar.addEventListener('mouseleave', () => {
+    hovered = false
+    showRest()
+  })
+
+  // Re-flash the shortcut whenever the chrome returns from
+  // hide-on-scroll — synced with the mode pill via the same
+  // data-strip-hidden attribute.
+  const stripObserver = new MutationObserver(() => {
+    if (document.documentElement.dataset.stripHidden !== '1') flashShortcut()
+  })
+  stripObserver.observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ['data-strip-hidden'],
+  })
+  flashShortcut()
 
   // Proximity reveal: mouse within PROXIMITY_PX of the bottom edge
   // expands the toolbar in mode 3. In other modes the format buttons
