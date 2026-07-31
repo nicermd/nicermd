@@ -17,10 +17,11 @@
 import type { Harness } from './main'
 import { getContentKind } from './doc-source'
 import { getFlavour, openEditPicker, READ_ENTRY } from './edit-mode'
+import { IS_MAC } from './platform'
 
 function svg(paths: string): string {
   return (
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" ' +
+    '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" ' +
     'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
     `stroke-linejoin="round">${paths}</svg>`
   )
@@ -30,6 +31,16 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   const wrap = document.createElement('div')
   wrap.className = 'mode-icons'
   root.appendChild(wrap)
+
+  // Transient shortcut hint — flashes beside the pill when the strip
+  // (re)appears, on the same cadence as the ⌘K pill's settle pulse
+  // (see main.css: both animations restart when data-strip-hidden
+  // flips off). Teaches the picker shortcut without permanent chrome.
+  const hint = document.createElement('span')
+  hint.className = 'mode-pill-hint'
+  hint.setAttribute('aria-hidden', 'true')
+  hint.textContent = IS_MAC ? '⌘⌥E' : 'Ctrl+Alt+E'
+  wrap.appendChild(hint)
 
   const pill = document.createElement('button')
   pill.type = 'button'

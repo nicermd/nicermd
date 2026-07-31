@@ -36,6 +36,13 @@
   --cm-gutter-bg: #ffffff;
   --cm-gutter-fg: #999999;
 
+  /* Furniture — blockquote borders, horizontal rules, list markers.
+     Defaults keep today's look (borders from --border, markers from
+     text colour); colour-variant themes override to add a controlled
+     dash of accent without touching prose ink. */
+  --flourish: var(--border);
+  --list-marker: currentColor;
+
   /* CodeMirror — markdown source token colours.
      Default is the puritan theme: every token reads as plain text. */
   --cm-marker: #000000;
@@ -108,6 +115,116 @@
   --cm-url: #7c7c82;
   --cm-monospace: #d8d8d9;
   --cm-quote: #7c7c82;
+}
+
+/* --- TEMP: Paper/Ink colour round (2026-07-31) ---
+   Four candidate answers to "the minimalist themes need a tiny bit
+   more colour". Accent pair keeps the grounds and colours only the
+   furniture; Warm pair shifts the whole ground temperature. The
+   winner folds into Paper/Ink and these blocks are deleted. */
+[data-theme='paper-accent'] {
+  --bg: #ffffff;
+  --fg: #1c1c1e;
+  --muted: #86868b;
+  --border: #e9e9ea;
+  --surface: #f6f6f7;
+  --link: #0b66c3;
+  --accent: #0b66c3;
+  --code-bg: #f6f6f7;
+  --code-fg: #1c1c1e;
+  --cm-bg: #ffffff;
+  --cm-fg: #1c1c1e;
+  --cm-caret: #0b66c3;
+  --cm-selection: rgba(11, 102, 195, 0.14);
+  --cm-gutter-bg: #ffffff;
+  --cm-gutter-fg: #c4c4c6;
+  --cm-marker: #b4b4b8;
+  --cm-heading: #111113;
+  --cm-link: #0b66c3;
+  --cm-url: #86868b;
+  --cm-monospace: #1c1c1e;
+  --cm-quote: #86868b;
+  /* The dash of colour: furniture takes a soft accent. */
+  --flourish: color-mix(in srgb, #0b66c3 45%, #ffffff);
+  --list-marker: #0b66c3;
+}
+
+[data-theme='ink-accent'] {
+  --bg: #17171a;
+  --fg: #d8d8d9;
+  --muted: #7c7c82;
+  --border: #2b2b30;
+  --surface: #1f1f23;
+  --link: #6fa8ef;
+  --accent: #6fa8ef;
+  --code-bg: #1f1f23;
+  --code-fg: #d8d8d9;
+  --cm-bg: #17171a;
+  --cm-fg: #d8d8d9;
+  --cm-caret: #6fa8ef;
+  --cm-selection: rgba(111, 168, 239, 0.2);
+  --cm-gutter-bg: #17171a;
+  --cm-gutter-fg: #46464c;
+  --cm-marker: #55555c;
+  --cm-heading: #ececee;
+  --cm-link: #6fa8ef;
+  --cm-url: #7c7c82;
+  --cm-monospace: #d8d8d9;
+  --cm-quote: #7c7c82;
+  --flourish: color-mix(in srgb, #6fa8ef 40%, #17171a);
+  --list-marker: #6fa8ef;
+}
+
+[data-theme='paper-warm'] {
+  --bg: #faf7f2;
+  --fg: #2a2620;
+  --muted: #8f8578;
+  --border: #eae3d8;
+  --surface: #f3eee6;
+  --link: #b4592e;
+  --accent: #b4592e;
+  --code-bg: #f3eee6;
+  --code-fg: #2a2620;
+  --cm-bg: #faf7f2;
+  --cm-fg: #2a2620;
+  --cm-caret: #b4592e;
+  --cm-selection: rgba(180, 89, 46, 0.14);
+  --cm-gutter-bg: #faf7f2;
+  --cm-gutter-fg: #c8bfb1;
+  --cm-marker: #c8bfb1;
+  --cm-heading: #1f1b16;
+  --cm-link: #b4592e;
+  --cm-url: #8f8578;
+  --cm-monospace: #2a2620;
+  --cm-quote: #8f8578;
+  --flourish: color-mix(in srgb, #b4592e 40%, #faf7f2);
+  --list-marker: #b4592e;
+}
+
+[data-theme='ink-warm'] {
+  --bg: #1b1815;
+  --fg: #ddd5c9;
+  --muted: #8a8072;
+  --border: #342f28;
+  --surface: #232019;
+  --link: #d99a4e;
+  --accent: #d99a4e;
+  --code-bg: #232019;
+  --code-fg: #ddd5c9;
+  --cm-bg: #1b1815;
+  --cm-fg: #ddd5c9;
+  --cm-caret: #d99a4e;
+  --cm-selection: rgba(217, 154, 78, 0.18);
+  --cm-gutter-bg: #1b1815;
+  --cm-gutter-fg: #4d463c;
+  --cm-marker: #5c5347;
+  --cm-heading: #efe9de;
+  --cm-link: #d99a4e;
+  --cm-url: #8a8072;
+  --cm-monospace: #ddd5c9;
+  --cm-quote: #8a8072;
+  --flourish: color-mix(in srgb, #d99a4e 38%, #1b1815);
+  --list-marker: #d99a4e;
 }
 
 /* Signature light + dark. Mature palettes (10+ years), balanced
@@ -935,8 +1052,8 @@ html {
    click opens the mode picker. Same visual language as the bottom
    ⌘K pill: bg, hairline border, full radius, soft shadow. */
 .mode-icon--pill-toggle {
-  width: 34px;
-  height: 26px;
+  width: 38px;
+  height: 28px;
   background: var(--bg);
   border: 1px solid var(--border);
   border-radius: 999px;
@@ -948,6 +1065,46 @@ html {
   opacity: 1;
   background: var(--bg);
   border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
+}
+
+/* Transient shortcut hint beside the pill — same appearance cadence
+   as the ⌘K settle pulse: animates on first paint and every return
+   from hide-on-scroll ([data-strip-hidden="1"] sets animation:none,
+   removal restarts it). Shows ~2s then fades; never loops. */
+.mode-pill-hint {
+  color: var(--muted);
+  font-size: 11px;
+  font-family: var(--font-code);
+  letter-spacing: 0.02em;
+  margin-right: 7px;
+  opacity: 0;
+  user-select: none;
+  pointer-events: none;
+  animation: mode-pill-hint-flash 2600ms ease 300ms 1 backwards;
+}
+@keyframes mode-pill-hint-flash {
+  0% {
+    opacity: 0;
+    transform: translateX(5px);
+  }
+  10% {
+    opacity: 1;
+    transform: none;
+  }
+  75% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+[data-strip-hidden='1'] .mode-pill-hint {
+  animation: none;
+}
+@media (prefers-reduced-motion: reduce) {
+  .mode-pill-hint {
+    animation: none;
+  }
 }
 
 /* In macOS native fullscreen via Tauri the title strip area collapses;
@@ -1610,7 +1767,7 @@ html {
 /* Blockquote lines — left border + muted colour. Applied per line
    so a multi-line quote gets a continuous border. */
 .mode-live .live-blockquote-line {
-  border-left: 3px solid var(--border);
+  border-left: 3px solid var(--flourish);
   padding-left: 1em;
   color: var(--muted);
 }
@@ -1619,7 +1776,7 @@ html {
    ordered markers stay as source digits but pick up the same colour.
    Task checkboxes are real inputs sized to the text line. */
 .mode-live .live-bullet {
-  color: var(--cm-marker);
+  color: var(--list-marker, var(--cm-marker));
 }
 .mode-live .live-list-mark {
   color: var(--cm-marker);
@@ -1729,15 +1886,18 @@ html {
   padding: 0;
 }
 .mode-read blockquote {
-  border-left: 3px solid var(--border);
+  border-left: 3px solid var(--flourish);
   margin-left: 0;
   padding-left: 1em;
   color: var(--muted);
 }
 .mode-read hr {
   border: none;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--flourish);
   margin: 2em 0;
+}
+.mode-read li::marker {
+  color: var(--list-marker);
 }
 .mode-read table {
   width: 100%;
@@ -1862,14 +2022,14 @@ html {
 .hljs-emphasis { font-style: italic; }
 .hljs-strong { font-weight: bold; }
 .mode-read blockquote {
-  border-left: 3px solid var(--border);
+  border-left: 3px solid var(--flourish);
   margin-left: 0;
   padding-left: 1em;
   color: var(--muted);
 }
 .mode-read hr {
   border: none;
-  border-top: 1px solid var(--border);
+  border-top: 1px solid var(--flourish);
   margin: 2em 0;
 }
 .mode-read table {
