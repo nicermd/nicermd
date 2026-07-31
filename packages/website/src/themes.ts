@@ -26,7 +26,13 @@ export interface Theme {
 }
 
 export const THEMES: readonly Theme[] = [
-  // Headline pair — Atom's One Light / One Dark. Polished, mature
+  // First-party defaults — the product's voice. One accent colour,
+  // colourless headings, whisper markers (see main.css). System font
+  // stacks: zero-network, instant first paint, native feel. The rest
+  // of the catalogue is the louder gallery tier.
+  { slug: 'paper', name: 'Paper', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
+  { slug: 'ink', name: 'Ink', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
+  // Gallery — Atom's One Light / One Dark. Polished, mature
   // palettes with balanced contrast, recognised across many editors.
   { slug: 'one-light', name: 'One Light', mode: 'light', inspiredBy: 'Atom', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
   { slug: 'one-dark', name: 'One Dark', mode: 'dark', inspiredBy: 'Atom', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },
@@ -49,7 +55,8 @@ export const THEMES: readonly Theme[] = [
 
 const STORAGE_KEY = 'nicermd:theme'
 const PREVIOUS_KEY = 'nicermd:theme-previous'
-const DEFAULT_SLUG = 'one-light'
+const DEFAULT_LIGHT_SLUG = 'paper'
+const DEFAULT_DARK_SLUG = 'ink'
 
 function readStored(): string | null {
   try {
@@ -129,12 +136,17 @@ export function toggleRecentTheme(): Theme | null {
   return applyTheme(previous)
 }
 
-// Initialise on boot. Restore from localStorage if present, else use the
-// configured default. (prefers-color-scheme integration is deferred to a
-// later iteration — for now a hardcoded default keeps the surface
-// area small.)
+// Initialise on boot. Restore from localStorage if present; first
+// visits follow the OS appearance — Ink for dark systems, Paper
+// otherwise. Only the FIRST paint consults the OS; once the user
+// commits any theme it's their choice and the OS stops mattering.
 export function initTheme(): Theme {
-  return applyTheme(readStored() ?? DEFAULT_SLUG, false)
+  const stored = readStored()
+  if (stored) return applyTheme(stored, false)
+  const prefersDark =
+    typeof window.matchMedia === 'function' &&
+    window.matchMedia('(prefers-color-scheme: dark)').matches
+  return applyTheme(prefersDark ? DEFAULT_DARK_SLUG : DEFAULT_LIGHT_SLUG, false)
 }
 
 export function cycleTheme(): Theme {
