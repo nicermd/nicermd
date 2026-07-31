@@ -5,10 +5,12 @@
 // in main.ts. 0 = baseline (current build).
 
 const STORAGE_KEY = 'nicermd:option'
-// No active round. (2026-07-31 top-right control round concluded:
-// the segmented pill won and evolved into the single-icon mode pill,
-// now the default in mode-icons.ts.)
-const MAX_OPTION = 0 // bump as new variants land
+// Current round (2026-07-31, desktop framing):
+//   0 = baseline (borderless canvas)
+//   1 = canvas-on-layer (reading column on a card over a tinted ground)
+//   2 = hairline window frame (1px inset border around the viewport)
+// (Previous round: top-right control -> single-icon mode pill, shipped.)
+const MAX_OPTION = 2 // bump as new variants land
 
 let cached: number | null = null
 

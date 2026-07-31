@@ -520,6 +520,43 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* --- ?option=1|2 — desktop framing round (2026-07-31) ---
+   The borderless canvas gets lost against the desktop, especially in
+   the Tauri shell. Two candidate framings, judged via CF preview and
+   the desktop app; baseline (option 0) is untouched.
+
+   Option 1 — canvas-on-layer: the page ground takes a subtle
+   fg-tinted layer and the reading column sits on a --bg card with a
+   hairline edge + soft shadow (Typora / Bear "page" feel). Applied
+   to Read mode first; Live and the workbench modes follow once a
+   direction wins. */
+[data-option='1'] body,
+[data-option='1'] html,
+[data-option='1'] #app {
+  background: color-mix(in srgb, var(--fg) 4%, var(--bg));
+}
+[data-option='1'] .mode-read {
+  background: var(--bg);
+  border: 1px solid color-mix(in srgb, var(--fg) 9%, var(--bg));
+  border-radius: 10px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
+  max-width: calc(var(--reading-width) + 4rem);
+  margin: 1.5rem auto 2.5rem;
+  padding: 3rem 3rem 4.5rem;
+}
+
+/* Option 2 — hairline window frame: a 1px inset border around the
+   whole viewport. The most minimal possible framing; reads best in
+   the Tauri shell where the window edge IS the app edge. */
+[data-option='2'] body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  border: 1px solid color-mix(in srgb, var(--fg) 16%, transparent);
+  pointer-events: none;
+  z-index: 200;
+}
+
 #app {
   display: flex;
   flex-direction: column;
