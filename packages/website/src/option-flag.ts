@@ -5,12 +5,13 @@
 // in main.ts. 0 = baseline (current build).
 
 const STORAGE_KEY = 'nicermd:option'
-// Current round (2026-07-31, desktop framing):
+// Current round (2026-07-31, desktop framing round 2 — round 1's
+// page-card rejected):
 //   0 = baseline (borderless canvas)
-//   1 = canvas-on-layer (reading column on a card over a tinted ground)
+//   1 = titlebar band (tinted strip + hairline along the window top)
 //   2 = hairline window frame (1px inset border around the viewport)
-// (Previous round: top-right control -> single-icon mode pill, shipped.)
-const MAX_OPTION = 2 // bump as new variants land
+//   3 = inset vignette (soft inward shadow at the viewport edges)
+const MAX_OPTION = 3 // bump as new variants land
 
 let cached: number | null = null
 

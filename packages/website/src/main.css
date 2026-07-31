@@ -534,34 +534,31 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* --- ?option=1|2 — desktop framing round (2026-07-31) ---
-   The borderless canvas gets lost against the desktop, especially in
-   the Tauri shell. Two candidate framings, judged via CF preview and
-   the desktop app; baseline (option 0) is untouched.
+/* --- ?option=1|2|3 — desktop framing round 2 (2026-07-31) ---
+   Round 1's page-card (content column on a tinted ground) was
+   rejected — the page effect read wrong and its layered backgrounds
+   misbehaved on long documents. Round 2 candidates frame the WINDOW
+   instead of the content; baseline (option 0) stays untouched.
 
-   Option 1 — canvas-on-layer: the page ground takes a subtle
-   fg-tinted layer and the reading column sits on a --bg card with a
-   hairline edge + soft shadow (Typora / Bear "page" feel). Applied
-   to Read mode first; Live and the workbench modes follow once a
-   direction wins. */
-[data-option='1'] body,
-[data-option='1'] html,
-[data-option='1'] #app {
+   Option 1 — titlebar band: a quiet tinted strip along the window
+   top with a hairline underline; content slides beneath it. Reads
+   as native app chrome, especially in the Tauri shell. */
+[data-option='1'] body::before {
+  content: '';
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 28px;
   background: color-mix(in srgb, var(--fg) 4%, var(--bg));
-}
-[data-option='1'] .mode-read {
-  background: var(--bg);
-  border: 1px solid color-mix(in srgb, var(--fg) 9%, var(--bg));
-  border-radius: 10px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-  max-width: calc(var(--reading-width) + 4rem);
-  margin: 1.5rem auto 2.5rem;
-  padding: 3rem 3rem 4.5rem;
+  border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, var(--bg));
+  pointer-events: none;
+  z-index: 1;
 }
 
-/* Option 2 — hairline window frame: a 1px inset border around the
-   whole viewport. The most minimal possible framing; reads best in
-   the Tauri shell where the window edge IS the app edge. */
+/* Option 2 — hairline window frame (carried over from round 1):
+   a 1px inset border around the whole viewport. Maximally minimal;
+   reads best in Tauri where the window edge is the app edge. */
 [data-option='2'] body::after {
   content: '';
   position: fixed;
@@ -569,6 +566,18 @@ html {
   border: 1px solid color-mix(in srgb, var(--fg) 16%, transparent);
   pointer-events: none;
   z-index: 200;
+}
+
+/* Option 3 — inset vignette: a soft inward shadow at the viewport
+   edges. No lines, no bands — the window reads as a shallow surface
+   whose edges gently turn away. */
+[data-option='3'] body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
+  pointer-events: none;
+  z-index: 199;
 }
 
 #app {
@@ -949,7 +958,9 @@ html {
    click opens the mode picker. Same visual language as the bottom
    ⌘K pill: bg, hairline border, full radius, soft shadow. */
 .mode-icon--pill-toggle {
-  width: 38px;
+  min-width: 38px;
+  width: auto;
+  padding: 0 8px;
   height: 28px;
   background: var(--bg);
   border: 1px solid var(--border);
@@ -958,51 +969,23 @@ html {
   opacity: 0.9;
   color: var(--fg);
 }
+/* In-pill shortcut hint — pill content swaps from the mode icon to
+   the shortcut text on hover and briefly on scroll-return (JS in
+   mode-icons.ts drives the swap). Typography matches the ⌘K pill's
+   resting label (.format-bar__dots): 12px, 500, 0.5px tracking. */
+.mode-icon--pill-toggle.mode-icon--hint {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  font-family: var(--font-body);
+  white-space: nowrap;
+}
 .mode-icon--pill-toggle:hover {
   opacity: 1;
   background: var(--bg);
   border-color: color-mix(in srgb, var(--accent) 40%, var(--border));
 }
 
-/* Transient shortcut hint beside the pill — same appearance cadence
-   as the ⌘K settle pulse: animates on first paint and every return
-   from hide-on-scroll ([data-strip-hidden="1"] sets animation:none,
-   removal restarts it). Shows ~2s then fades; never loops. */
-.mode-pill-hint {
-  color: var(--muted);
-  font-size: 11px;
-  font-family: var(--font-code);
-  letter-spacing: 0.02em;
-  margin-right: 7px;
-  opacity: 0;
-  user-select: none;
-  pointer-events: none;
-  animation: mode-pill-hint-flash 2600ms ease 300ms 1 backwards;
-}
-@keyframes mode-pill-hint-flash {
-  0% {
-    opacity: 0;
-    transform: translateX(5px);
-  }
-  10% {
-    opacity: 1;
-    transform: none;
-  }
-  75% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 0;
-  }
-}
-[data-strip-hidden='1'] .mode-pill-hint {
-  animation: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .mode-pill-hint {
-    animation: none;
-  }
-}
 
 /* In macOS native fullscreen via Tauri the title strip area collapses;
    hide our title element and remove the 28px reserve so content fills
