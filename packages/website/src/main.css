@@ -2716,3 +2716,23 @@ html {
   background: var(--accent);
   color: var(--bg);
 }
+
+/* --- Overlay elevation (2026-07-31) ---
+   Shared lift for every floating panel so they separate cleanly from
+   the document instead of reading as part of the page. Two moves:
+   a border strong enough to define the edge where drop shadows can't
+   (dark themes on dark grounds), and a deeper two-layer shadow —
+   tight ambient + broad drop — for light themes. Overrides the
+   per-panel border/shadow declared earlier; keep panels in sync by
+   editing HERE, not per-panel. */
+.cmdp__panel,
+.edp__panel,
+.url-open__panel,
+.theme-picker,
+.font-picker,
+.alpha-popover__panel {
+  border-color: color-mix(in srgb, var(--fg) 22%, var(--bg));
+  box-shadow:
+    0 12px 32px rgba(0, 0, 0, 0.26),
+    0 40px 96px rgba(0, 0, 0, 0.38);
+}
