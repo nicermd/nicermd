@@ -26,21 +26,15 @@ export interface Theme {
 }
 
 export const THEMES: readonly Theme[] = [
-  // First-party defaults — the product's voice. One accent colour,
-  // colourless headings, whisper markers (see main.css). System font
-  // stacks: zero-network, instant first paint, native feel. The rest
-  // of the catalogue is the louder gallery tier.
+  // First-party defaults — the product's voice. Three colour
+  // families with jobs: blue for headings/links, muted berry for
+  // inline code, ink for prose (see main.css). System font stacks:
+  // zero-network, instant first paint, native feel. The rest of the
+  // catalogue is the louder gallery tier — kept deliberately: loud
+  // themes suit some content, they're just not the quick-read
+  // default (user call, 2026-07-31).
   { slug: 'paper', name: 'Paper', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
   { slug: 'ink', name: 'Ink', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
-  // TEMP — colour-round candidates for Paper/Ink ("a tiny bit more
-  // colour", 2026-07-31). Accent pair colours only the furniture
-  // (blockquote borders, rules, list markers); Warm pair shifts the
-  // ground temperature. Winner folds into Paper/Ink; the rest and
-  // these entries get deleted when the round closes.
-  { slug: 'paper-accent', name: 'Paper Accent', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
-  { slug: 'ink-accent', name: 'Ink Accent', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
-  { slug: 'paper-warm', name: 'Paper Warm', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
-  { slug: 'ink-warm', name: 'Ink Warm', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
   // Gallery — Atom's One Light / One Dark. Polished, mature
   // palettes with balanced contrast, recognised across many editors.
   { slug: 'one-light', name: 'One Light', mode: 'light', inspiredBy: 'Atom', defaultProseFont: 'inter', defaultCodeFont: 'fira-code' },

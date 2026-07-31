@@ -177,11 +177,12 @@ Direction: lean into iA Writer / Typora-class minimalism. Mode
 architecture (Read-primary + edit picker) is the active workstream;
 these three follow it.
 
-- **NEXT — Clean default Light/Dark themes.** Current theme set reads
-  louder than the product wants. Ship two first-party defaults tuned
-  for restraint (one accent colour max, generous whitespace, type
-  does the work); demote existing louder themes to an optional
-  gallery tier rather than deleting them.
+- **DONE 2026-07-31 — Clean default Light/Dark themes.** Paper + Ink
+  shipped (#108) then tuned through four dogfood rounds to a
+  three-colour-family design: blue headings/links, muted berry
+  inline code, ink prose, heading-hue furniture wash. Gallery tier
+  kept in full — loud themes suit some content, just not the
+  quick-read default. First visit follows OS appearance.
 - **NEXT — Custom theme files (YAML tokens, GitHub-linkable).**
   Themes as validated token data (colours, safe-list fonts, spacing)
   applied as CSS custom properties — NOT raw CSS (CSS from untrusted
