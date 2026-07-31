@@ -23,7 +23,7 @@ jobs:
     # can produce a fat binary that runs natively on both architectures.
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@v7
 
       - name: Install Rust targets
         # Default rustup on macos-latest already has aarch64-apple-darwin
