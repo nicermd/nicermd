@@ -36,8 +36,8 @@ export const THEMES: readonly Theme[] = [
   // (3-4 colours with jobs); hue pairing open. Paper/Ink carry
   // combo A (slate-blue + crimson); these compare alternative
   // pairings. Winner's values land in Paper/Ink; entries deleted.
-  { slug: 'paper-teal', name: 'Paper Teal', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
-  { slug: 'ink-teal', name: 'Ink Teal', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
+  { slug: 'paper-plum', name: 'Paper Plum', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
+  { slug: 'ink-plum', name: 'Ink Plum', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
   { slug: 'paper-indigo', name: 'Paper Indigo', mode: 'light', defaultProseFont: 'system', defaultCodeFont: 'system' },
   { slug: 'ink-indigo', name: 'Ink Indigo', mode: 'dark', defaultProseFont: 'system', defaultCodeFont: 'system' },
   // Gallery — Atom's One Light / One Dark. Polished, mature

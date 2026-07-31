@@ -82,14 +82,14 @@
   /* Markers barely-there; headings inherit body ink (a hair darker
      for quiet hierarchy); code accents stay monochrome. */
   --cm-marker: #b4b4b8;
-  --cm-heading: #1d4c7f;
+  --cm-heading: #1259a8;
   --cm-link: #0b66c3;
   --cm-url: #86868b;
-  --cm-monospace: #a8354f;
+  --cm-monospace: #97465a;
   --cm-quote: #86868b;
 
-  --flourish: color-mix(in srgb, #1d4c7f 30%, #ffffff);
-  --list-marker: #1d4c7f;
+  --flourish: color-mix(in srgb, #1259a8 30%, #ffffff);
+  --list-marker: #1259a8;
 }
 
 [data-theme='ink'] {
@@ -113,13 +113,13 @@
   --cm-gutter-fg: #46464c;
 
   --cm-marker: #55555c;
-  --cm-heading: #9cc2f7;
+  --cm-heading: #8ab8fa;
   --cm-link: #6fa8ef;
   --cm-url: #7c7c82;
-  --cm-monospace: #e08fa0;
+  --cm-monospace: #d99aa8;
   --cm-quote: #7c7c82;
 
-  --flourish: color-mix(in srgb, #9cc2f7 28%, #17171a);
+  --flourish: color-mix(in srgb, #8ab8fa 28%, #17171a);
   --list-marker: #6fa8ef;
 }
 
@@ -129,56 +129,56 @@
    now carry combo A (slate-blue headings + crimson code). These two
    alternative pairings compare against them; winner's values land in
    Paper/Ink and these blocks go. */
-[data-theme='paper-teal'] {
+[data-theme='paper-plum'] {
   --bg: #ffffff;
   --fg: #1c1c1e;
   --muted: #86868b;
   --border: #e9e9ea;
   --surface: #f6f6f7;
-  --link: #0c7d74;
-  --accent: #0c7d74;
+  --link: #0b66c3;
+  --accent: #0b66c3;
   --code-bg: #f6f6f7;
   --code-fg: #1c1c1e;
   --cm-bg: #ffffff;
   --cm-fg: #1c1c1e;
-  --cm-caret: #0c7d74;
-  --cm-selection: rgba(12, 125, 116, 0.14);
+  --cm-caret: #0b66c3;
+  --cm-selection: rgba(11, 102, 195, 0.14);
   --cm-gutter-bg: #ffffff;
   --cm-gutter-fg: #c4c4c6;
   --cm-marker: #b4b4b8;
-  --cm-heading: #0f6862;
-  --cm-link: #0c7d74;
+  --cm-heading: #1259a8;
+  --cm-link: #0b66c3;
   --cm-url: #86868b;
-  --cm-monospace: #b3541e;
+  --cm-monospace: #7c4d8f;
   --cm-quote: #86868b;
-  --flourish: color-mix(in srgb, #0f6862 28%, #ffffff);
-  --list-marker: #0f6862;
+  --flourish: color-mix(in srgb, #1259a8 30%, #ffffff);
+  --list-marker: #1259a8;
 }
 
-[data-theme='ink-teal'] {
+[data-theme='ink-plum'] {
   --bg: #17171a;
   --fg: #d8d8d9;
   --muted: #7c7c82;
   --border: #2b2b30;
   --surface: #1f1f23;
-  --link: #5fb8ae;
-  --accent: #5fb8ae;
+  --link: #6fa8ef;
+  --accent: #6fa8ef;
   --code-bg: #1f1f23;
   --code-fg: #d8d8d9;
   --cm-bg: #17171a;
   --cm-fg: #d8d8d9;
-  --cm-caret: #5fb8ae;
-  --cm-selection: rgba(95, 184, 174, 0.18);
+  --cm-caret: #6fa8ef;
+  --cm-selection: rgba(111, 168, 239, 0.2);
   --cm-gutter-bg: #17171a;
   --cm-gutter-fg: #46464c;
   --cm-marker: #55555c;
-  --cm-heading: #7fd4cb;
-  --cm-link: #5fb8ae;
+  --cm-heading: #8ab8fa;
+  --cm-link: #6fa8ef;
   --cm-url: #7c7c82;
-  --cm-monospace: #e5a072;
+  --cm-monospace: #c2a3e8;
   --cm-quote: #7c7c82;
-  --flourish: color-mix(in srgb, #7fd4cb 26%, #17171a);
-  --list-marker: #5fb8ae;
+  --flourish: color-mix(in srgb, #8ab8fa 28%, #17171a);
+  --list-marker: #6fa8ef;
 }
 
 [data-theme='paper-indigo'] {
