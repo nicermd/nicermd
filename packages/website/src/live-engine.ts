@@ -147,6 +147,46 @@ class ImageWidget extends WidgetType {
   }
 }
 
+// Bullet widget — replaces a bullet list's `-` / `*` / `+` marker so
+// the list reads like rendered output. The trailing space in the
+// source stays put, keeping positions addressable for arrow nav.
+class BulletWidget extends WidgetType {
+  eq(): boolean {
+    return true
+  }
+  toDOM(): HTMLElement {
+    const span = document.createElement('span')
+    span.className = 'live-bullet'
+    span.textContent = '•'
+    return span
+  }
+}
+
+// Task checkbox widget — replaces `[ ]` / `[x]` with a real checkbox.
+// Clicking it toggles the underlying source (handled by the editor-
+// level click handler in mountLive via posAtDOM, since widget
+// instances don't know their own live positions).
+class TaskWidget extends WidgetType {
+  constructor(private readonly checked: boolean) {
+    super()
+  }
+  eq(other: TaskWidget): boolean {
+    return other.checked === this.checked
+  }
+  toDOM(): HTMLElement {
+    const box = document.createElement('input')
+    box.type = 'checkbox'
+    box.className = 'live-task-checkbox'
+    box.checked = this.checked
+    return box
+  }
+  ignoreEvent(): boolean {
+    // Let clicks reach the editor's domEventHandlers (which do the
+    // source toggle) instead of being swallowed as widget-internal.
+    return false
+  }
+}
+
 // Block widget renders source via the core markdown-it pipeline. The
 // .mode-read class wraps the output so the same prose CSS applies.
 class BlockWidget extends WidgetType {
@@ -273,6 +313,22 @@ function buildDecorations(state: EditorState, baseUrl: string | undefined): Deco
         return undefined
       }
 
+      // Setext heading (`Heading` underlined with `===` / `---`) —
+      // heading class on the content line; the underline line is kept
+      // VISIBLE but styled down (see the HeaderMark carve-out below).
+      // Hiding it entirely would either leave a ghost empty line or
+      // need a cross-line replace, which broke arrow-key nav in the
+      // widget-era spike — styled-but-present is the safe shape.
+      const setextMatch = name.match(/^SetextHeading([12])$/)
+      if (setextMatch) {
+        const level = setextMatch[1]
+        const contentLine = doc.lineAt(from).number
+        const underlineLine = doc.lineAt(to).number
+        applyLineClass(contentLine, Math.max(contentLine, underlineLine - 1), `live-h${level}`)
+        applyLineClass(underlineLine, underlineLine, 'live-setext-underline')
+        return undefined
+      }
+
       // Blockquote — apply line class to every line in the quote so
       // each gets the left-border + muted colour. Children include
       // QuoteMark nodes that get hidden inline.
@@ -283,19 +339,29 @@ function buildDecorations(state: EditorState, baseUrl: string | undefined): Deco
         return undefined
       }
 
-      // Image — replace `![alt](url)` with an inline <img>. Skipped
-      // when the cursor's on the line so the user sees the raw
-      // syntax during editing.
+      // Image — replace the whole `![alt](url)` span with an inline
+      // <img>. URL and alt come from the syntax tree rather than a
+      // regex, so titles, escapes and odd spacing all resolve the
+      // same way the real renderer sees them. Reference-style images
+      // (`![alt][ref]`) have no URL child — those fall through to
+      // visible source. Skipped when the cursor's on the line so the
+      // user sees raw syntax during editing.
       if (name === 'Image') {
         if (intersectsExclude(from, to, excludes)) return undefined
-        const src = doc.sliceString(from, to)
-        const match = src.match(/^!\[([^\]]*)\]\(([^)\s]+)(?:\s+"[^"]*")?\)$/)
-        if (match) {
+        const n = node.node
+        const urlNode = n.getChild('URL')
+        if (urlNode) {
+          // Alt text sits between the first two LinkMarks: `![` alt `]`.
+          const marks = n.getChildren('LinkMark')
+          const alt =
+            marks.length >= 2
+              ? doc.sliceString(marks[0]!.to, marks[1]!.from)
+              : ''
           pending.push({
             from,
             to,
             deco: Decoration.replace({
-              widget: new ImageWidget(match[2]!, match[1]!),
+              widget: new ImageWidget(doc.sliceString(urlNode.from, urlNode.to), alt),
             }),
           })
           return false
@@ -303,10 +369,56 @@ function buildDecorations(state: EditorState, baseUrl: string | undefined): Deco
         return undefined
       }
 
+      // List markers. Bullets (`-` / `*` / `+`) become a rendered dot;
+      // ordered markers (`1.`) stay visible — renumbering them live
+      // would fight the source — but pick up the marker colour. The
+      // marker's parent chain is ListItem -> BulletList/OrderedList.
+      if (name === 'ListMark') {
+        if (intersectsExclude(from, to, excludes)) return undefined
+        const listType = node.node.parent?.parent?.name
+        if (listType === 'BulletList') {
+          pending.push({
+            from,
+            to,
+            deco: Decoration.replace({ widget: new BulletWidget() }),
+          })
+        } else {
+          pending.push({
+            from,
+            to,
+            deco: Decoration.mark({ class: 'live-list-mark' }),
+          })
+        }
+        return undefined
+      }
+
+      // GFM task markers — `[ ]` / `[x]` become a real checkbox.
+      // Clicking toggles the source (editor-level handler; see
+      // mountLive). Skipped on the cursor's line like everything else.
+      if (name === 'TaskMarker') {
+        if (intersectsExclude(from, to, excludes)) return undefined
+        const raw = doc.sliceString(from, to)
+        pending.push({
+          from,
+          to,
+          deco: Decoration.replace({
+            widget: new TaskWidget(/[xX]/.test(raw)),
+          }),
+        })
+        return undefined
+      }
+
       // Inline markers we hide so the visible text reads clean
       // (e.g. `**` around bold content). Skipped when the line is
       // in the exclude set so the user sees raw syntax mid-edit.
+      // Carve-out: a setext heading's HeaderMark is the whole `===`
+      // underline line — hiding it leaves a ghost empty line, so it
+      // keeps the styled-down line class from the Setext branch
+      // instead.
       if (INLINE_MARK_TYPES.has(name)) {
+        if (name === 'HeaderMark' && node.node.parent?.name.startsWith('SetextHeading')) {
+          return undefined
+        }
         if (intersectsExclude(from, to, excludes)) return undefined
         pending.push({ from, to, deco: Decoration.replace({}) })
         return undefined
@@ -415,6 +527,61 @@ export function mountLive(
 
   const baseUrl = getCurrentSourceUrl() ?? undefined
 
+  // Cmd/Ctrl+click on a link opens it; clicking a task checkbox
+  // toggles the source. Both hook MOUSEDOWN, not click: CodeMirror's
+  // own mousedown handling (caret placement, and meta-click's
+  // add-cursor behaviour) consumes the interaction before a click
+  // event would reach us. Returning true tells CM the event is
+  // handled so it skips its default entirely.
+  //
+  // Plain clicks stay with the cursor (placing the caret reveals the
+  // line's source — that's the editing affordance), so navigation
+  // takes the modifier, same as every code editor. The URL resolves
+  // from the syntax tree at the click point: works on the styled link
+  // text even while the URL chars are hidden.
+  const linkOpener = EditorView.domEventHandlers({
+    mousedown: (e, view) => {
+      // Task checkbox toggle — the widget's input forwards events
+      // (ignoreEvent false); flip `[ ]`↔`[x]` in the source at the
+      // widget's live position. preventDefault stops the input's
+      // native toggle; the rebuild re-renders it from the new source.
+      const target = e.target as HTMLElement
+      if (target instanceof HTMLInputElement && target.classList.contains('live-task-checkbox')) {
+        e.preventDefault()
+        const pos = view.posAtDOM(target)
+        const line = view.state.doc.lineAt(pos)
+        const rel = pos - line.from
+        const match = line.text.slice(rel).match(/^\[( |x|X)\]/)
+        if (match) {
+          view.dispatch({
+            changes: {
+              from: pos,
+              to: pos + 3,
+              insert: match[1] === ' ' ? '[x]' : '[ ]',
+            },
+          })
+        }
+        return true
+      }
+      if (!e.metaKey && !e.ctrlKey) return false
+      const pos = view.posAtCoords({ x: e.clientX, y: e.clientY })
+      if (pos == null) return false
+      let node = syntaxTree(view.state).resolveInner(pos, 0)
+      while (node.parent && node.name !== 'Link' && node.name !== 'Autolink' && node.name !== 'URL') {
+        node = node.parent
+      }
+      const urlNode = node.name === 'URL' ? node : node.getChild('URL')
+      if (!urlNode) return false
+      const url = view.state.doc.sliceString(urlNode.from, urlNode.to)
+      if (/^https?:\/\//i.test(url)) {
+        e.preventDefault()
+        window.open(url, '_blank', 'noopener')
+        return true
+      }
+      return false
+    },
+  })
+
   const languageCompartment = new Compartment()
   const view = new EditorView({
     state: EditorState.create({
@@ -431,6 +598,7 @@ export function mountLive(
         search(),
         keymap.of([...defaultKeymap, ...historyKeymap]),
         liveDecorationField(baseUrl),
+        linkOpener,
         EditorView.updateListener.of((update) => {
           if (update.docChanged) onChange?.(update.state.doc.toString())
         }),
@@ -439,14 +607,8 @@ export function mountLive(
     parent: wrap,
   })
 
-  // TEMP debug hatch — expose the live mode's EditorView on window so
-  // the probe can read its selection/coords without poking the DOM.
-  // Remove before merging the spike.
-  ;(window as unknown as { __liveView?: EditorView }).__liveView = view
-
   return {
     destroy: () => {
-      delete (window as unknown as { __liveView?: EditorView }).__liveView
       view.destroy()
       wrap.remove()
     },

@@ -1514,6 +1514,33 @@ html {
   color: var(--muted);
 }
 
+/* List furniture. Bullets render as a dot in the marker colour;
+   ordered markers stay as source digits but pick up the same colour.
+   Task checkboxes are real inputs sized to the text line. */
+.mode-live .live-bullet {
+  color: var(--cm-marker);
+}
+.mode-live .live-list-mark {
+  color: var(--cm-marker);
+}
+.mode-live .live-task-checkbox {
+  accent-color: var(--accent);
+  width: 0.95em;
+  height: 0.95em;
+  margin: 0 0.1em 0 0;
+  vertical-align: -0.1em;
+  cursor: pointer;
+}
+
+/* Setext heading underline (`===` / `---` line) — kept visible but
+   quiet; hiding it entirely leaves a ghost line (see live-engine). */
+.mode-live .live-setext-underline {
+  color: var(--cm-marker);
+  opacity: 0.45;
+  font-size: 0.8em;
+  line-height: 1.2;
+}
+
 /* Inline content wrappers — applied as marks on the content range,
    complementing the marker-hide on adjacent syntax chars. */
 .mode-live .live-strong { font-weight: 700; }
