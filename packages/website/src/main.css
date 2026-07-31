@@ -534,37 +534,14 @@ html {
   scrollbar-gutter: stable;
 }
 
-/* --- ?option=1|2|3 — desktop framing round 2 (2026-07-31) ---
-   Round 1's page-card (content column on a tinted ground) was
-   rejected — the page effect read wrong and its layered backgrounds
-   misbehaved on long documents. Round 2 candidates frame the WINDOW
-   instead of the content; baseline (option 0) stays untouched.
-
-   Option 1 — titlebar band: a quiet tinted strip along the window
-   top with a hairline underline; content slides beneath it. Reads
-   as native app chrome, especially in the Tauri shell. */
-[data-option='1'] body::before {
-  content: '';
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  height: 28px;
-  background: color-mix(in srgb, var(--fg) 4%, var(--bg));
-  border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, var(--bg));
-  pointer-events: none;
-  z-index: 1;
-}
-
-/* Option 2 — accent frame: a rounded 2px inset border around the
-   viewport in the theme's accent (same hue as the mode pill's hover
-   ring); follows the active theme automatically via var(--accent).
-   The radius matches macOS window corners, so in the Tauri shell the
-   frame hugs the window edge. Currently visible in the web build so
-   the round can be judged without a desktop release — AT ROLLOUT
-   this gates to [data-shell='tauri'] only (browser tabs already
-   have chrome; the frame is a window affordance). */
-[data-option='2'] body::after {
+/* Desktop window frame (framing rounds concluded 2026-07-31: the
+   accent frame won; page-card, titlebar band and vignette rejected).
+   A rounded 2px inset border around the viewport in the theme's
+   accent — the same hue family as the pill rings, so frame + pills
+   read as one chrome family that re-tints with the theme. The radius
+   matches macOS window corners. Tauri-only: browser tabs already
+   have chrome; the frame is a window affordance. */
+[data-shell='tauri'] body::after {
   content: '';
   position: fixed;
   inset: 0;
@@ -572,18 +549,6 @@ html {
   border-radius: 10px;
   pointer-events: none;
   z-index: 200;
-}
-
-/* Option 3 — inset vignette: a soft inward shadow at the viewport
-   edges. No lines, no bands — the window reads as a shallow surface
-   whose edges gently turn away. */
-[data-option='3'] body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.1);
-  pointer-events: none;
-  z-index: 199;
 }
 
 #app {
