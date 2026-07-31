@@ -829,6 +829,16 @@ html {
 .mode-icon--active:hover {
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
+/* The edit-flavour chevron reads as an appendage of the Edit button,
+   not a fourth peer — narrower, and its glyph slightly smaller via
+   the svg scale so the row keeps a quiet visual weight. */
+.mode-icon--chevron {
+  width: 16px;
+}
+.mode-icon--chevron svg {
+  width: 12px;
+  height: 12px;
+}
 
 /* In macOS native fullscreen via Tauri the title strip area collapses;
    hide our title element and remove the 28px reserve so content fills
@@ -1149,6 +1159,92 @@ html {
   text-align: center;
 }
 
+/* Edit-flavour picker — Cmd+Alt+E / the chevron next to the Edit
+   button. Small centred modal in the command-palette idiom (same
+   backdrop treatment, same row rhythm) but list-only: three flavours
+   don't need a search input. Built and torn down per-open by
+   edit-mode.ts. */
+.edp__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: color-mix(in srgb, var(--bg) 40%, rgba(0, 0, 0, 0.35));
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding-top: 18vh;
+}
+.edp__panel {
+  width: min(400px, calc(100vw - 32px));
+  display: flex;
+  flex-direction: column;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
+  overflow: hidden;
+  font-family: var(--font-body);
+}
+.edp__title {
+  padding: 12px 18px 8px;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+.edp__list {
+  list-style: none;
+  margin: 0;
+  padding: 0 0 6px;
+}
+.edp__row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 18px;
+  min-height: 36px;
+  cursor: pointer;
+  color: var(--fg);
+}
+.edp__row--selected {
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+.edp__icon {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+}
+.edp__row--selected .edp__icon {
+  color: var(--accent);
+}
+.edp__label {
+  font-size: 14px;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.edp__hint {
+  flex: 1;
+  color: var(--muted);
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.edp__shortcut {
+  color: var(--muted);
+  font-size: 12px;
+  font-family: var(--font-code);
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+}
+.edp__note {
+  padding: 8px 18px 12px;
+  color: var(--muted);
+  font-size: 12px;
+  border-top: 1px solid var(--border);
+}
+
 /* --- Open URL modal --- */
 .url-open__backdrop {
   position: fixed;
@@ -1314,6 +1410,75 @@ html {
 .url-open__btn:disabled {
   opacity: 0.6;
   cursor: progress;
+}
+
+/* --- Live (CM6 inline-decorated source, key 5) ---
+   Source text stays in place; line classes restyle each line as the
+   matching block type, mark decorations hide syntax markers, and
+   block widgets only kick in for fenced code, tables, HR, HTML. */
+/* Auto height so the doc grows with content and the window scrolls
+   naturally — matches Read mode rather than putting a scrollbar
+   inside the editor. */
+.mode-live { width: 100%; }
+.mode-live .cm-editor { height: auto; }
+
+/* Block widgets reuse .mode-read prose styling but live inside the
+   CM scroller's centred column, so neutralise outer constraints. */
+.mode-live .live-block.mode-read {
+  max-width: none;
+  width: auto;
+  margin: 0;
+  padding: 0;
+}
+.mode-live .live-block.mode-read > *:first-child { margin-top: 0; }
+.mode-live .live-block.mode-read > *:last-child { margin-bottom: 0; }
+
+/* Heading lines — same hierarchy as .mode-read but applied as a
+   line-class on the source line so the heading stays an editable
+   CM line rather than a widget. */
+.mode-live .live-h1,
+.mode-live .live-h2,
+.mode-live .live-h3,
+.mode-live .live-h4,
+.mode-live .live-h5,
+.mode-live .live-h6 {
+  color: var(--cm-heading);
+  font-weight: 700;
+  line-height: 1.25;
+}
+.mode-live .live-h1 { font-size: 2em; }
+.mode-live .live-h2 { font-size: 1.5em; }
+.mode-live .live-h3 { font-size: 1.25em; }
+.mode-live .live-h4 { font-size: 1.1em; }
+.mode-live .live-h5 { font-size: 1em; }
+.mode-live .live-h6 { font-size: 0.9em; color: var(--muted); }
+
+/* Blockquote lines — left border + muted colour. Applied per line
+   so a multi-line quote gets a continuous border. */
+.mode-live .live-blockquote-line {
+  border-left: 3px solid var(--border);
+  padding-left: 1em;
+  color: var(--muted);
+}
+
+/* Inline content wrappers — applied as marks on the content range,
+   complementing the marker-hide on adjacent syntax chars. */
+.mode-live .live-strong { font-weight: 700; }
+.mode-live .live-em { font-style: italic; }
+.mode-live .live-strike { text-decoration: line-through; }
+.mode-live .live-inline-code {
+  font-family: var(--font-code);
+  font-size: 0.92em;
+  background: var(--code-bg);
+  color: var(--code-fg);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+}
+.mode-live .live-link {
+  color: var(--link, currentColor);
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 2px;
 }
 
 /* --- Mode 1 — themed read --- */

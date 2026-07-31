@@ -171,6 +171,37 @@ is prefixed with a status tag so its disposition is scannable:
   3. **Chocolatey** — pre-winget veteran with a large install base.
      `choco install nicermd`.
 
+## Design / UX (2026-07-31 direction review)
+
+Direction: lean into iA Writer / Typora-class minimalism. Mode
+architecture (Read-primary + edit picker) is the active workstream;
+these three follow it.
+
+- **NEXT — Clean default Light/Dark themes.** Current theme set reads
+  louder than the product wants. Ship two first-party defaults tuned
+  for restraint (one accent colour max, generous whitespace, type
+  does the work); demote existing louder themes to an optional
+  gallery tier rather than deleting them.
+- **NEXT — Custom theme files (YAML tokens, GitHub-linkable).**
+  Themes as validated token data (colours, safe-list fonts, spacing)
+  applied as CSS custom properties — NOT raw CSS (CSS from untrusted
+  URLs is a security/CSP hole: exfiltration, remote loads, UI
+  overlay). Decided 2026-07-31. Format matches the 18 YAML themes in
+  `reference/old-spike/` awaiting port. Distribution via GitHub
+  raw/gist URLs; needs one CSP `connect-src` addition + a validator
+  with discreet unsupported-key surfacing.
+- **NEXT — Desktop window framing.** The borderless canvas gets lost
+  against the desktop. A/B via `?option=1|2|3` CF preview: (1)
+  hairline window border, (2) canvas-on-layer (document column on a
+  subtly different background — Typora/Bear "page" feel; current
+  lean), (3) quiet titlebar treatment. Balance framing vs
+  minimalism; symmetric by default.
+- **NEXT — WYSIWYG format bar to top.** Bottom FAB/format-bar is a
+  Milkdown-era port; users expect editing controls along the top.
+  Persistent top toolbar while in Write mode, absent in Read —
+  consistent with controls-on-demand. Fold into or sequence after
+  the edit-picker work since both touch the toolbar.
+
 ## Fonts
 
 - **PARKED — "More fonts" affordance.**

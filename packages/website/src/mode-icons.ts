@@ -1,58 +1,40 @@
-// Mode-switcher icons for the title strip. Top-right of the window;
-// 4 buttons, one per mode. Active mode in accent colour at full
-// opacity; inactive muted at 50%. Click dispatches to harness.
+// Mode switcher for the title strip — Read-primary shape. Top-right
+// of the window; three controls instead of the old four flat tabs:
 //
-// Icons are Lucide originals (MIT) inlined as SVG paths — book-open /
-// pen-line / columns-2 / code. Inlining avoids pulling the whole
-// lucide package for 4 icons (~1KB total here vs ~tens of KB for the
-// package).
+//   [Read]  [Edit]  [▾]
+//
+// Read is the resting state. Edit enters the remembered edit flavour
+// (Write / Split / Code — picker on first-ever use); while editing,
+// the Edit button shows the ACTIVE flavour's icon so you can see which
+// editor you're in at a glance. The chevron opens the flavour picker.
+// Cmd+1..4 direct jumps still exist as the power layer (see main.ts).
+//
+// Icons are Lucide originals (MIT) inlined as SVG paths — book-open
+// for Read, pen-line for Edit at rest, and the flavour's own icon
+// while active. Inlining avoids pulling the whole lucide package.
 
 import type { Harness } from './main'
 import { getContentKind } from './doc-source'
+import { getFlavour, isEditMode, toggleEdit, openEditPicker } from './edit-mode'
 
-interface ModeIconDef {
-  key: number
-  name: string
-  shortcut: string
-  paths: string
+const READ_PATHS =
+  '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>' +
+  '<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>'
+
+// pen-line — the Edit button's resting icon (no flavour active).
+const EDIT_PATHS =
+  '<path d="M12 20h9"/>' +
+  '<path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>'
+
+const CHEVRON_PATHS = '<path d="m6 9 6 6 6-6"/>'
+
+function svg(paths: string): string {
+  return (
+    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" ' +
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+    `stroke-linejoin="round">${paths}</svg>`
+  )
 }
-
-// 24×24 viewBox, stroke="currentColor", stroke-width=2, line-cap/join=round.
-// Paths copied from lucide.dev (MIT) and reduced to just the inner shapes.
-const ICONS: ModeIconDef[] = [
-  {
-    key: 1,
-    name: 'Read',
-    shortcut: 'Cmd+1',
-    paths:
-      '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>' +
-      '<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
-  },
-  {
-    key: 2,
-    name: 'Write',
-    shortcut: 'Cmd+2',
-    paths:
-      '<path d="M12 20h9"/>' +
-      '<path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>',
-  },
-  {
-    key: 3,
-    name: 'Split',
-    shortcut: 'Cmd+3',
-    paths:
-      '<rect width="18" height="18" x="3" y="3" rx="2"/>' +
-      '<path d="M12 3v18"/>',
-  },
-  {
-    key: 4,
-    name: 'Code',
-    shortcut: 'Cmd+4',
-    paths:
-      '<polyline points="16 18 22 12 16 6"/>' +
-      '<polyline points="8 6 2 12 8 18"/>',
-  },
-]
 
 export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   const wrap = document.createElement('div')
@@ -60,54 +42,71 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   wrap.setAttribute('role', 'tablist')
   root.appendChild(wrap)
 
-  const buttons: Map<number, HTMLButtonElement> = new Map()
+  const readBtn = document.createElement('button')
+  readBtn.type = 'button'
+  readBtn.className = 'mode-icon'
+  readBtn.setAttribute('role', 'tab')
+  readBtn.setAttribute('aria-label', 'Read')
+  readBtn.title = 'Read — Cmd+1'
+  readBtn.innerHTML = svg(READ_PATHS)
+  readBtn.addEventListener('click', () => harness.switchTo(1))
+  wrap.appendChild(readBtn)
 
-  for (const def of ICONS) {
-    const btn = document.createElement('button')
-    btn.type = 'button'
-    btn.className = 'mode-icon'
-    btn.setAttribute('role', 'tab')
-    btn.setAttribute('aria-label', def.name)
-    btn.title = `${def.name} — ${def.shortcut}`
-    btn.innerHTML =
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" ' +
-      'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
-      `stroke-linejoin="round">${def.paths}</svg>`
-    btn.addEventListener('click', () => harness.switchTo(def.key))
-    wrap.appendChild(btn)
-    buttons.set(def.key, btn)
+  const editBtn = document.createElement('button')
+  editBtn.type = 'button'
+  editBtn.className = 'mode-icon'
+  editBtn.setAttribute('role', 'tab')
+  editBtn.setAttribute('aria-label', 'Edit')
+  editBtn.innerHTML = svg(EDIT_PATHS)
+  editBtn.addEventListener('click', () => {
+    // From Read: enter the remembered flavour. While editing: clicking
+    // Edit again is a no-op (you're already editing) rather than an
+    // exit — exit lives on the Read button and Cmd+Return, so a stray
+    // second click can't bounce you out of your editor.
+    if (!isEditMode(harness.getCurrentMode().key)) toggleEdit(harness)
+  })
+  wrap.appendChild(editBtn)
+
+  const pickBtn = document.createElement('button')
+  pickBtn.type = 'button'
+  pickBtn.className = 'mode-icon mode-icon--chevron'
+  pickBtn.setAttribute('aria-label', 'Choose edit mode')
+  pickBtn.title = 'Choose edit mode — Cmd+Alt+E'
+  pickBtn.innerHTML = svg(CHEVRON_PATHS)
+  pickBtn.addEventListener('click', () => openEditPicker(harness))
+  wrap.appendChild(pickBtn)
+
+  const update = (key: number): void => {
+    const editing = isEditMode(key)
+    readBtn.classList.toggle('mode-icon--active', key === 1)
+    readBtn.setAttribute('aria-selected', key === 1 ? 'true' : 'false')
+    editBtn.classList.toggle('mode-icon--active', editing)
+    editBtn.setAttribute('aria-selected', editing ? 'true' : 'false')
+    // Reflect the active flavour on the Edit button; revert to the
+    // pen at rest. Tooltip names the flavour so hover answers "which
+    // editor am I in?" precisely.
+    const flavour = editing ? getFlavour(key) : null
+    editBtn.innerHTML = svg(flavour ? flavour.paths : EDIT_PATHS)
+    editBtn.title = flavour
+      ? `Editing: ${flavour.name} — Cmd+Return returns to Read`
+      : 'Edit — Cmd+Return'
   }
 
-  const updateActive = (key: number): void => {
-    for (const [k, btn] of buttons.entries()) {
-      const active = k === key
-      btn.classList.toggle('mode-icon--active', active)
-      btn.setAttribute('aria-selected', active ? 'true' : 'false')
-    }
-  }
-
-  // Modes 2 (Write/Tiptap) and 3 (Split: editor + live preview) are
-  // markdown-only. Write because Tiptap's markdown serialiser would
-  // mangle non-markdown text on save. Split because the preview side
-  // is the same hljs render as Read mode — for code, editor + preview
-  // are essentially the same content twice, adding friction without
-  // adding signal. Read + Code stay available for every kind. If the
-  // user happens to be in a hidden mode when a non-markdown doc loads,
-  // kick them back to Read.
-  const updateVisibility = (): void => {
+  // Write (2), Split (3) and Live (5) are markdown-only; harness.switchTo
+  // enforces that and edit-mode routes non-markdown docs straight to
+  // Code, so the buttons themselves stay visible for every content
+  // kind. Only correction needed here: if a non-markdown doc loads
+  // while a markdown-only mode is active, kick back to Read.
+  const onSourceChanged = (): void => {
     const isMarkdown = getContentKind().kind === 'markdown'
-    const writeBtn = buttons.get(2)
-    const splitBtn = buttons.get(3)
-    if (writeBtn) writeBtn.hidden = !isMarkdown
-    if (splitBtn) splitBtn.hidden = !isMarkdown
     if (!isMarkdown) {
       const current = harness.getCurrentMode().key
-      if (current === 2 || current === 3) harness.switchTo(1)
+      if (current === 2 || current === 3 || current === 5) harness.switchTo(1)
     }
   }
 
-  updateActive(harness.getCurrentMode().key)
-  updateVisibility()
-  harness.onModeChange((key) => updateActive(key))
-  document.addEventListener('nicermd:source-changed', updateVisibility)
+  update(harness.getCurrentMode().key)
+  onSourceChanged()
+  harness.onModeChange((key) => update(key))
+  document.addEventListener('nicermd:source-changed', onSourceChanged)
 }

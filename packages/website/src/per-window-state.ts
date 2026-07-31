@@ -9,7 +9,7 @@
 //
 // Two kinds of state restored here:
 //
-//   • Mode (1..4) — which of Read / Write / Split / Code was active
+//   • Mode (1..5) — which of Read / Write / Split / Code / Live was active
 //     when the window last quit. Persists across launches so a
 //     restored window comes back in the same mode the user left it.
 //
@@ -57,7 +57,7 @@ export function readPersistedMode(): number | null {
     const raw = localStorage.getItem(`${MODE_PREFIX}:${getWindowLabel()}`)
     if (!raw) return null
     const n = parseInt(raw, 10)
-    if (!Number.isInteger(n) || n < 1 || n > 4) return null
+    if (!Number.isInteger(n) || n < 1 || n > 5) return null
     return n
   } catch {
     return null
