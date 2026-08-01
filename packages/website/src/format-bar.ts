@@ -9,9 +9,9 @@
 // (top-toolbar.ts) in the 2026-08-01 round, so this is now a plain
 // Menu pill in every mode.
 //
-// Hide-on-scroll piggybacks on the same `data-strip-hidden` flag the
-// title strip uses (see scroll-strip.ts) — scrolling down slides the
-// pill out, scrolling up brings it back, mode change resurfaces it.
+// Visibility piggybacks on the same `data-strip-hidden` flag the
+// title strip uses (see chrome-visibility.ts) — reach shows the pill,
+// reading/typing/idle hide it, mode change resurfaces it.
 
 import type { Harness } from './main'
 import { openPalette } from './command-palette'

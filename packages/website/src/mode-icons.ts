@@ -95,7 +95,7 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   })
 
   // Re-flash whenever the strip returns from hide-on-scroll. The
-  // scroll-strip module flips data-strip-hidden on <html>; observe the
+  // chrome-visibility module flips data-strip-hidden on <html>; observe the
   // attribute rather than re-deriving scroll state here.
   const stripObserver = new MutationObserver(() => {
     if (document.documentElement.dataset.stripHidden !== '1') flashHint()

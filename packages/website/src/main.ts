@@ -52,7 +52,7 @@ import { openUrlPrompt, processBootUrlParam } from './url-open'
 import { setupLinkChaining, showNoticeBanner } from './link-chain'
 import { openThemePicker } from './theme-picker'
 import { registerServiceWorker } from './sw-register'
-import { setupScrollStrip, showStrip } from './scroll-strip'
+import { setupChromeVisibility, showStrip } from './chrome-visibility'
 import { setupFormatBar } from './format-bar'
 import { setupTopToolbar } from './top-toolbar'
 import { setupCommandPalette } from './command-palette'
@@ -958,7 +958,7 @@ async function boot(): Promise<void> {
 
   // Hide title strip + mode icons on scroll-down, restore on scroll-up.
   // Inert in mode 4 (split scrolls inside panes, not the document).
-  setupScrollStrip()
+  setupChromeVisibility()
 
   // Snapshot the persisted per-window state IMMEDIATELY, before any
   // setDocState call (which the boot path makes a few lines down with

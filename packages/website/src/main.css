@@ -974,7 +974,7 @@ html {
   top: 0.75rem;
 }
 
-/* Hide-on-scroll-down: scroll-strip.ts sets data-strip-hidden="1" on
+/* Chrome hide: chrome-visibility.ts sets data-strip-hidden="1" on
    <html> when the user scrolls past the top. Both filename and icons
    slide up out of view together. */
 .window-title,
@@ -1010,7 +1010,7 @@ html {
    - Push mode icons down by 32px so when Chrome's title bar collapses
      and its chrome buttons overlay on the page content, they sit
      above (not on top of) our icons.
-   - Pin mode icons against [data-strip-hidden] (our scroll-strip flag)
+   - Pin mode icons against [data-strip-hidden] (our chrome-visibility flag)
      so scrolling doesn't translate them up into the chrome zone.
    Tauri and plain browser tabs are unaffected. */
 @media (display-mode: standalone) {
@@ -2710,7 +2710,7 @@ html[data-active-mode="3"][data-tauri="1"] .window-title {
 }
 
 /* --- Find bar (Cmd+F) ---
-   Floating pill anchored top-right, below the scroll-strip area. One
+   Floating pill anchored top-right, below the title-strip area. One
    bar across all modes; per-mode adapters drive content highlighting
    beneath it. The match-count badge dims to muted when empty so the
    'no matches yet' state reads as passive, not error. */
