@@ -747,9 +747,7 @@ html {
    it never intercepts clicks on content beneath. */
 .version-badge {
   position: fixed;
-  /* Sized to the same 32px height as .format-bar so the two share a
-     baseline and a vertical centre when they sit at the same `bottom`.
-     padding is intentionally vertical-only; the flex centring handles
+  /* padding is intentionally vertical-only; the flex centring handles
      the rest. */
   bottom: 14px;
   right: 12px;
@@ -883,80 +881,62 @@ html {
   display: none;
 }
 
-/* Mode icons in the title strip — top-right, 4 buttons, active one
-   accent-coloured, others muted. */
+/* Strip control — the single mouse affordance for modes + commands
+   (2026-08-01 unified-panel round; replaced the floating mode pill
+   and the bottom Menu pill). Desktop: quiet control at the strip's
+   right end, riding the strip's one transition. Web: same control
+   floats as a ghost chip top-right (no strip there). */
 .mode-icons {
   display: none;
   position: fixed;
-  top: 6px;
-  right: 12px;
-  height: 28px;
+  right: 10px;
   z-index: 6;
   align-items: center;
-  gap: 2px;
 }
 [data-tauri="1"] .mode-icons {
   display: flex;
 }
-.mode-icon {
-  width: 26px;
-  height: 22px;
+[data-shell="tauri"] .mode-icons {
+  top: 3px;
+}
+[data-shell="web"] .mode-icons {
+  top: 9px;
+}
+.strip-control {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
   background: transparent;
   border: none;
-  border-radius: 4px;
-  color: var(--muted);
-  opacity: 0.5;
+  border-radius: 6px;
+  color: color-mix(in srgb, var(--fg) 60%, var(--muted));
   cursor: pointer;
-  padding: 0;
-  transition: color 120ms ease, opacity 120ms ease, background 120ms ease;
+  transition: color 120ms ease, background 120ms ease;
 }
-.mode-icon:hover {
-  opacity: 0.85;
-  background: color-mix(in srgb, var(--fg) 6%, transparent);
-}
-.mode-icon--active {
-  color: var(--accent);
-  opacity: 1;
-}
-.mode-icon--active:hover {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-}
-/* Single-icon mode pill (2026-07-31 — the segmented A/B round
-   collapsed to this). One control showing the current mode's icon;
-   click opens the mode picker. Same visual language as the bottom
-   ⌘K pill: bg, hairline border, full radius, soft shadow. */
-.mode-icon--pill-toggle {
-  min-width: 38px;
-  width: auto;
-  padding: 0 8px;
-  height: 28px;
-  background: var(--bg);
-  /* Accent ring — same 45% mix as the window frame so the floating
-     chrome (frame, mode pill, cmdk pill) reads as one family. */
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-  border-radius: 999px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  opacity: 0.9;
+.strip-control:hover {
   color: var(--fg);
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
 }
-/* In-pill shortcut hint — pill content swaps from the mode icon to
-   the shortcut text on hover and briefly on scroll-return (JS in
-   mode-icons.ts drives the swap). Typography matches the ⌘K pill's
-   resting label (.format-bar__dots): 12px, 500, 0.5px tracking. */
-.mode-icon--pill-toggle.mode-icon--hint {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  font-family: var(--font-body);
-  white-space: nowrap;
+/* On web's bare page (no strip surface behind it) the chip needs a
+   whisper of its own material to be findable. */
+[data-shell="web"] .strip-control {
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid color-mix(in srgb, var(--fg) 10%, var(--border));
 }
-.mode-icon--pill-toggle:hover {
-  opacity: 1;
-  background: var(--bg);
-  border-color: color-mix(in srgb, var(--accent) 75%, var(--border));
+[data-shell="web"] .strip-control:hover {
+  background: color-mix(in srgb, var(--fg) 7%, var(--bg));
+}
+.strip-control__icon {
+  display: flex;
+  align-items: center;
+}
+.strip-control__caret {
+  font-size: 8px;
+  opacity: 0.7;
 }
 
 
@@ -986,21 +966,12 @@ html {
   transform: translateY(calc(-100% - 24px));
 }
 [data-strip-hidden="1"] .mode-icons {
-  /* The pill floats with a drop shadow, so a plain -100% leaves its
-     bottom sliver + shadow peeking. On desktop it also sits BELOW the
-     28px strip (top 30–34px), so the overshoot must swallow that
-     offset too — 48px clears top + height + shadow in every layout,
-     and the extra distance is invisible at a fixed 200ms duration. */
-  transform: translateY(calc(-100% - 48px));
+  /* Overshoot past -100% so the control clears the edge from any
+     resting top (3px in the strip, 9px as the web chip). */
+  transform: translateY(calc(-100% - 24px));
 }
-/* Format / command pill is bottom-anchored, so it slides down out of
-   view (translateX is preserved for centring; transform stacks via
-   composition). Inherits the same scroll-driven flag — the title strip
-   and the pill appear / disappear together. The version badge piggy-
-   backs on the same flag so all chrome hides as a single unit. */
-[data-strip-hidden="1"] .format-bar {
-  transform: translateX(-50%) translateY(calc(100% + 14px));
-}
+/* The version badge piggybacks on the same flag so all chrome hides
+   as a single unit. */
 [data-strip-hidden="1"] .version-badge {
   transform: translateY(calc(100% + 14px));
 }
@@ -1072,81 +1043,10 @@ html {
   }
 }
 
-/* Format / command pill. Always visible at low opacity. In modes
-   1/3/4 the resting "⌘K" label opens the command palette on click; in
-   mode 2 it expands to a format toolbar via proximity reveal (handled
-   in format-bar.ts), with a trailing ⌘K button that opens the palette
-   from there. Hide-on-scroll handled by [data-strip-hidden] above. */
-.format-bar {
-  display: flex;
-  position: fixed;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-  background: var(--bg);
-  /* Accent ring — matches the mode pill and window frame. */
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-  border-radius: 999px;
-  height: 32px;
-  align-items: center;
-  padding: 0 4px;
-  gap: 2px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  transition: opacity 160ms ease, padding 160ms ease,
-    transform 240ms ease, border-color 240ms ease,
-    box-shadow 240ms ease;
-  opacity: 0.9;
-  cursor: pointer;
-  /* One-shot settle pulse: a soft accent ring expands and fades after
-     the pill slides into place. Runs on first paint AND every return
-     from hide-on-scroll — [data-strip-hidden="1"] sets animation:none,
-     so removing the flag restarts the animation. The 300ms delay lets
-     the slide-in transition land first; `backwards` holds the 0% frame
-     (plain shadow) during the delay. Deliberately once-only per
-     appearance: an attention cue, not a decoration loop. */
-  animation: format-bar-settle 700ms ease-out 300ms 1 backwards;
-}
-@keyframes format-bar-settle {
-  0% {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1),
-      0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent);
-  }
-  100% {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1),
-      0 0 0 14px transparent;
-  }
-}
-[data-strip-hidden="1"] .format-bar {
-  animation: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .format-bar {
-    animation: none;
-  }
-}
-.format-bar:hover {
-  opacity: 1;
-}
-.format-bar__dots {
-  color: var(--fg);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 0 10px;
-  user-select: none;
-  letter-spacing: 0.5px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-}
-/* ---- Write-mode top toolbar --------------------------------------
-   Rendered in mode 3 (Write) only: a full-width theme-tinted bar
-   holding the format buttons. Soft sheen finish — a gentle vertical
-   gradient mixed from the active theme's accent plus a hairline top
-   highlight, deliberately far short of brushed metal (a finish, not
-   a texture; won the 2026-08-01 round over a flat tint). Re-colours
-   with the theme. Hide-on-scroll rides the same data-strip-hidden
-   flag as the title strip. */
+/* (The bottom Menu pill lived here until 2026-08-01 — retired with
+   the floating mode pill when the unified panel + strip control
+   became the single affordance.) */
+
 /* Top chrome band — shell-split geometry, one material system.
    Desktop (Tauri): 28px window strip (surfaced on .window-title in
    EVERY mode, riding the pointer-reveal flag) + a 32px tool row that
@@ -1219,14 +1119,6 @@ html[data-active-mode="3"] .top-toolbar {
 .top-toolbar__menu {
   color: color-mix(in srgb, var(--fg) 55%, var(--muted));
 }
-/* Desktop pills tuck below the strip; centre in the tool row when it
-   exists. Web keeps the shipped top-6 float. */
-[data-shell="tauri"] .mode-icons {
-  top: 34px;
-}
-html[data-active-mode="3"][data-shell="tauri"] .mode-icons {
-  top: 30px;
-}
 /* Web Write mode: filename tucks left inside the single bar. */
 html[data-active-mode="3"][data-shell="web"] .window-title {
   height: 40px;
@@ -1244,7 +1136,7 @@ html[data-active-mode="3"][data-shell="web"] .window-title {
   top: 0;
 }
 [data-shell="tauri"][data-fullscreen="1"] .mode-icons {
-  top: 6px;
+  top: 9px;
 }
 [data-strip-hidden="1"] .top-toolbar {
   transform: translateY(calc(-100% - 8px));
@@ -1423,64 +1315,33 @@ html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
   font-size: 14px;
   text-align: center;
 }
-
-/* Edit-flavour picker — Cmd+Alt+E / the chevron next to the Edit
-   button. Small centred modal in the command-palette idiom (same
-   backdrop treatment, same row rhythm) but list-only: three flavours
-   don't need a search input. Built and torn down per-open by
-   edit-mode.ts. */
-.edp__backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: color-mix(in srgb, var(--bg) 40%, rgba(0, 0, 0, 0.35));
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 18vh;
-}
-.edp__panel {
-  width: min(400px, calc(100vw - 32px));
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
-  overflow: hidden;
-  font-family: var(--font-body);
-}
-.edp__title {
-  padding: 12px 18px 8px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.edp__list {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 6px;
-}
-.edp__row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 18px;
-  min-height: 36px;
-  cursor: pointer;
-  color: var(--fg);
-}
-.edp__row--selected {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-}
-/* The mode you're currently IN — distinct from the arrow-key
-   selection. A small accent dot in the row's left gutter. */
-.edp__row {
+/* Mode rows — the pinned mode section at the top of the unified
+   panel (the standalone edp picker merged in, 2026-08-01). Same row
+   rhythm as commands, plus an icon; the mode you're currently IN
+   gets an accent dot in the left gutter (distinct from the arrow-key
+   selection). */
+.cmdp__row {
   position: relative;
 }
-.edp__row--current::before {
+.cmdp__row--mode .cmdp__label {
+  flex: none;
+  font-weight: 500;
+}
+.cmdp__row--mode .cmdp__hint {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cmdp__icon {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+}
+.cmdp__row--selected .cmdp__icon,
+.cmdp__row--current .cmdp__icon {
+  color: var(--accent);
+}
+.cmdp__row--current::before {
   content: '';
   position: absolute;
   left: 7px;
@@ -1489,46 +1350,23 @@ html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
   border-radius: 999px;
   background: var(--accent);
 }
-.edp__icon {
+.cmdp__divider {
   display: flex;
   align-items: center;
+  gap: 10px;
+  margin: 6px 0 2px;
+  padding: 0 18px;
   color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-.edp__row--selected .edp__icon {
-  color: var(--accent);
-}
-.edp__label {
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.edp__hint {
+.cmdp__divider::after {
+  content: '';
   flex: 1;
-  color: var(--muted);
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.edp__shortcut {
-  color: var(--muted);
-  font-size: 12px;
-  font-family: var(--font-code);
-  white-space: nowrap;
-  letter-spacing: 0.02em;
-}
-/* Menu hand-off row — separated from the modes above it. */
-.edp__row--menu {
-  border-top: 1px solid var(--border);
-  margin-top: 6px;
-  padding-top: 10px;
-}
-
-.edp__note {
-  padding: 8px 18px 12px;
-  color: var(--muted);
-  font-size: 12px;
-  border-top: 1px solid var(--border);
+  height: 1px;
+  background: var(--border);
 }
 
 /* --- Open URL modal --- */
@@ -2898,7 +2736,6 @@ html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
    per-panel border/shadow declared earlier; keep panels in sync by
    editing HERE, not per-panel. */
 .cmdp__panel,
-.edp__panel,
 .url-open__panel,
 .theme-picker,
 .font-picker,

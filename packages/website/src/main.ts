@@ -53,10 +53,9 @@ import { setupLinkChaining, showNoticeBanner } from './link-chain'
 import { openThemePicker } from './theme-picker'
 import { registerServiceWorker } from './sw-register'
 import { setupChromeVisibility, showStrip } from './chrome-visibility'
-import { setupFormatBar } from './format-bar'
 import { setupTopToolbar } from './top-toolbar'
 import { setupCommandPalette } from './command-palette'
-import { setupEditMode, toggleEdit, openEditPicker } from './edit-mode'
+import { setupEditMode, toggleEdit } from './edit-mode'
 import { mountLive } from './live-engine'
 import { setupTouchSwipe } from './touch-swipe'
 import { cycleOption, getOption } from './option-flag'
@@ -1028,7 +1027,15 @@ async function boot(): Promise<void> {
   setupTitle(harness, root)
   setupEditMode(harness)
   setupModeIcons(harness, root)
-  setupFormatBar(harness, root)
+  // Per-mode chrome CSS (top-toolbar visibility, content clearance)
+  // keys off data-active-mode — maintained here since the bottom pill
+  // that used to own it is gone (2026-08-01 unified-panel round).
+  document.documentElement.dataset.activeMode = String(
+    harness.getCurrentMode().key,
+  )
+  harness.onModeChange((key) => {
+    document.documentElement.dataset.activeMode = String(key)
+  })
   setupTopToolbar(harness, root)
   setupCommandPalette(harness)
   setupVersionBadge(root)
@@ -1202,15 +1209,6 @@ function finish(harness: Harness): void {
       cycleOption()
       return
     }
-    // Cmd/Ctrl + Alt/Option + E — open the edit-flavour picker. Same
-    // Alt-family rationale as theme/font: plain Cmd+E is Tiptap's
-    // inline-code binding in Write mode, so the picker takes the Alt
-    // slot and Cmd+Return handles the fast enter/exit toggle.
-    if (event.altKey && event.code === 'KeyE') {
-      event.preventDefault()
-      openEditPicker(harness)
-      return
-    }
     // Cmd/Ctrl + Alt/Option + O — open URL prompt. Slots into the
     // Cmd+Alt+letter picker family. Cmd+Shift+O is Chrome's bookmark
     // manager and Cmd+U is View-Source on most browsers (and not always
@@ -1265,15 +1263,8 @@ function finish(harness: Harness): void {
       void openFile(harness)
       return
     }
-    // Cmd+E — the mode picker. The two-glyph sibling of Cmd+K:
-    // ⌘K = commands, ⌘E = edit/mode. Tiptap's inline-code (the old
-    // Mod-e) moved to Cmd+Shift+E (see wysiwyg-engine's remap);
-    // Cmd+Alt+E stays as a working alias.
-    if (event.code === 'KeyE') {
-      event.preventDefault()
-      openEditPicker(harness)
-      return
-    }
+    // (Cmd+E is Tiptap's inline-code binding again — the mode picker
+    // merged into the unified ⌘K panel, 2026-08-01.)
     // Cmd+Return — toggle Read ↔ edit. From Read, enter the remembered
     // edit flavour (picker on first-ever use); from any edit flavour,
     // return to Read. See edit-mode.ts for the architecture.

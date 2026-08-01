@@ -1,36 +1,27 @@
-// Mode pill for the title strip — single-icon design (2026-07-31).
-// Top-right of the window:
+// Strip control — the single mouse affordance for modes + commands
+// (2026-08-01 unified-panel round; replaced the floating mode pill).
+// A quiet control at the window strip's right end showing the
+// current mode's icon and a caret; clicking opens the unified ⌘K
+// panel (modes on top, commands beneath). On web — where there is no
+// strip — the same control floats as a ghost chip in the top-right
+// corner.
 //
-//   [ <current-mode icon> ]
+// It is strip furniture: it rides the strip's one show/hide
+// transition via data-strip-hidden, with no independent animation and
+// no hover label-swap — the tooltip carries the shortcut instead.
 //
-// The pill shows the icon of the mode you're IN; clicking it opens
-// the mode picker (Read / Live / Write / Split / Code — see
-// edit-mode.ts). It hides on scroll-down and returns on scroll-up
-// exactly like the bottom ⌘K pill, via the same data-strip-hidden
-// flag.
-//
-// Shortcut teaching: the pill's CONTENT swaps to the shortcut text
-// (⌘⌥E) on mouse-over, and briefly whenever the pill returns from
-// hide-on-scroll; the icon comes back once the pointer leaves /
-// after a short idle. Text metrics match the ⌘K pill's resting
-// label (see .mode-icon--hint in main.css).
-//
-// Icons are Lucide originals (MIT) inlined as SVG paths — same
-// approach as format-bar.ts; avoids pulling the whole lucide package.
+// Icons are Lucide originals (MIT) inlined as SVG paths — avoids
+// pulling the whole lucide package for a handful of glyphs.
 
 import type { Harness } from './main'
 import { getContentKind } from './doc-source'
-import { getFlavour, openEditPicker, READ_ENTRY } from './edit-mode'
+import { getFlavour, READ_ENTRY } from './edit-mode'
+import { openPalette } from './command-palette'
 import { IS_MAC } from './platform'
-
-const HINT_LABEL = IS_MAC ? '⌘E' : 'Ctrl+E'
-// How long the hint lingers after the pill (re)appears before the
-// icon returns. Mirrors the ⌘K settle pulse's ~2s presence.
-const HINT_LINGER_MS = 2000
 
 function svg(paths: string): string {
   return (
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" ' +
+    '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
     'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
     `stroke-linejoin="round">${paths}</svg>`
   )
@@ -41,77 +32,30 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   wrap.className = 'mode-icons'
   root.appendChild(wrap)
 
-  const pill = document.createElement('button')
-  pill.type = 'button'
-  pill.className = 'mode-icon mode-icon--pill-toggle'
-  pill.setAttribute('aria-haspopup', 'listbox')
-  pill.addEventListener('click', () => openEditPicker(harness))
-  wrap.appendChild(pill)
-
-  // --- content state: icon vs shortcut hint -----------------------------
-  let iconPaths = READ_ENTRY.paths
-  let showingHint = false
-  let hovered = false
-  let lingerTimer: number | null = null
-
-  const render = (): void => {
-    if (showingHint) {
-      pill.classList.add('mode-icon--hint')
-      pill.textContent = HINT_LABEL
-    } else {
-      pill.classList.remove('mode-icon--hint')
-      pill.innerHTML = svg(iconPaths)
-    }
-  }
-
-  const showHint = (): void => {
-    if (showingHint) return
-    showingHint = true
-    render()
-  }
-  const showIcon = (): void => {
-    if (!showingHint || hovered) return
-    showingHint = false
-    render()
-  }
-  // Hint flash on (re)appearance: show the shortcut, then bring the
-  // icon back after a short idle — unless the pointer is on the pill.
-  const flashHint = (): void => {
-    showHint()
-    if (lingerTimer !== null) window.clearTimeout(lingerTimer)
-    lingerTimer = window.setTimeout(() => {
-      lingerTimer = null
-      showIcon()
-    }, HINT_LINGER_MS)
-  }
-
-  pill.addEventListener('mouseenter', () => {
-    hovered = true
-    showHint()
+  const control = document.createElement('button')
+  control.type = 'button'
+  control.className = 'strip-control'
+  control.setAttribute('aria-haspopup', 'dialog')
+  control.addEventListener('click', () => {
+    openPalette()
   })
-  pill.addEventListener('mouseleave', () => {
-    hovered = false
-    showIcon()
-  })
+  wrap.appendChild(control)
 
-  // Re-flash whenever the strip returns from hide-on-scroll. The
-  // chrome-visibility module flips data-strip-hidden on <html>; observe the
-  // attribute rather than re-deriving scroll state here.
-  const stripObserver = new MutationObserver(() => {
-    if (document.documentElement.dataset.stripHidden !== '1') flashHint()
-  })
-  stripObserver.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['data-strip-hidden'],
-  })
+  const icon = document.createElement('span')
+  icon.className = 'strip-control__icon'
+  control.appendChild(icon)
+
+  const caret = document.createElement('span')
+  caret.className = 'strip-control__caret'
+  caret.textContent = '▾'
+  control.appendChild(caret)
 
   const update = (key: number): void => {
     const entry = key === 1 ? READ_ENTRY : getFlavour(key)
-    iconPaths = entry?.paths ?? READ_ENTRY.paths
+    icon.innerHTML = svg(entry?.paths ?? READ_ENTRY.paths)
     const name = entry?.name ?? 'Read'
-    pill.setAttribute('aria-label', `Mode: ${name} — choose mode`)
-    pill.title = `${name} — click or ${IS_MAC ? 'Cmd+E' : 'Ctrl+E'} to change mode`
-    render()
+    control.setAttribute('aria-label', `Mode: ${name} — modes and menu`)
+    control.title = `${name} — modes and menu (${IS_MAC ? '⌘K' : 'Ctrl+K'})`
   }
 
   // Live (2), Write (3) and Split (4) are markdown-only; harness.switchTo
@@ -129,7 +73,4 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   onSourceChanged()
   harness.onModeChange((key) => update(key))
   document.addEventListener('nicermd:source-changed', onSourceChanged)
-
-  // First-paint flash — same teaching moment as the ⌘K settle pulse.
-  flashHint()
 }
