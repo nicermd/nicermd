@@ -1155,14 +1155,13 @@ html {
    Web: a browser tab has no window buttons to contain, so no strip —
    Write mode gets a single 40px tool bar (filename tucked left
    inside it) and other modes keep the invisible floating title.
-   Material: milky glass (2026-08-01 final verdict; graphite removed).
-   The first thin-glass recipe (45-55% opacity) lost to graphite on
-   legibility, but the milky recipe — macOS-toolbar opacity (72-80%),
-   heavy blur, near-ink labels — won the rematch: it keeps text crisp
-   AND adapts to every theme automatically, which fixed graphite's
-   weakness (a fixed neutral mix that fought loud gallery themes).
-   data-finish (chrome-finish.ts) currently toggles an optional
-   graphite button plate ("island") while that detail dogfoods. */
+   Material: milky glass (2026-08-01 final verdict — graphite and the
+   button-island plate both retired after dogfood). The first
+   thin-glass recipe (45-55% opacity) lost on legibility; the milky
+   recipe — macOS-toolbar opacity (72-80%), heavy blur, near-ink
+   labels — won: it keeps text crisp AND adapts to every theme
+   automatically, which a fixed neutral mix couldn't (fought loud
+   gallery themes). Buttons sit directly on the frost. */
 .top-toolbar {
   display: none;
   position: fixed;
@@ -1220,24 +1219,6 @@ html[data-active-mode="3"] .top-toolbar {
 .top-toolbar__menu {
   color: color-mix(in srgb, var(--fg) 55%, var(--muted));
 }
-/* ---- island round (data-finish="island", runtime toggle): milky
-   glass is now the base material above; the open question is whether
-   the button group earns an opaque graphite plate ("island") on the
-   glass, or sits plate-less on the frost (default). */
-html[data-finish="island"] .top-toolbar__group {
-  height: 26px;
-  padding: 0 6px;
-  border-radius: 7px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--fg) 10%, var(--bg)),
-    color-mix(in srgb, var(--fg) 5%, var(--bg))
-  );
-  border: 1px solid color-mix(in srgb, var(--fg) 20%, var(--border));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
-}
-
 /* Desktop pills tuck below the strip; centre in the tool row when it
    exists. Web keeps the shipped top-6 float. */
 [data-shell="tauri"] .mode-icons {
