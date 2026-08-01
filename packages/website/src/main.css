@@ -1220,22 +1220,29 @@ html[data-active-mode="3"] .top-toolbar {
    atmosphere, graphite where it's function, so controls hold
    contrast whatever scrolls beneath. Default (graphite) rules above
    stay untouched. */
+/* Milky-glass recipe (v2 after dogfood): real macOS toolbars run
+   ~80% opaque — enough frost to keep text legible, enough
+   translucency to breathe with the theme. Stronger blur with milder
+   saturation kills the detail noise that made v1's labels swim. */
 html[data-finish="island"][data-shell="web"] .top-toolbar,
 html[data-finish="island"][data-shell="tauri"] .top-toolbar::before {
-  background: color-mix(in srgb, var(--bg) 45%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
   box-shadow: none;
 }
 html[data-finish="island"] .top-toolbar {
   border-bottom-color: color-mix(in srgb, var(--accent) 22%, transparent);
 }
 html[data-finish="island"][data-shell="tauri"] .window-title {
-  background: color-mix(in srgb, var(--bg) 55%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
   border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
   box-shadow: none;
+  /* Filename in near-ink — the muted grey tuned for opaque chrome
+     drowns on a live backdrop. */
+  color: color-mix(in srgb, var(--fg) 80%, var(--muted));
 }
 html[data-finish="island"] .top-toolbar__group {
   height: 26px;
@@ -1243,12 +1250,17 @@ html[data-finish="island"] .top-toolbar__group {
   border-radius: 7px;
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, var(--fg) 9%, var(--bg)),
-    color-mix(in srgb, var(--fg) 4%, var(--bg))
+    color-mix(in srgb, var(--fg) 10%, var(--bg)),
+    color-mix(in srgb, var(--fg) 5%, var(--bg))
   );
-  border: 1px solid color-mix(in srgb, var(--fg) 14%, var(--border));
+  border: 1px solid color-mix(in srgb, var(--fg) 20%, var(--border));
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08),
     inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+}
+/* Button glyphs and labels step up from muted toward ink on glass. */
+html[data-finish="island"] .top-toolbar__button,
+html[data-finish="island"] .top-toolbar__menu {
+  color: color-mix(in srgb, var(--fg) 55%, var(--muted));
 }
 
 /* Desktop pills tuck below the strip; centre in the tool row when it
