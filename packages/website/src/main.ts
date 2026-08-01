@@ -60,6 +60,7 @@ import { setupEditMode, toggleEdit, openEditPicker } from './edit-mode'
 import { mountLive } from './live-engine'
 import { setupTouchSwipe } from './touch-swipe'
 import { cycleOption, getOption } from './option-flag'
+import { initFinish } from './chrome-finish'
 import type { FormatAction } from './wysiwyg-engine'
 import type { FindAdapter } from './find/types'
 import { createDomFindAdapter } from './find/dom-walker'
@@ -886,6 +887,7 @@ async function boot(): Promise<void> {
   // Expose the iteration flag to CSS — [data-option='N'] rules style
   // A/B variants (currently: desktop framing) without JS involvement.
   document.documentElement.dataset.option = String(getOption())
+  initFinish()
 
   // Auto-open the theme picker on first-ever visit so users see the
   // catalog up front. Detected by absence of the localStorage key.

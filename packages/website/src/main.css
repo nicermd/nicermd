@@ -1214,6 +1214,43 @@ html[data-active-mode="3"] .top-toolbar {
   border-bottom: 1px solid color-mix(in srgb, var(--fg) 14%, var(--border));
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 20%, transparent);
 }
+/* ---- island round (data-finish="island", runtime toggle while the
+   H1-vs-H3 comparison dogfoods): the band goes frosted glass and the
+   button group sits on an opaque graphite plate — glass where it's
+   atmosphere, graphite where it's function, so controls hold
+   contrast whatever scrolls beneath. Default (graphite) rules above
+   stay untouched. */
+html[data-finish="island"][data-shell="web"] .top-toolbar,
+html[data-finish="island"][data-shell="tauri"] .top-toolbar::before {
+  background: color-mix(in srgb, var(--bg) 45%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  box-shadow: none;
+}
+html[data-finish="island"] .top-toolbar {
+  border-bottom-color: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+html[data-finish="island"][data-shell="tauri"] .window-title {
+  background: color-mix(in srgb, var(--bg) 55%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+  box-shadow: none;
+}
+html[data-finish="island"] .top-toolbar__group {
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--fg) 9%, var(--bg)),
+    color-mix(in srgb, var(--fg) 4%, var(--bg))
+  );
+  border: 1px solid color-mix(in srgb, var(--fg) 14%, var(--border));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
+}
+
 /* Desktop pills tuck below the strip; centre in the tool row when it
    exists. Web keeps the shipped top-6 float. */
 [data-shell="tauri"] .mode-icons {
