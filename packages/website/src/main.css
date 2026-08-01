@@ -1075,14 +1075,16 @@ html {
     border-color 120ms ease;
   will-change: transform;
 }
+/* Desktop: no floating pill — a floating search field is a web idiom
+   and it broke the window's minimalism (2026-08-01 verdict). The
+   desktop answers are the native menu bar, right-click, ⌘K and the
+   strip control. */
 [data-shell="tauri"] .menu-pill {
-  top: 40px;
+  display: none;
 }
 /* Web's filename lives at the bottom (see .window-title web rules),
-   so the pill owns the top-centre. Fullscreen desktop hides the
-   strip, so the pill hugs the top there too. */
-[data-shell="web"] .menu-pill,
-[data-shell="tauri"][data-fullscreen="1"] .menu-pill {
+   so the pill owns the top-centre. */
+[data-shell="web"] .menu-pill {
   top: 14px;
 }
 .menu-pill:hover {
@@ -1111,6 +1113,67 @@ html[data-active-mode="3"] .menu-pill {
   background: color-mix(in srgb, var(--fg) 4%, transparent);
   color: var(--muted);
   font-family: var(--font-code);
+}
+
+/* Right-click menu — Read mode, the Typora pattern: the whole page is
+   the target and nothing is ever visible. Milky glass like the rest
+   of the chrome; built and torn down per-open by context-menu.ts. */
+.ctxm {
+  position: fixed;
+  z-index: 120;
+  min-width: 200px;
+  padding: 5px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid color-mix(in srgb, var(--fg) 16%, var(--border));
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.2);
+  font-family: var(--font-body);
+}
+.ctxm__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--fg);
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
+}
+.ctxm__row:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
+}
+.ctxm__row--current::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent);
+}
+.ctxm__shortcut {
+  color: var(--muted);
+  font-size: 11px;
+  font-family: var(--font-code);
+  letter-spacing: 0.02em;
+}
+.ctxm__row:hover .ctxm__shortcut {
+  color: color-mix(in srgb, var(--accent) 70%, var(--muted));
+}
+.ctxm__divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: color-mix(in srgb, var(--fg) 9%, transparent);
 }
 
 /* Top chrome band — shell-split geometry, one material system.

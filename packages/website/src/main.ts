@@ -55,6 +55,7 @@ import { registerServiceWorker } from './sw-register'
 import { setupChromeVisibility, showStrip } from './chrome-visibility'
 import { setupTopToolbar } from './top-toolbar'
 import { setupMenuPill } from './menu-pill'
+import { setupContextMenu } from './context-menu'
 import { setupCommandPalette } from './command-palette'
 import { setupEditMode, toggleEdit } from './edit-mode'
 import { mountLive } from './live-engine'
@@ -1039,6 +1040,7 @@ async function boot(): Promise<void> {
   })
   setupTopToolbar(harness, root)
   setupMenuPill(root)
+  setupContextMenu(harness)
   setupCommandPalette(harness)
   setupVersionBadge(root)
   // Touch swipe on the doc surface cycles modes. Scoped to .mode-host
