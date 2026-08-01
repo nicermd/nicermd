@@ -398,8 +398,17 @@ function openPaletteImpl(harness: Harness): void {
     // Typed query: matching modes stay pinned above matching commands,
     // each zone ranked by score; selection jumps to the best match so
     // a mode never steals Enter from a typed command query.
+    // Modes match on name, description AND invisible keywords —
+    // "edit" must surface the edit flavours even though the row
+    // names stay clean. Name matches outrank the weaker channels.
+    const modeScore = (f: EditFlavour): number =>
+      Math.max(
+        fuzzyScore(q, f.name),
+        Math.round(fuzzyScore(q, f.hint) * 0.4),
+        Math.round(fuzzyScore(q, f.keywords) * 0.8),
+      )
     const modeScored = modes
-      .map((flavour) => ({ flavour, score: fuzzyScore(q, flavour.name) }))
+      .map((flavour) => ({ flavour, score: modeScore(flavour) }))
       .filter((e) => e.score > 0)
       .sort((a, b) => b.score - a.score)
     const cmdScored = all

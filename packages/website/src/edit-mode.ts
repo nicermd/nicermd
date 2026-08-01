@@ -40,6 +40,9 @@ export interface EditFlavour {
   // Lucide icon paths, same inlining convention as mode-icons.ts.
   paths: string
   markdownOnly: boolean
+  // Invisible search aliases for the unified panel — "edit" must find
+  // the edit flavours even though the row names stay clean.
+  keywords: string
 }
 
 // Ordered (and numbered) by closeness to Read — rendered-ness
@@ -56,6 +59,7 @@ export const EDIT_FLAVOURS: EditFlavour[] = [
       '<path d="m12 3-1.9 5.8a2 2 0 0 1-1.287 1.288L3 12l5.8 1.9a2 2 0 0 1 1.288 1.287L12 21l1.9-5.8a2 2 0 0 1 1.287-1.288L21 12l-5.8-1.9a2 2 0 0 1-1.288-1.287Z"/>' +
       '<path d="M5 3v4"/><path d="M19 17v4"/><path d="M3 5h4"/><path d="M17 19h4"/>',
     markdownOnly: true,
+    keywords: 'edit editor',
   },
   {
     key: 3,
@@ -66,6 +70,7 @@ export const EDIT_FLAVOURS: EditFlavour[] = [
       '<path d="M12 20h9"/>' +
       '<path d="M16.376 3.622a1 1 0 0 1 3.002 3.002L7.368 18.635a2 2 0 0 1-.855.506l-2.872.838a.5.5 0 0 1-.62-.62l.838-2.872a2 2 0 0 1 .506-.854z"/>',
     markdownOnly: true,
+    keywords: 'edit editor wysiwyg',
   },
   {
     key: 4,
@@ -76,6 +81,7 @@ export const EDIT_FLAVOURS: EditFlavour[] = [
       '<rect width="18" height="18" x="3" y="3" rx="2"/>' +
       '<path d="M12 3v18"/>',
     markdownOnly: true,
+    keywords: 'edit editor',
   },
   {
     key: 5,
@@ -86,6 +92,7 @@ export const EDIT_FLAVOURS: EditFlavour[] = [
       '<polyline points="16 18 22 12 16 6"/>' +
       '<polyline points="8 6 2 12 8 18"/>',
     markdownOnly: false,
+    keywords: 'edit editor source raw',
   },
 ]
 
@@ -102,6 +109,7 @@ export const READ_ENTRY: EditFlavour = {
     '<path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/>' +
     '<path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/>',
   markdownOnly: false,
+  keywords: 'reading view',
 }
 
 export function isEditMode(key: number): boolean {

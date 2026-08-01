@@ -1043,9 +1043,77 @@ html {
   }
 }
 
-/* (The bottom Menu pill lived here until 2026-08-01 — retired with
-   the floating mode pill when the unified panel + strip control
-   became the single affordance.) */
+/* Top-centre menu pill — the big mouse target for the unified panel
+   (P2 search-field style, 2026-08-01). Milky-glass capsule centred
+   under the strip; static content sized for the longest platform
+   label so nothing ever swaps or shifts. Hidden in Write mode (the
+   tool row's Menu covers the job); rides pointer-reveal with the
+   rest of the chrome. */
+.menu-pill {
+  position: fixed;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 6;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 34px;
+  padding: 0 10px 0 15px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--bg) 78%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid color-mix(in srgb, var(--fg) 12%, var(--border));
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
+  color: color-mix(in srgb, var(--fg) 70%, var(--muted));
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: transform 200ms ease, color 120ms ease,
+    border-color 120ms ease;
+  will-change: transform;
+}
+[data-shell="tauri"] .menu-pill {
+  top: 40px;
+}
+/* Web keeps the floating centred filename in the invisible title
+   zone (0–28px) — the pill clears it. Fullscreen desktop hides the
+   title entirely, so the pill can hug the top. */
+[data-shell="web"] .menu-pill {
+  top: 34px;
+}
+[data-shell="tauri"][data-fullscreen="1"] .menu-pill {
+  top: 14px;
+}
+.menu-pill:hover {
+  color: var(--fg);
+  border-color: color-mix(in srgb, var(--fg) 22%, var(--border));
+}
+/* Write mode: the tool row's Menu button covers the job — two menu
+   affordances on screen would compete. */
+html[data-active-mode="3"] .menu-pill {
+  display: none;
+}
+[data-strip-hidden="1"] .menu-pill {
+  transform: translateX(-50%) translateY(calc(-100% - 56px));
+}
+.menu-pill__glyph {
+  font-size: 13px;
+  opacity: 0.75;
+}
+.menu-pill__kbd {
+  font-size: 10.5px;
+  font-weight: 500;
+  letter-spacing: 0.03em;
+  padding: 1px 6px;
+  border-radius: 5px;
+  border: 1px solid color-mix(in srgb, var(--fg) 14%, var(--border));
+  background: color-mix(in srgb, var(--fg) 4%, transparent);
+  color: var(--muted);
+  font-family: var(--font-code);
+}
 
 /* Top chrome band — shell-split geometry, one material system.
    Desktop (Tauri): 28px window strip (surfaced on .window-title in

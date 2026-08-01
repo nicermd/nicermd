@@ -81,7 +81,7 @@ export function setupChromeVisibility(): void {
       const t = e.target
       pinned =
         t instanceof Element &&
-        t.closest('.mode-icons, .top-toolbar') !== null
+        t.closest('.mode-icons, .top-toolbar, .menu-pill') !== null
       if (anchorX >= 0) {
         const dx = e.clientX - anchorX
         const dy = e.clientY - anchorY

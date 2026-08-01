@@ -54,6 +54,7 @@ import { openThemePicker } from './theme-picker'
 import { registerServiceWorker } from './sw-register'
 import { setupChromeVisibility, showStrip } from './chrome-visibility'
 import { setupTopToolbar } from './top-toolbar'
+import { setupMenuPill } from './menu-pill'
 import { setupCommandPalette } from './command-palette'
 import { setupEditMode, toggleEdit } from './edit-mode'
 import { mountLive } from './live-engine'
@@ -1037,6 +1038,7 @@ async function boot(): Promise<void> {
     document.documentElement.dataset.activeMode = String(key)
   })
   setupTopToolbar(harness, root)
+  setupMenuPill(root)
   setupCommandPalette(harness)
   setupVersionBadge(root)
   // Touch swipe on the doc surface cycles modes. Scoped to .mode-host
