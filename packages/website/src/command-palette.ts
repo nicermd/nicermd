@@ -107,12 +107,12 @@ function buildCommands(harness: Harness): Command[] {
     // Fonts
     { id: 'font.picker', label: 'Fonts…', shortcut: 'Cmd+Alt+F', action: () => openFontPicker() },
 
-    // Chrome finish — temporary while the island-vs-graphite round
+    // Chrome finish — temporary while the plate-vs-plate-less round
     // dogfoods; works in every mode (the tool-row button is Write-only).
     {
       id: 'chrome.finish',
-      label: 'Toggle chrome finish',
-      hint: 'Graphite ↔ glass band with graphite island',
+      label: 'Toggle button island',
+      hint: 'Buttons on plain glass ↔ on a graphite plate',
       action: async () => {
         const m = await import('./chrome-finish')
         m.toggleFinish()

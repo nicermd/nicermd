@@ -1,30 +1,29 @@
-// Chrome finish — the material story for the top chrome, toggleable
-// at runtime while the island-vs-graphite round dogfoods (2026-08-01;
-// second use of this pattern — the first round retired frosted-glass
-// surfaces under the controls, this one tests glass around them).
+// Chrome finish — milky glass is THE material (2026-08-01 verdict;
+// graphite removed after the milky recipe fixed glass's legibility).
+// The remaining open question, toggleable at runtime while it
+// dogfoods: does the button group earn an opaque graphite plate
+// ("island") on the glass, or sit plate-less on the frost?
 //
-//   graphite (default) — H3: opaque neutral strip + accent sheen
-//                        tool row (the locked 2026-08-01 baseline)
-//   island             — H1: frosted-glass band with the buttons on
-//                        an opaque graphite plate, so controls hold
-//                        contrast whatever scrolls beneath
+//   glass (default) — buttons directly on the milky band
+//   island          — buttons on a graphite plate floating in it
 //
 // Pure CSS swap via data-finish on <html> — no reload. Persisted in
-// localStorage. Reachable from the tool-row toggle button and the
-// command palette; once a winner emerges this collapses to a single
-// finish and the toggle goes away.
+// localStorage (older stored values from the retired graphite round
+// fall back to 'glass'). Reachable from the tool-row toggle button
+// and the command palette; collapses to one state when the verdict
+// lands.
 
 const STORAGE_KEY = 'nicermd:chrome-finish'
 
-export type ChromeFinish = 'graphite' | 'island'
+export type ChromeFinish = 'glass' | 'island'
 
 export function getFinish(): ChromeFinish {
   try {
     return window.localStorage.getItem(STORAGE_KEY) === 'island'
       ? 'island'
-      : 'graphite'
+      : 'glass'
   } catch {
-    return 'graphite'
+    return 'glass'
   }
 }
 
@@ -37,7 +36,7 @@ export function initFinish(): void {
 }
 
 export function toggleFinish(): ChromeFinish {
-  const next: ChromeFinish = getFinish() === 'island' ? 'graphite' : 'island'
+  const next: ChromeFinish = getFinish() === 'island' ? 'glass' : 'island'
   try {
     window.localStorage.setItem(STORAGE_KEY, next)
   } catch {

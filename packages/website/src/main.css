@@ -1155,10 +1155,14 @@ html {
    Web: a browser tab has no window buttons to contain, so no strip —
    Write mode gets a single 40px tool bar (filename tucked left
    inside it) and other modes keep the invisible floating title.
-   Material: graphite (2026-08-01 verdict over frosted glass — glass
-   read inconsistently against varying content): neutral ink-gradient
-   strip, accent sheen tool row, plain page — three tiers separated
-   by temperature. */
+   Material: milky glass (2026-08-01 final verdict; graphite removed).
+   The first thin-glass recipe (45-55% opacity) lost to graphite on
+   legibility, but the milky recipe — macOS-toolbar opacity (72-80%),
+   heavy blur, near-ink labels — won the rematch: it keeps text crisp
+   AND adapts to every theme automatically, which fixed graphite's
+   weakness (a fixed neutral mix that fought loud gallery themes).
+   data-finish (chrome-finish.ts) currently toggles an optional
+   graphite button plate ("island") while that detail dogfoods. */
 .top-toolbar {
   display: none;
   position: fixed;
@@ -1168,7 +1172,7 @@ html {
   z-index: 5;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
   transition: transform 200ms ease;
   will-change: transform;
 }
@@ -1195,63 +1199,43 @@ html[data-active-mode="3"] .top-toolbar {
 }
 [data-shell="web"] .top-toolbar,
 [data-shell="tauri"] .top-toolbar::before {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 11%, var(--bg)),
-    color-mix(in srgb, var(--accent) 4%, var(--bg))
-  );
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
-}
-/* Desktop window strip — surfaced in every mode; hides and returns
-   with the rest of the chrome via data-strip-hidden. */
-[data-shell="tauri"] .window-title {
-  z-index: 6;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--fg) 8%, var(--bg)),
-    color-mix(in srgb, var(--fg) 3%, var(--bg))
-  );
-  border-bottom: 1px solid color-mix(in srgb, var(--fg) 14%, var(--border));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 20%, transparent);
-}
-/* ---- island round (data-finish="island", runtime toggle while the
-   H1-vs-H3 comparison dogfoods): the band goes frosted glass and the
-   button group sits on an opaque graphite plate — glass where it's
-   atmosphere, graphite where it's function, so controls hold
-   contrast whatever scrolls beneath. Default (graphite) rules above
-   stay untouched. */
-/* Milky-glass recipe (v2 after dogfood): real macOS toolbars run
-   ~80% opaque — enough frost to keep text legible, enough
-   translucency to breathe with the theme. Stronger blur with milder
-   saturation kills the detail noise that made v1's labels swim. */
-html[data-finish="island"][data-shell="web"] .top-toolbar,
-html[data-finish="island"][data-shell="tauri"] .top-toolbar::before {
   background: color-mix(in srgb, var(--bg) 72%, transparent);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
   backdrop-filter: blur(18px) saturate(1.2);
-  box-shadow: none;
 }
-html[data-finish="island"] .top-toolbar {
-  border-bottom-color: color-mix(in srgb, var(--accent) 22%, transparent);
-}
-html[data-finish="island"][data-shell="tauri"] .window-title {
+/* Desktop window strip — surfaced in every mode; hides and returns
+   with the rest of the chrome via data-strip-hidden. Milkier than the
+   tool row (80% vs 72%) so the filename reads over anything, in
+   near-ink rather than the muted grey tuned for opaque chrome. */
+[data-shell="tauri"] .window-title {
+  z-index: 6;
   background: color-mix(in srgb, var(--bg) 80%, transparent);
   -webkit-backdrop-filter: blur(18px) saturate(1.2);
   backdrop-filter: blur(18px) saturate(1.2);
   border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
-  box-shadow: none;
-  /* Filename in near-ink — the muted grey tuned for opaque chrome
-     drowns on a live backdrop. */
   color: color-mix(in srgb, var(--fg) 80%, var(--muted));
 }
-/* Plate-less since milky v3: the 72-80% frost carries the contrast on
-   its own, so the buttons sit directly on the glass — one material,
-   no island. (The graphite plate lived here for one dogfood round;
-   git history has it if the plain band ever feels loose.) */
 /* Button glyphs and labels step up from muted toward ink on glass. */
-html[data-finish="island"] .top-toolbar__button,
-html[data-finish="island"] .top-toolbar__menu {
+.top-toolbar__button,
+.top-toolbar__menu {
   color: color-mix(in srgb, var(--fg) 55%, var(--muted));
+}
+/* ---- island round (data-finish="island", runtime toggle): milky
+   glass is now the base material above; the open question is whether
+   the button group earns an opaque graphite plate ("island") on the
+   glass, or sits plate-less on the frost (default). */
+html[data-finish="island"] .top-toolbar__group {
+  height: 26px;
+  padding: 0 6px;
+  border-radius: 7px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--fg) 10%, var(--bg)),
+    color-mix(in srgb, var(--fg) 5%, var(--bg))
+  );
+  border: 1px solid color-mix(in srgb, var(--fg) 20%, var(--border));
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08),
+    inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
 }
 
 /* Desktop pills tuck below the strip; centre in the tool row when it

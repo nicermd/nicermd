@@ -182,14 +182,14 @@ export function setupTopToolbar(harness: Harness, root: HTMLElement): void {
   })
   group.appendChild(menu)
 
-  // Temporary dogfood toggle for the island-vs-graphite round — a
+  // Temporary dogfood toggle for the plate-vs-plate-less round — a
   // visible flick beats URL flags, especially in the desktop shell.
   // Removed once a winner is picked.
   const finishBtn = document.createElement('button')
   finishBtn.type = 'button'
   finishBtn.className = 'top-toolbar__button top-toolbar__finish'
-  finishBtn.setAttribute('aria-label', 'Toggle chrome finish')
-  finishBtn.title = 'Chrome finish — graphite / island'
+  finishBtn.setAttribute('aria-label', 'Toggle button island')
+  finishBtn.title = 'Buttons — plain glass / graphite island'
   finishBtn.innerHTML =
     '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" ' +
     'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
