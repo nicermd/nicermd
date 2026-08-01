@@ -5,13 +5,13 @@
 // in main.ts. 0 = baseline (current build).
 
 const STORAGE_KEY = 'nicermd:option'
-// Active round (2026-08-01 pm, strip finish): 0 = D1 baseline (shared
-// sheen band, Write only), 1 = F1 graphite strip in all modes,
-// 2 = F4 frosted-glass strip in all modes. Cycle in-app with
-// Cmd+Shift+Alt+O. (Earlier: two-tier D beat B's traffic-light
-// reposition; soft sheen beat flat tint + bottom proximity pill;
-// accent window frame shipped.)
-const MAX_OPTION = 2 // bump as new variants land
+// No active round. (2026-08-01: the strip-finish comparison moved off
+// the option flag onto the runtime data-finish toggle — see
+// chrome-finish.ts — because the desktop shell has no URL bar.
+// Earlier: two-tier D beat B's traffic-light reposition; soft sheen
+// beat flat tint + bottom proximity pill; accent window frame
+// shipped.)
+const MAX_OPTION = 0 // bump as new variants land
 
 let cached: number | null = null
 

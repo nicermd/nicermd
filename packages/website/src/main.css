@@ -1144,67 +1144,43 @@ html {
    a texture; won the 2026-08-01 round over a flat tint). Re-colours
    with the theme. Hide-on-scroll rides the same data-strip-hidden
    flag as the title strip. */
-/* Two-tier layout (titlebar build D, 2026-08-01): a 28px window
-   strip (traffic lights at their NATIVE position, filename centred —
-   the shipped .window-title renders on top) plus a 32px tool row
-   below, one 60px element. Finish round rides the option flag:
-     option=0  D1 — shared sheen across both tiers, faint divider
-     option=1  D2 — quiet flat strip, sheen reserved for the tool row */
+/* Top chrome band — shell-split geometry, one material system.
+   Desktop (Tauri): 28px window strip (surfaced on .window-title in
+   EVERY mode, riding the pointer-reveal flag) + a 32px tool row that
+   joins it in Write mode → 60px band. The strip contains the native
+   traffic lights; pills tuck below it outside Write mode.
+   Web: a browser tab has no window buttons to contain, so no strip —
+   Write mode gets a single 40px tool bar (filename tucked left
+   inside it) and other modes keep the invisible floating title.
+   Materials come from data-finish (chrome-finish.ts, runtime
+   toggleable): graphite = opaque neutral strip + accent sheen tools;
+   glass = frosted translucent strip + tools with backdrop blur. */
 .top-toolbar {
   display: none;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 60px;
-  padding-top: 28px;
   z-index: 5;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 11%, var(--bg)),
-    color-mix(in srgb, var(--accent) 4%, var(--bg))
-  );
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
   transition: transform 200ms ease;
   will-change: transform;
 }
 html[data-active-mode="3"] .top-toolbar {
   display: flex;
 }
-/* Strip/tool-row boundary. D1 keeps it faint and inset so the band
-   reads as one surface with two rows. */
-.top-toolbar::after {
-  content: "";
-  position: absolute;
-  left: 64px;
-  right: 64px;
-  top: 28px;
-  height: 1px;
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
+[data-shell="web"] .top-toolbar {
+  height: 40px;
 }
-/* ---- strip-finish round (2026-08-01 pm): three-tier hierarchy.
-   option=1 F1 graphite · option=2 F4 frosted glass. Both surface the
-   window strip (the shipped .window-title element) in EVERY mode —
-   it rides the pointer-reveal flag, so it comes and goes with the
-   rest of the chrome; in Write mode the tool row hangs beneath it.
-   The band element stops painting the strip region itself: the strip
-   surface belongs to .window-title, the tool sheen moves to ::before
-   over the lower 32px, and the boundary line is the strip's own
-   border-bottom (the inset ::after divider is D1-only). */
-html[data-option="1"] .top-toolbar,
-html[data-option="2"] .top-toolbar {
-  background: none;
-  box-shadow: none;
+[data-shell="tauri"] .top-toolbar {
+  height: 60px;
+  padding-top: 28px;
 }
-html[data-option="1"] .top-toolbar::after,
-html[data-option="2"] .top-toolbar::after {
-  display: none;
-}
-html[data-option="1"] .top-toolbar::before,
-html[data-option="2"] .top-toolbar::before {
+/* Tool material paints the whole bar on web, only the lower 32px on
+   desktop — the strip region belongs to .window-title. */
+[data-shell="tauri"] .top-toolbar::before {
   content: "";
   position: absolute;
   left: 0;
@@ -1213,10 +1189,32 @@ html[data-option="2"] .top-toolbar::before {
   bottom: 0;
   pointer-events: none;
 }
-/* F1 — graphite strip: neutral ink-mixed gradient; the accent sheen
-   is reserved for the tool row, the page stays plain — three tiers
-   separated by temperature. */
-html[data-option="1"] .window-title {
+[data-shell="web"] .top-toolbar,
+[data-shell="tauri"] .top-toolbar::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 11%, var(--bg)),
+    color-mix(in srgb, var(--accent) 4%, var(--bg))
+  );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
+}
+html[data-finish="glass"][data-shell="web"] .top-toolbar,
+html[data-finish="glass"][data-shell="tauri"] .top-toolbar::before {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 14%, transparent),
+    color-mix(in srgb, var(--accent) 5%, transparent)
+  );
+  -webkit-backdrop-filter: blur(14px) saturate(1.4);
+  backdrop-filter: blur(14px) saturate(1.4);
+}
+html[data-finish="glass"] .top-toolbar {
+  border-bottom-color: color-mix(in srgb, var(--accent) 22%, transparent);
+}
+/* Desktop window strip — surfaced in every mode; hides and returns
+   with the rest of the chrome via data-strip-hidden. */
+[data-shell="tauri"] .window-title {
+  z-index: 6;
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--fg) 8%, var(--bg)),
@@ -1225,67 +1223,52 @@ html[data-option="1"] .window-title {
   border-bottom: 1px solid color-mix(in srgb, var(--fg) 14%, var(--border));
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 20%, transparent);
 }
-html[data-option="1"] .top-toolbar::before {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 11%, var(--bg)),
-    color-mix(in srgb, var(--accent) 4%, var(--bg))
-  );
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
-}
-/* F4 — frosted glass: translucent strip + backdrop blur, content
-   ghosts through as it scrolls under; the tool row is the same glass
-   with the accent sheen laid over it. */
-html[data-option="2"] .window-title {
+html[data-finish="glass"][data-shell="tauri"] .window-title {
   background: color-mix(in srgb, var(--bg) 55%, transparent);
   -webkit-backdrop-filter: blur(14px) saturate(1.4);
   backdrop-filter: blur(14px) saturate(1.4);
   border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+  box-shadow: none;
 }
-html[data-option="2"] .top-toolbar::before {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 14%, transparent),
-    color-mix(in srgb, var(--accent) 5%, transparent)
-  );
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
-}
-html[data-option="2"] .top-toolbar {
-  border-bottom-color: color-mix(in srgb, var(--accent) 22%, transparent);
-}
-/* Strip visible in all modes → the filename layer needs its surface
-   above content everywhere, and the pills tuck BELOW the strip when
-   there is no tool row to sit in. */
-html[data-option="1"] .window-title,
-html[data-option="2"] .window-title {
-  z-index: 6;
-}
-html[data-option="1"] .mode-icons,
-html[data-option="2"] .mode-icons {
+/* Desktop pills tuck below the strip; centre in the tool row when it
+   exists. Web keeps the shipped top-6 float. */
+[data-shell="tauri"] .mode-icons {
   top: 34px;
 }
-html[data-option="1"][data-active-mode="3"] .mode-icons,
-html[data-option="2"][data-active-mode="3"] .mode-icons {
+html[data-active-mode="3"][data-shell="tauri"] .mode-icons {
   top: 30px;
+}
+/* Web Write mode: filename tucks left inside the single bar. */
+html[data-active-mode="3"][data-shell="web"] .window-title {
+  height: 40px;
+  justify-content: flex-start;
+  padding: 0 7rem 0 16px;
+  z-index: 6;
+}
+/* macOS fullscreen hides the strip (no window buttons to hold) — the
+   band collapses to the web-style single tool bar. */
+[data-shell="tauri"][data-fullscreen="1"] .top-toolbar {
+  height: 40px;
+  padding-top: 0;
+}
+[data-shell="tauri"][data-fullscreen="1"] .top-toolbar::before {
+  top: 0;
+}
+[data-shell="tauri"][data-fullscreen="1"] .mode-icons {
+  top: 6px;
 }
 [data-strip-hidden="1"] .top-toolbar {
   transform: translateY(calc(-100% - 8px));
 }
 /* Content clearance while the band is up — Write mode only. */
-html[data-active-mode="3"] .mode-host,
-html[data-active-mode="3"][data-tauri="1"] .mode-host {
+html[data-active-mode="3"][data-shell="web"] .mode-host {
+  padding-top: 52px;
+}
+html[data-active-mode="3"][data-shell="tauri"] .mode-host {
   padding-top: 72px;
 }
-/* The shipped centred filename doubles as the strip's label — just
-   lift it above the band. */
-html[data-active-mode="3"] .window-title {
-  z-index: 6;
-}
-/* Mode pill centres in the tool row (28 + (32 − 28)/2 ≈ top 30). */
-html[data-active-mode="3"] .mode-icons {
-  top: 30px;
+html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
+  padding-top: 52px;
 }
 .top-toolbar__group {
   display: flex;
