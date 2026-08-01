@@ -5,11 +5,12 @@
 // in main.ts. 0 = baseline (current build).
 
 const STORAGE_KEY = 'nicermd:option'
-// No active round. (2026-08-01: Write-mode top toolbar — soft sheen
-// won, now the default; flat tint + bottom proximity pill rejected.
-// Earlier: accent window frame shipped; page-card, titlebar band and
-// vignette rejected; single-icon mode pill.)
-const MAX_OPTION = 0 // bump as new variants land
+// Active round (2026-08-01, titlebar build D finish): 0 = D1 shared
+// sheen across strip + tool row, 1 = D2 quiet strip with sheen on the
+// tool row only. Cycle in-app with Cmd+Shift+Alt+O. (Earlier: soft
+// sheen beat flat tint + bottom proximity pill; accent window frame
+// shipped; page-card, titlebar band, vignette rejected.)
+const MAX_OPTION = 1 // bump as new variants land
 
 let cached: number | null = null
 

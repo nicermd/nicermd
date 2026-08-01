@@ -1144,13 +1144,20 @@ html {
    a texture; won the 2026-08-01 round over a flat tint). Re-colours
    with the theme. Hide-on-scroll rides the same data-strip-hidden
    flag as the title strip. */
+/* Two-tier layout (titlebar build D, 2026-08-01): a 28px window
+   strip (traffic lights at their NATIVE position, filename centred —
+   the shipped .window-title renders on top) plus a 32px tool row
+   below, one 60px element. Finish round rides the option flag:
+     option=0  D1 — shared sheen across both tiers, faint divider
+     option=1  D2 — quiet flat strip, sheen reserved for the tool row */
 .top-toolbar {
   display: none;
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
-  height: 40px;
+  height: 60px;
+  padding-top: 28px;
   z-index: 5;
   align-items: center;
   justify-content: center;
@@ -1167,28 +1174,67 @@ html {
 html[data-active-mode="3"] .top-toolbar {
   display: flex;
 }
+/* Strip/tool-row boundary. D1 keeps it faint and inset so the band
+   reads as one surface with two rows. */
+.top-toolbar::after {
+  content: "";
+  position: absolute;
+  left: 64px;
+  right: 64px;
+  top: 28px;
+  height: 1px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+}
+/* D2 — quiet strip: flat tint base; ::before lays the sheen over the
+   tool row only; the divider becomes a full-width hairline. */
+html[data-option="1"] .top-toolbar {
+  background: color-mix(in srgb, var(--accent) 4%, var(--bg));
+  box-shadow: none;
+}
+html[data-option="1"] .top-toolbar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 28px;
+  bottom: 0;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--accent) 11%, var(--bg)),
+    color-mix(in srgb, var(--accent) 4%, var(--bg))
+  );
+  box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
+  pointer-events: none;
+}
+html[data-option="1"] .top-toolbar::after {
+  left: 0;
+  right: 0;
+  background: color-mix(in srgb, var(--accent) 14%, var(--border));
+}
 [data-strip-hidden="1"] .top-toolbar {
   transform: translateY(calc(-100% - 8px));
 }
-/* Content clearance while the bar is up — Write mode only. Overrides
-   the 28px Tauri strip reserve (the bar subsumes the strip). */
+/* Content clearance while the band is up — Write mode only. */
 html[data-active-mode="3"] .mode-host,
 html[data-active-mode="3"][data-tauri="1"] .mode-host {
-  padding-top: 52px;
+  padding-top: 72px;
 }
-/* Tauri filename: the centred title would collide with the centred
-   buttons, so in Write mode it left-aligns inside the bar, tucked
-   after the traffic lights, and rides the bar's height. */
-html[data-active-mode="3"][data-tauri="1"] .window-title {
-  height: 40px;
-  justify-content: flex-start;
-  padding: 0 7rem 0 86px;
+/* The shipped centred filename doubles as the strip's label — just
+   lift it above the band. */
+html[data-active-mode="3"] .window-title {
   z-index: 6;
+}
+/* Mode pill centres in the tool row (28 + (32 − 28)/2 ≈ top 30). */
+html[data-active-mode="3"] .mode-icons {
+  top: 30px;
 }
 .top-toolbar__group {
   display: flex;
   align-items: center;
   gap: 2px;
+  /* Above the D2 ::before sheen layer. */
+  position: relative;
+  z-index: 1;
 }
 /* Format buttons — icon-only, quiet until hover/active. */
 .top-toolbar__button {
