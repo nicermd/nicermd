@@ -1,152 +1,34 @@
-// Format / command pill at the bottom-middle of the window. Always
-// visible at low opacity. In modes 1/2/4/5 the resting "⌘K" label is the
-// click target — opens the command palette. In mode 3 (WYSIWYG) it
-// expands to a format toolbar on mouse proximity to the bottom edge,
-// with a trailing "⌘K" button at the end so the palette stays one
-// click away even when formatting controls are showing.
+// Menu / command pill at the bottom-middle of the window. Always
+// visible at low opacity; clicking it opens the command palette.
+// Resting label is the pill's PURPOSE ("Menu"); the ⌘K shortcut shows
+// on hover and flashes on (re)appearance, mirroring the mode pill's
+// grammar (rest = what it is, hover/flash = how to key it).
+//
+// The Write-mode format buttons used to expand out of this pill on
+// bottom-edge proximity; they moved to the top toolbar
+// (top-toolbar.ts) in the 2026-08-01 round, so this is now a plain
+// Menu pill in every mode.
 //
 // Hide-on-scroll piggybacks on the same `data-strip-hidden` flag the
 // title strip uses (see scroll-strip.ts) — scrolling down slides the
 // pill out, scrolling up brings it back, mode change resurfaces it.
-//
-// Icons are Lucide originals (MIT) inlined as SVG paths. Same approach
-// as mode-icons.ts — avoids pulling the whole lucide package for a
-// handful of glyphs.
 
 import type { Harness } from './main'
-import type { FormatAction } from './wysiwyg-engine'
 import { openPalette } from './command-palette'
-import { getOption } from './option-flag'
 import { IS_MAC } from './platform'
-
-export interface FormatButtonDef {
-  action: FormatAction
-  label: string
-  shortcut?: string
-  paths: string
-}
-
-// 24×24 viewBox, stroke="currentColor", stroke-width=2, line-cap/join=round.
-// Exported for the top toolbar (top-toolbar.ts) so both surfaces render
-// the identical button set from one definition.
-export const FORMAT_BUTTONS: FormatButtonDef[] = [
-  {
-    action: 'bold',
-    label: 'Bold',
-    shortcut: 'Cmd+B',
-    paths:
-      '<path d="M6 12h9a4 4 0 0 1 0 8H7a1 1 0 0 1-1-1z"/>' +
-      '<path d="M6 4h7a4 4 0 0 1 0 8H6z"/>',
-  },
-  {
-    action: 'italic',
-    label: 'Italic',
-    shortcut: 'Cmd+I',
-    paths:
-      '<line x1="19" x2="10" y1="4" y2="4"/>' +
-      '<line x1="14" x2="5" y1="20" y2="20"/>' +
-      '<line x1="15" x2="9" y1="4" y2="20"/>',
-  },
-  {
-    action: 'strike',
-    label: 'Strikethrough',
-    paths:
-      '<path d="M16 4H9a3 3 0 0 0-2.83 4"/>' +
-      '<path d="M14 12a4 4 0 0 1 0 8H6"/>' +
-      '<line x1="4" x2="20" y1="12" y2="12"/>',
-  },
-  {
-    action: 'h1',
-    label: 'Heading 1',
-    paths:
-      '<path d="M4 12h8"/>' +
-      '<path d="M4 18V6"/>' +
-      '<path d="M12 18V6"/>' +
-      '<path d="m17 12 3-2v8"/>',
-  },
-  {
-    action: 'h2',
-    label: 'Heading 2',
-    paths:
-      '<path d="M4 12h8"/>' +
-      '<path d="M4 18V6"/>' +
-      '<path d="M12 18V6"/>' +
-      '<path d="M21 18h-4c0-4 4-3 4-6 0-1.5-2-2.5-4-1"/>',
-  },
-  {
-    action: 'bulletList',
-    label: 'Bullet list',
-    paths:
-      '<line x1="8" x2="21" y1="6" y2="6"/>' +
-      '<line x1="8" x2="21" y1="12" y2="12"/>' +
-      '<line x1="8" x2="21" y1="18" y2="18"/>' +
-      '<line x1="3" x2="3.01" y1="6" y2="6"/>' +
-      '<line x1="3" x2="3.01" y1="12" y2="12"/>' +
-      '<line x1="3" x2="3.01" y1="18" y2="18"/>',
-  },
-  {
-    action: 'orderedList',
-    label: 'Numbered list',
-    paths:
-      '<line x1="10" x2="21" y1="6" y2="6"/>' +
-      '<line x1="10" x2="21" y1="12" y2="12"/>' +
-      '<line x1="10" x2="21" y1="18" y2="18"/>' +
-      '<path d="M4 6h1v4"/>' +
-      '<path d="M4 10h2"/>' +
-      '<path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/>',
-  },
-  {
-    action: 'blockquote',
-    label: 'Quote',
-    paths:
-      '<path d="M16 3a2 2 0 0 0-2 2v6h6V5a2 2 0 0 0-2-2zM4 3a2 2 0 0 0-2 2v6h6V5a2 2 0 0 0-2-2z"/>' +
-      '<path d="M14 11v4a4 4 0 0 0 4 4"/>' +
-      '<path d="M2 11v4a4 4 0 0 0 4 4"/>',
-  },
-  {
-    action: 'code',
-    label: 'Inline code',
-    paths:
-      '<path d="m18 16 4-4-4-4"/>' +
-      '<path d="m6 8-4 4 4 4"/>' +
-      '<path d="m14.5 4-5 16"/>',
-  },
-  {
-    action: 'link',
-    label: 'Link',
-    paths:
-      '<path d="M9 17H7A5 5 0 0 1 7 7h2"/>' +
-      '<path d="M15 7h2a5 5 0 1 1 0 10h-2"/>' +
-      '<line x1="8" x2="16" y1="12" y2="12"/>',
-  },
-]
-
-const PROXIMITY_PX = 120
 
 // macOS uses the ⌘ glyph; Windows / Linux read more naturally as
 // "Ctrl+K". Detection lives in platform.ts so the same query-param
 // override (`?platform=win`) flips every label site-wide.
 const CMD_K_LABEL = IS_MAC ? '⌘K' : 'Ctrl+K'
-const CMD_K_TITLE = IS_MAC ? 'Command palette — ⌘K' : 'Command palette — Ctrl+K'
 
 export function setupFormatBar(harness: Harness, root: HTMLElement): void {
-  // 2026-08-01 round (?option=1|2): the Write-mode format buttons move
-  // to a top toolbar (top-toolbar.ts). When active, this pill stays a
-  // plain "Menu" in every mode — no proximity expansion, no hybrid
-  // B I hint — and clicking it opens the palette in mode 3 too.
-  const topToolbar = getOption() >= 1
-
   const bar = document.createElement('div')
   bar.className = 'format-bar'
-  bar.setAttribute('role', 'toolbar')
-  bar.setAttribute('aria-label', 'Commands and formatting')
+  bar.setAttribute('role', 'button')
+  bar.setAttribute('aria-label', 'Command palette')
   root.appendChild(bar)
 
-  // Resting label — the pill's PURPOSE ("Menu"); the ⌘K shortcut shows
-  // on hover and flashes on (re)appearance, mirroring the mode pill's
-  // grammar (rest = what it is, hover/flash = how to key it). In mode
-  // 3 the resting label is a hybrid: a styled "B I" hints at the
-  // format toolbar that proximity reveals, then the Menu affordance.
   const dots = document.createElement('span')
   dots.className = 'format-bar__dots'
   bar.appendChild(dots)
@@ -156,19 +38,7 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
   let lingerTimer: number | null = null
 
   const renderDots = (): void => {
-    if (showingShortcut) {
-      dots.textContent = CMD_K_LABEL
-      return
-    }
-    if (!topToolbar && harness.getCurrentMode().key === 3) {
-      dots.innerHTML =
-        '<b class="format-bar__hint-b">B</b>' +
-        '<i class="format-bar__hint-i">I</i>' +
-        '<span class="format-bar__hint-sep">·</span>' +
-        '<span class="format-bar__hint-cmdp">Menu</span>'
-    } else {
-      dots.textContent = 'Menu'
-    }
+    dots.textContent = showingShortcut ? CMD_K_LABEL : 'Menu'
   }
   const showShortcut = (): void => {
     if (showingShortcut) return
@@ -191,100 +61,23 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
       showRest()
     }, 2000)
   }
-  const setRestingLabel = (_key: number): void => {
-    renderDots()
-  }
+  renderDots()
 
-  const buttonsWrap = document.createElement('div')
-  buttonsWrap.className = 'format-bar__buttons'
-  bar.appendChild(buttonsWrap)
-
-  const buttonsByAction = new Map<FormatAction, HTMLButtonElement>()
-
-  for (const def of FORMAT_BUTTONS) {
-    const btn = document.createElement('button')
-    btn.type = 'button'
-    btn.className = 'format-bar__button'
-    btn.setAttribute('aria-label', def.label)
-    btn.title = def.shortcut ? `${def.label} — ${def.shortcut}` : def.label
-    btn.innerHTML =
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" ' +
-      'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
-      `stroke-linejoin="round">${def.paths}</svg>`
-    btn.addEventListener('mousedown', (e) => {
-      // Prevent the toolbar from stealing focus from the editor — the
-      // toggle has to fire while the editor still owns the selection.
-      e.preventDefault()
-    })
-    btn.addEventListener('click', () => {
-      harness.toggleFormat(def.action)
-    })
-    buttonsWrap.appendChild(btn)
-    buttonsByAction.set(def.action, btn)
-  }
-
-  // Trailing palette button — visible only when the format toolbar is
-  // expanded (mode 3 + proximity). Gives mouse users a "⌘K" target
-  // without having to leave the bottom strip first.
-  const more = document.createElement('button')
-  more.type = 'button'
-  more.className = 'format-bar__more'
-  more.setAttribute('aria-label', 'Command palette')
-  more.title = CMD_K_TITLE
-  more.textContent = CMD_K_LABEL
-  more.addEventListener('mousedown', (e) => e.preventDefault())
-  more.addEventListener('click', () => {
-    openPalette()
-  })
-  buttonsWrap.appendChild(more)
-
-  // Pill click in modes 1/2/4/5 opens the palette. In mode 3 the bar is
-  // expanded into format buttons via proximity, so clicks fall through
-  // to per-button handlers (and the trailing ⌘K button handles cmdp).
-  bar.addEventListener('click', (e) => {
-    if (!topToolbar && harness.getCurrentMode().key === 3) return
-    // Only the bar background or its resting label opens cmdp — don't
-    // double-trigger when the user clicked a child control.
-    if (e.target !== bar && e.target !== dots) return
+  bar.addEventListener('click', () => {
     openPalette()
   })
 
-  const refreshActiveStates = (): void => {
-    for (const [action, btn] of buttonsByAction) {
-      btn.classList.toggle(
-        'format-bar__button--active',
-        harness.isFormatActive(action),
-      )
-    }
-  }
-
-  // Re-subscribe to format-update events on every mode change. The
-  // wysiwyg handle is destroyed on mode-out and recreated on mode-in,
-  // so the subscription has to follow.
-  let detach: (() => void) | null = null
-  const subscribe = (): void => {
-    detach?.()
-    detach = harness.onFormatUpdate(refreshActiveStates)
-    refreshActiveStates()
-  }
-
+  // The active-mode attribute drives per-mode chrome CSS (top toolbar
+  // visibility, content clearance) — kept here so it updates even if
+  // no other chrome module is listening.
   const applyMode = (key: number): void => {
     document.documentElement.dataset.activeMode = String(key)
-    setRestingLabel(key)
-    if (key === 3 && !topToolbar) {
-      subscribe()
-    } else {
-      detach?.()
-      detach = null
-    }
   }
-
   applyMode(harness.getCurrentMode().key)
   harness.onModeChange((key) => applyMode(key))
 
   // Hover reveals the shortcut (rest = purpose, hover = key) — same
-  // grammar as the mode pill. In Write mode proximity expands the bar
-  // into buttons (dots hidden), so the swap only shows collapsed.
+  // grammar as the mode pill.
   bar.addEventListener('mouseenter', () => {
     hovered = true
     showShortcut()
@@ -305,23 +98,4 @@ export function setupFormatBar(harness: Harness, root: HTMLElement): void {
     attributeFilter: ['data-strip-hidden'],
   })
   flashShortcut()
-
-  // Proximity reveal: mouse within PROXIMITY_PX of the bottom edge
-  // expands the toolbar in mode 3. In other modes the format buttons
-  // are meaningless, so the listener bails out and ensures the bar
-  // stays in its resting (collapsed, ⌘K) state.
-  let isOpen = false
-  window.addEventListener('mousemove', (e) => {
-    if (topToolbar || harness.getCurrentMode().key !== 3) {
-      if (isOpen) {
-        isOpen = false
-        bar.classList.remove('format-bar--open')
-      }
-      return
-    }
-    const open = window.innerHeight - e.clientY <= PROXIMITY_PX
-    if (open === isOpen) return
-    isOpen = open
-    bar.classList.toggle('format-bar--open', open)
-  })
 }

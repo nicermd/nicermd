@@ -1122,15 +1122,8 @@ html {
     animation: none;
   }
 }
-.format-bar:hover,
-.format-bar--open {
+.format-bar:hover {
   opacity: 1;
-}
-/* In mode 2 clicking the bar background does nothing (proximity
-   reveals format buttons; the trailing ⌘K button opens cmdp), so drop
-   the pointer cursor to match. */
-[data-active-mode="3"] .format-bar {
-  cursor: default;
 }
 .format-bar__dots {
   color: var(--fg);
@@ -1143,92 +1136,14 @@ html {
   align-items: center;
   gap: 5px;
 }
-/* Mode-2 hybrid hint: styled B + I telegraph the format toolbar that
-   proximity reveals; the trailing cmdp glyph telegraphs the palette
-   button at the end of the expanded toolbar. */
-.format-bar__hint-b {
-  font-weight: 700;
-  font-style: normal;
-}
-.format-bar__hint-i {
-  font-weight: 500;
-  font-style: italic;
-}
-.format-bar__hint-sep {
-  opacity: 0.6;
-}
-.format-bar__hint-cmdp {
-  font-weight: 500;
-  font-style: normal;
-}
-.format-bar--open .format-bar__dots {
-  display: none;
-}
-.format-bar__buttons {
-  display: none;
-  align-items: center;
-  gap: 2px;
-}
-.format-bar--open .format-bar__buttons {
-  display: flex;
-}
-.format-bar__button {
-  width: 26px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: var(--muted);
-  cursor: pointer;
-  padding: 0;
-  transition: color 120ms ease, background 120ms ease;
-}
-.format-bar__button:hover {
-  color: var(--fg);
-  background: color-mix(in srgb, var(--fg) 6%, transparent);
-}
-.format-bar__button--active {
-  color: var(--accent);
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-}
-/* Trailing palette button — only meaningful next to the format
-   buttons (mode 2 expanded), so hidden until --open is set. */
-.format-bar__more {
-  display: none;
-  align-items: center;
-  justify-content: center;
-  height: 24px;
-  padding: 0 8px;
-  margin-left: 4px;
-  background: transparent;
-  border: none;
-  border-radius: 4px;
-  color: var(--muted);
-  cursor: pointer;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  transition: color 120ms ease, background 120ms ease;
-}
-.format-bar--open .format-bar__more {
-  display: flex;
-}
-.format-bar__more:hover {
-  color: var(--fg);
-  background: color-mix(in srgb, var(--fg) 6%, transparent);
-}
-
-/* ---- 2026-08-01 iteration round: Write-mode top toolbar ----------
-   ?option=1 flat accent tint · ?option=2 soft sheen gradient.
-   Only rendered in mode 3 (Write): a full-width theme-tinted bar
-   holding the format buttons, replacing the bottom pill's proximity
-   expansion. The tint is mixed from the active theme's accent so the
-   bar re-colours with the theme. Hide-on-scroll rides the same
-   data-strip-hidden flag as the title strip. */
+/* ---- Write-mode top toolbar --------------------------------------
+   Rendered in mode 3 (Write) only: a full-width theme-tinted bar
+   holding the format buttons. Soft sheen finish — a gentle vertical
+   gradient mixed from the active theme's accent plus a hairline top
+   highlight, deliberately far short of brushed metal (a finish, not
+   a texture; won the 2026-08-01 round over a flat tint). Re-colours
+   with the theme. Hide-on-scroll rides the same data-strip-hidden
+   flag as the title strip. */
 .top-toolbar {
   display: none;
   position: fixed;
@@ -1239,46 +1154,32 @@ html {
   z-index: 5;
   align-items: center;
   justify-content: center;
-  border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
-  transition: transform 200ms ease;
-  will-change: transform;
-}
-html[data-option="1"][data-active-mode="3"] .top-toolbar,
-html[data-option="2"][data-active-mode="3"] .top-toolbar {
-  display: flex;
-}
-/* Option 1 — flat tint: macOS-tinted-toolbar feel, echoes the accent
-   window frame. */
-html[data-option="1"] .top-toolbar {
-  background: color-mix(in srgb, var(--accent) 7%, var(--bg));
-}
-/* Option 2 — soft sheen: same tint family with a gentle vertical
-   gradient and a hairline top highlight. Deliberately far short of
-   brushed metal — a finish, not a texture. */
-html[data-option="2"] .top-toolbar {
   background: linear-gradient(
     180deg,
     color-mix(in srgb, var(--accent) 11%, var(--bg)),
     color-mix(in srgb, var(--accent) 4%, var(--bg))
   );
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, var(--border));
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
+  transition: transform 200ms ease;
+  will-change: transform;
+}
+html[data-active-mode="3"] .top-toolbar {
+  display: flex;
 }
 [data-strip-hidden="1"] .top-toolbar {
   transform: translateY(calc(-100% - 8px));
 }
 /* Content clearance while the bar is up — Write mode only. Overrides
    the 28px Tauri strip reserve (the bar subsumes the strip). */
-html[data-option="1"][data-active-mode="3"] .mode-host,
-html[data-option="2"][data-active-mode="3"] .mode-host,
-html[data-option="1"][data-active-mode="3"][data-tauri="1"] .mode-host,
-html[data-option="2"][data-active-mode="3"][data-tauri="1"] .mode-host {
+html[data-active-mode="3"] .mode-host,
+html[data-active-mode="3"][data-tauri="1"] .mode-host {
   padding-top: 52px;
 }
 /* Tauri filename: the centred title would collide with the centred
    buttons, so in Write mode it left-aligns inside the bar, tucked
    after the traffic lights, and rides the bar's height. */
-html[data-option="1"][data-active-mode="3"][data-tauri="1"] .window-title,
-html[data-option="2"][data-active-mode="3"][data-tauri="1"] .window-title {
+html[data-active-mode="3"][data-tauri="1"] .window-title {
   height: 40px;
   justify-content: flex-start;
   padding: 0 7rem 0 86px;
@@ -1289,7 +1190,7 @@ html[data-option="2"][data-active-mode="3"][data-tauri="1"] .window-title {
   align-items: center;
   gap: 2px;
 }
-/* Buttons mirror .format-bar__button so both surfaces read identical. */
+/* Format buttons — icon-only, quiet until hover/active. */
 .top-toolbar__button {
   width: 28px;
   height: 26px;
@@ -1319,11 +1220,13 @@ html[data-option="2"][data-active-mode="3"][data-tauri="1"] .window-title {
   background: color-mix(in srgb, var(--fg) 18%, transparent);
 }
 /* Trailing Menu button — same typography as the pills' resting label;
-   JS swaps the text to ⌘K on hover / scroll-return flash. */
+   JS swaps to ⌘K on hover / scroll-return flash. Both labels stack in
+   one grid cell and the inactive one goes invisible-but-sized, so the
+   button (and therefore the bar) NEVER changes width on the swap —
+   menubar geometry must not move under the mouse. */
 .top-toolbar__menu {
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  display: grid;
+  place-items: center;
   height: 26px;
   padding: 0 10px;
   background: transparent;
@@ -1338,15 +1241,22 @@ html[data-option="2"][data-active-mode="3"][data-tauri="1"] .window-title {
   letter-spacing: 0.5px;
   transition: color 120ms ease, background 120ms ease;
 }
+.top-toolbar__menu-label {
+  grid-area: 1 / 1;
+  white-space: nowrap;
+}
+.top-toolbar__menu-label--key {
+  visibility: hidden;
+}
+.top-toolbar__menu--key .top-toolbar__menu-label--rest {
+  visibility: hidden;
+}
+.top-toolbar__menu--key .top-toolbar__menu-label--key {
+  visibility: visible;
+}
 .top-toolbar__menu:hover {
   color: var(--fg);
   background: color-mix(in srgb, var(--fg) 6%, transparent);
-}
-/* With the toolbar active the bottom pill is a plain Menu everywhere,
-   so restore its palette-click cursor in Write mode. */
-html[data-option="1"][data-active-mode="3"] .format-bar,
-html[data-option="2"][data-active-mode="3"] .format-bar {
-  cursor: pointer;
 }
 
 /* Command palette — Cmd+K / Cmd+/ opens a centred modal with a fuzzy
