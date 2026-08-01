@@ -182,25 +182,6 @@ export function setupTopToolbar(harness: Harness, root: HTMLElement): void {
   })
   group.appendChild(menu)
 
-  // Temporary dogfood toggle for the graphite-vs-glass finish round —
-  // a visible flick is friendlier than URL flags, especially in the
-  // desktop shell. Removed once a winner is picked.
-  const finishBtn = document.createElement('button')
-  finishBtn.type = 'button'
-  finishBtn.className = 'top-toolbar__button top-toolbar__finish'
-  finishBtn.setAttribute('aria-label', 'Toggle chrome finish')
-  finishBtn.title = 'Chrome finish — graphite / glass'
-  finishBtn.innerHTML =
-    '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" ' +
-    'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
-    'stroke-linejoin="round"><circle cx="12" cy="12" r="9"/>' +
-    '<path d="M12 3a9 9 0 0 0 0 18z" fill="currentColor" stroke="none"/></svg>'
-  finishBtn.addEventListener('mousedown', (e) => e.preventDefault())
-  finishBtn.addEventListener('click', () => {
-    void import('./chrome-finish').then((m) => m.toggleFinish())
-  })
-  group.appendChild(finishBtn)
-
   // Menu label swap — rest = "Menu", hover/flash = "⌘K". Mirrors the
   // two pills so the whole chrome speaks one grammar.
   let hovered = false

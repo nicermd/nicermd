@@ -107,18 +107,6 @@ function buildCommands(harness: Harness): Command[] {
     // Fonts
     { id: 'font.picker', label: 'Fonts…', shortcut: 'Cmd+Alt+F', action: () => openFontPicker() },
 
-    // Chrome finish — temporary while the graphite-vs-glass round
-    // dogfoods; works in every mode (the tool-row button is Write-only).
-    {
-      id: 'chrome.finish',
-      label: 'Toggle chrome finish',
-      hint: 'Graphite ↔ frosted glass',
-      action: async () => {
-        const m = await import('./chrome-finish')
-        m.toggleFinish()
-      },
-    },
-
     // Format — mode 2 only
     { id: 'format.bold', label: 'Bold', shortcut: 'Cmd+B', action: () => harness.toggleFormat('bold'), available: inWysiwyg },
     { id: 'format.italic', label: 'Italic', shortcut: 'Cmd+I', action: () => harness.toggleFormat('italic'), available: inWysiwyg },

@@ -982,13 +982,16 @@ html {
   transition: transform 200ms ease;
   will-change: transform;
 }
-[data-strip-hidden="1"] .window-title,
-[data-strip-hidden="1"] .mode-icons {
-  /* The pill floats below the viewport edge with a drop shadow, so a
-     plain -100% leaves its bottom sliver + shadow peeking. Overshoot
-     far enough that both clear the edge completely — the mode pill
-     disappears and returns exactly like the bottom ⌘K pill. */
+[data-strip-hidden="1"] .window-title {
   transform: translateY(calc(-100% - 24px));
+}
+[data-strip-hidden="1"] .mode-icons {
+  /* The pill floats with a drop shadow, so a plain -100% leaves its
+     bottom sliver + shadow peeking. On desktop it also sits BELOW the
+     28px strip (top 30–34px), so the overshoot must swallow that
+     offset too — 48px clears top + height + shadow in every layout,
+     and the extra distance is invisible at a fixed 200ms duration. */
+  transform: translateY(calc(-100% - 48px));
 }
 /* Format / command pill is bottom-anchored, so it slides down out of
    view (translateX is preserved for centring; transform stacks via
@@ -1152,9 +1155,10 @@ html {
    Web: a browser tab has no window buttons to contain, so no strip —
    Write mode gets a single 40px tool bar (filename tucked left
    inside it) and other modes keep the invisible floating title.
-   Materials come from data-finish (chrome-finish.ts, runtime
-   toggleable): graphite = opaque neutral strip + accent sheen tools;
-   glass = frosted translucent strip + tools with backdrop blur. */
+   Material: graphite (2026-08-01 verdict over frosted glass — glass
+   read inconsistently against varying content): neutral ink-gradient
+   strip, accent sheen tool row, plain page — three tiers separated
+   by temperature. */
 .top-toolbar {
   display: none;
   position: fixed;
@@ -1198,19 +1202,6 @@ html[data-active-mode="3"] .top-toolbar {
   );
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 14%, transparent);
 }
-html[data-finish="glass"][data-shell="web"] .top-toolbar,
-html[data-finish="glass"][data-shell="tauri"] .top-toolbar::before {
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--accent) 14%, transparent),
-    color-mix(in srgb, var(--accent) 5%, transparent)
-  );
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-}
-html[data-finish="glass"] .top-toolbar {
-  border-bottom-color: color-mix(in srgb, var(--accent) 22%, transparent);
-}
 /* Desktop window strip — surfaced in every mode; hides and returns
    with the rest of the chrome via data-strip-hidden. */
 [data-shell="tauri"] .window-title {
@@ -1222,13 +1213,6 @@ html[data-finish="glass"] .top-toolbar {
   );
   border-bottom: 1px solid color-mix(in srgb, var(--fg) 14%, var(--border));
   box-shadow: inset 0 1px 0 color-mix(in srgb, #fff 20%, transparent);
-}
-html[data-finish="glass"][data-shell="tauri"] .window-title {
-  background: color-mix(in srgb, var(--bg) 55%, transparent);
-  -webkit-backdrop-filter: blur(14px) saturate(1.4);
-  backdrop-filter: blur(14px) saturate(1.4);
-  border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
-  box-shadow: none;
 }
 /* Desktop pills tuck below the strip; centre in the tool row when it
    exists. Web keeps the shipped top-6 float. */
