@@ -1244,19 +1244,10 @@ html[data-finish="island"][data-shell="tauri"] .window-title {
      drowns on a live backdrop. */
   color: color-mix(in srgb, var(--fg) 80%, var(--muted));
 }
-html[data-finish="island"] .top-toolbar__group {
-  height: 26px;
-  padding: 0 6px;
-  border-radius: 7px;
-  background: linear-gradient(
-    180deg,
-    color-mix(in srgb, var(--fg) 10%, var(--bg)),
-    color-mix(in srgb, var(--fg) 5%, var(--bg))
-  );
-  border: 1px solid color-mix(in srgb, var(--fg) 20%, var(--border));
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08),
-    inset 0 1px 0 color-mix(in srgb, #fff 18%, transparent);
-}
+/* Plate-less since milky v3: the 72-80% frost carries the contrast on
+   its own, so the buttons sit directly on the glass — one material,
+   no island. (The graphite plate lived here for one dogfood round;
+   git history has it if the plain band ever feels loose.) */
 /* Button glyphs and labels step up from muted toward ink on glass. */
 html[data-finish="island"] .top-toolbar__button,
 html[data-finish="island"] .top-toolbar__menu {
