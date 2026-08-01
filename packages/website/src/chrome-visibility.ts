@@ -9,6 +9,7 @@
 //   reach  — pointer moves (mouse)            → show, arm idle timer
 //   read   — sustained scroll down            → hide immediately
 //   write  — typing in an editing surface     → hide immediately
+//   engage — clicking into the page           → hide immediately
 //   still  — ~2.5s without reach              → hide
 //   pin    — pointer resting on chrome        → never counts as idle
 //   shift  — mode change / boot (showStrip)   → show, arm idle timer
@@ -76,6 +77,9 @@ export function setupChromeVisibility(): void {
     'pointermove',
     (e) => {
       if (e.pointerType !== 'mouse') return
+      // A held button means dragging (text selection, checkbox sweep)
+      // — that's engaging with content, not reaching for chrome.
+      if (e.buttons !== 0) return
       // Pin while the pointer rests on a chrome surface — hovering a
       // control must never count as idle.
       const t = e.target
@@ -90,6 +94,26 @@ export function setupChromeVisibility(): void {
       anchorX = e.clientX
       anchorY = e.clientY
       showStrip()
+    },
+    { passive: true },
+  )
+
+  // --- engage ---------------------------------------------------------
+  // Clicking into the document hides the chrome — the user is placing
+  // a caret, selecting, following a link. Chrome and overlay clicks
+  // are exempt (the panel, pickers and controls live outside
+  // .mode-host). Re-anchor at the click point so the click's own
+  // micro-jitter doesn't immediately count as a fresh reach.
+  window.addEventListener(
+    'pointerdown',
+    (e) => {
+      if (e.pointerType !== 'mouse') return
+      const t = e.target
+      if (!(t instanceof Element) || !t.closest('.mode-host')) return
+      anchorX = e.clientX
+      anchorY = e.clientY
+      pinned = false
+      hide()
     },
     { passive: true },
   )

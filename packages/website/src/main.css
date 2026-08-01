@@ -1078,12 +1078,10 @@ html {
 [data-shell="tauri"] .menu-pill {
   top: 40px;
 }
-/* Web keeps the floating centred filename in the invisible title
-   zone (0–28px) — the pill clears it. Fullscreen desktop hides the
-   title entirely, so the pill can hug the top. */
-[data-shell="web"] .menu-pill {
-  top: 34px;
-}
+/* Web's filename lives at the bottom (see .window-title web rules),
+   so the pill owns the top-centre. Fullscreen desktop hides the
+   strip, so the pill hugs the top there too. */
+[data-shell="web"] .menu-pill,
 [data-shell="tauri"][data-fullscreen="1"] .menu-pill {
   top: 14px;
 }
@@ -1187,12 +1185,19 @@ html[data-active-mode="3"] .top-toolbar {
 .top-toolbar__menu {
   color: color-mix(in srgb, var(--fg) 55%, var(--muted));
 }
-/* Web Write mode: filename tucks left inside the single bar. */
-html[data-active-mode="3"][data-shell="web"] .window-title {
-  height: 40px;
-  justify-content: flex-start;
-  padding: 0 7rem 0 16px;
-  z-index: 6;
+/* Web filename — bottom-centre status line (2026-08-01: it clashed
+   with the Commands pill when both floated at top-centre; desktop
+   keeps the filename in the strip because that's what a titlebar is
+   for). Same element, repositioned; hides DOWNWARD with the chrome. */
+[data-shell="web"] .window-title {
+  top: auto;
+  bottom: 10px;
+  height: 22px;
+  font-size: 11px;
+  padding: 0 8rem;
+}
+[data-shell="web"][data-strip-hidden="1"] .window-title {
+  transform: translateY(calc(100% + 16px));
 }
 /* macOS fullscreen hides the strip (no window buttons to hold) — the
    band collapses to the web-style single tool bar. */
