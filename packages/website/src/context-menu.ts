@@ -131,9 +131,21 @@ function openMenu(harness: Harness, x: number, y: number): void {
 
 export function setupContextMenu(harness: Harness): void {
   document.addEventListener('contextmenu', (e) => {
+    // Desktop-only: on the web the browser's own context menu is the
+    // valuable native affordance (copy, search, open-link) — reader
+    // sites never hijack it. On desktop the bare webview menu is
+    // near-empty, so the custom menu adds value instead of removing it.
+    if (document.documentElement.dataset.shell !== 'tauri') return
     if (harness.getCurrentMode().key !== 1) return
     const t = e.target
     if (!(t instanceof Element) || !t.closest('.mode-host')) return
+    // Target-sensitive pass-through: selections and links keep the
+    // native WKWebView menu (Copy, Look Up, Translate, Copy Link…) —
+    // those are text intents, not app intents. The app menu owns
+    // plain-area right-clicks only, matching macOS menu conventions.
+    const sel = window.getSelection()
+    if (sel && !sel.isCollapsed) return
+    if (t.closest('a')) return
     e.preventDefault()
     openMenu(harness, e.clientX, e.clientY)
   })
