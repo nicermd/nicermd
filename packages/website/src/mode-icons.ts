@@ -19,6 +19,10 @@ import { getFlavour, READ_ENTRY } from './edit-mode'
 import { openPalette } from './command-palette'
 import { IS_MAC } from './platform'
 
+const CMD_K_TITLE_WHISPER = IS_MAC
+  ? 'All commands — ⌘K'
+  : 'All commands — Ctrl+K'
+
 function svg(paths: string): string {
   return (
     '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
@@ -31,6 +35,22 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   const wrap = document.createElement('div')
   wrap.className = 'mode-icons'
   root.appendChild(wrap)
+
+  // ⌘K whisper — Split/Code's answer to reach (2026-08-03 nav-row
+  // round): choosing those modes declares keyboard comfort, so they
+  // get a reminder instead of the Read/Live nav row. Sits tight
+  // against the strip control, same typography, quieter ink.
+  // Visibility is CSS-driven off data-active-mode + data-shell.
+  const whisper = document.createElement('button')
+  whisper.type = 'button'
+  whisper.className = 'strip-kwhisper'
+  whisper.textContent = IS_MAC ? '⌘K' : 'Ctrl+K'
+  whisper.title = CMD_K_TITLE_WHISPER
+  whisper.setAttribute('aria-label', 'Command palette')
+  whisper.addEventListener('click', () => {
+    openPalette()
+  })
+  wrap.appendChild(whisper)
 
   const control = document.createElement('button')
   control.type = 'button'

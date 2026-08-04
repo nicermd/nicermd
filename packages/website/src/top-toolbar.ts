@@ -12,15 +12,28 @@
 // <html>; hide-on-scroll piggybacks on the same data-strip-hidden
 // flag as the rest of the chrome.
 //
-// The trailing "Menu" button keeps the palette one click away at the
-// top and follows the chrome grammar: rest = what it is ("Menu"),
-// hover/flash = how to key it (⌘K). Both labels render stacked in
-// one grid cell with the inactive one invisible, so the button —
-// and therefore the whole bar — never changes width on hover.
+// The trailing "Commands ⌘K" button keeps the palette one click away
+// at the top. It is one static composed piece — word for the mouse
+// user, key in quieter ink for the learner — and never mutates
+// (2026-08-03: the old Menu↔⌘K hover swap was rejected; "Commands" is
+// the vocabulary every other surface uses).
+//
+// 2026-08-03 nav-row round: Read (1) and Live (2) get their own
+// second tier on desktop — the same 32px band, holding Read's
+// vocabulary instead of Write's: modes (current accented) · Open ·
+// Theme · Commands ⌘K. Two-stage quiet: the revealed row is ghost-
+// faint, pointer over the row firms every label, the hovered button
+// gets full presence — material never changes, only the ink.
+// Split (4) and Code (5) deliberately get no row: choosing them
+// declares keyboard comfort, so they get a ⌘K whisper in the strip
+// instead (see mode-icons.ts).
 
 import type { Harness } from './main'
 import type { FormatAction } from './wysiwyg-engine'
 import { openPalette } from './command-palette'
+import { EDIT_FLAVOURS, READ_ENTRY } from './edit-mode'
+import { getContentKind, openFile } from './doc-source'
+import { openThemePicker } from './theme-picker'
 import { IS_MAC } from './platform'
 
 interface FormatButtonDef {
@@ -127,11 +140,98 @@ const FORMAT_BUTTONS: FormatButtonDef[] = [
 
 const CMD_K_LABEL = IS_MAC ? '⌘K' : 'Ctrl+K'
 const CMD_K_TITLE = IS_MAC ? 'Command palette — ⌘K' : 'Command palette — Ctrl+K'
-const HINT_LINGER_MS = 2000
+
+function svg(paths: string, size: number): string {
+  return (
+    `<svg width="${size}" height="${size}" viewBox="0 0 24 24" fill="none" ` +
+    'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+    `stroke-linejoin="round">${paths}</svg>`
+  )
+}
+
+// Static composed trailing button, shared by both bars.
+function makeCommandsButton(): HTMLButtonElement {
+  const btn = document.createElement('button')
+  btn.type = 'button'
+  btn.className = 'top-toolbar__menu'
+  btn.setAttribute('aria-label', 'Command palette')
+  btn.title = CMD_K_TITLE
+  btn.innerHTML =
+    'Commands' + `<span class="top-toolbar__menu-key">${CMD_K_LABEL}</span>`
+  btn.addEventListener('mousedown', (e) => e.preventDefault())
+  btn.addEventListener('click', () => {
+    openPalette()
+  })
+  return btn
+}
+
+// Nav row — Read/Live's answer to reach. Mode buttons render from the
+// same EDIT_FLAVOURS data as the panel and right-click menu.
+function setupNavToolbar(harness: Harness, root: HTMLElement): void {
+  const bar = document.createElement('div')
+  bar.className = 'top-toolbar top-toolbar--nav'
+  bar.setAttribute('role', 'toolbar')
+  bar.setAttribute('aria-label', 'Navigation')
+  root.appendChild(bar)
+
+  const group = document.createElement('div')
+  group.className = 'top-toolbar__group'
+  bar.appendChild(group)
+
+  const modeButtons: { key: number; markdownOnly: boolean; el: HTMLButtonElement }[] = []
+  for (const f of [READ_ENTRY, ...EDIT_FLAVOURS]) {
+    const btn = document.createElement('button')
+    btn.type = 'button'
+    btn.className = 'top-toolbar__tb'
+    btn.title = `${f.name} — ${IS_MAC ? f.shortcut : f.shortcut.replace(/\bCmd\b/g, 'Ctrl')}`
+    btn.innerHTML = svg(f.paths, 13) + `<span>${f.name}</span>`
+    btn.addEventListener('click', () => {
+      harness.switchTo(f.key)
+    })
+    group.appendChild(btn)
+    modeButtons.push({ key: f.key, markdownOnly: Boolean(f.markdownOnly), el: btn })
+  }
+
+  const sep = document.createElement('span')
+  sep.className = 'top-toolbar__sep'
+  group.appendChild(sep)
+
+  const openBtn = document.createElement('button')
+  openBtn.type = 'button'
+  openBtn.className = 'top-toolbar__tb'
+  openBtn.title = IS_MAC ? 'Open file — ⌘O' : 'Open file — Ctrl+O'
+  openBtn.innerHTML = '<span>Open</span>'
+  openBtn.addEventListener('click', () => void openFile(harness))
+  group.appendChild(openBtn)
+
+  const themeBtn = document.createElement('button')
+  themeBtn.type = 'button'
+  themeBtn.className = 'top-toolbar__tb'
+  themeBtn.title = IS_MAC ? 'Theme — ⌘⌥T' : 'Theme — Ctrl+Alt+T'
+  themeBtn.innerHTML = '<span>Theme</span>'
+  themeBtn.addEventListener('click', () => openThemePicker())
+  group.appendChild(themeBtn)
+
+  group.appendChild(makeCommandsButton())
+
+  const refresh = (): void => {
+    const current = harness.getCurrentMode().key
+    const isMarkdown = getContentKind().kind === 'markdown'
+    for (const b of modeButtons) {
+      b.el.classList.toggle('top-toolbar__tb--current', b.key === current)
+      b.el.hidden = b.markdownOnly && !isMarkdown
+    }
+  }
+  refresh()
+  harness.onModeChange(refresh)
+  document.addEventListener('nicermd:source-changed', refresh)
+}
 
 export function setupTopToolbar(harness: Harness, root: HTMLElement): void {
+  setupNavToolbar(harness, root)
+
   const bar = document.createElement('div')
-  bar.className = 'top-toolbar'
+  bar.className = 'top-toolbar top-toolbar--fmt'
   bar.setAttribute('role', 'toolbar')
   bar.setAttribute('aria-label', 'Formatting')
   root.appendChild(bar)
@@ -148,10 +248,7 @@ export function setupTopToolbar(harness: Harness, root: HTMLElement): void {
     btn.className = 'top-toolbar__button'
     btn.setAttribute('aria-label', def.label)
     btn.title = def.shortcut ? `${def.label} — ${def.shortcut}` : def.label
-    btn.innerHTML =
-      '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" ' +
-      'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
-      `stroke-linejoin="round">${def.paths}</svg>`
+    btn.innerHTML = svg(def.paths, 16)
     // Prevent the toolbar from stealing focus from the editor — the
     // toggle has to fire while the editor still owns the selection.
     btn.addEventListener('mousedown', (e) => e.preventDefault())
@@ -166,60 +263,7 @@ export function setupTopToolbar(harness: Harness, root: HTMLElement): void {
   sep.className = 'top-toolbar__sep'
   group.appendChild(sep)
 
-  const menu = document.createElement('button')
-  menu.type = 'button'
-  menu.className = 'top-toolbar__menu'
-  menu.setAttribute('aria-label', 'Command palette')
-  menu.title = CMD_K_TITLE
-  // Both labels occupy the same grid cell; CSS keeps the inactive one
-  // invisible-but-sized so the button width never changes on swap.
-  menu.innerHTML =
-    '<span class="top-toolbar__menu-label top-toolbar__menu-label--rest">Menu</span>' +
-    `<span class="top-toolbar__menu-label top-toolbar__menu-label--key">${CMD_K_LABEL}</span>`
-  menu.addEventListener('mousedown', (e) => e.preventDefault())
-  menu.addEventListener('click', () => {
-    openPalette()
-  })
-  group.appendChild(menu)
-
-  // Menu label swap — rest = "Menu", hover/flash = "⌘K". Mirrors the
-  // two pills so the whole chrome speaks one grammar.
-  let hovered = false
-  let showingShortcut = false
-  let lingerTimer: number | null = null
-  const showShortcut = (): void => {
-    showingShortcut = true
-    menu.classList.add('top-toolbar__menu--key')
-  }
-  const showRest = (): void => {
-    if (hovered) return
-    showingShortcut = false
-    menu.classList.remove('top-toolbar__menu--key')
-  }
-  const flashShortcut = (): void => {
-    showShortcut()
-    if (lingerTimer !== null) window.clearTimeout(lingerTimer)
-    lingerTimer = window.setTimeout(() => {
-      lingerTimer = null
-      showRest()
-    }, HINT_LINGER_MS)
-  }
-  menu.addEventListener('mouseenter', () => {
-    hovered = true
-    showShortcut()
-  })
-  menu.addEventListener('mouseleave', () => {
-    hovered = false
-    if (lingerTimer === null && showingShortcut) showRest()
-  })
-  const stripObserver = new MutationObserver(() => {
-    if (document.documentElement.dataset.stripHidden !== '1') flashShortcut()
-  })
-  stripObserver.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ['data-strip-hidden'],
-  })
-  flashShortcut()
+  group.appendChild(makeCommandsButton())
 
   const refreshActiveStates = (): void => {
     for (const [action, btn] of buttonsByAction) {

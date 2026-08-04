@@ -1204,7 +1204,13 @@ html[data-active-mode="3"] .menu-pill {
   transition: transform 200ms ease;
   will-change: transform;
 }
-html[data-active-mode="3"] .top-toolbar {
+html[data-active-mode="3"] .top-toolbar--fmt {
+  display: flex;
+}
+/* Nav row — Read/Live's answer to reach (2026-08-03). Desktop only:
+   web keeps the Commands pill as its floating affordance. */
+html[data-active-mode="1"][data-shell="tauri"] .top-toolbar--nav,
+html[data-active-mode="2"][data-shell="tauri"] .top-toolbar--nav {
   display: flex;
 }
 [data-shell="web"] .top-toolbar {
@@ -1277,13 +1283,19 @@ html[data-active-mode="3"] .top-toolbar {
 [data-strip-hidden="1"] .top-toolbar {
   transform: translateY(calc(-100% - 8px));
 }
-/* Content clearance while the band is up — Write mode only. */
+/* Content clearance while the band is up. Write on both shells; on
+   desktop also Read/Live (they have the nav row) — so switching
+   between banded modes never jumps the content column. */
 html[data-active-mode="3"][data-shell="web"] .mode-host {
   padding-top: 52px;
 }
+html[data-active-mode="1"][data-shell="tauri"] .mode-host,
+html[data-active-mode="2"][data-shell="tauri"] .mode-host,
 html[data-active-mode="3"][data-shell="tauri"] .mode-host {
   padding-top: 72px;
 }
+html[data-active-mode="1"][data-shell="tauri"][data-fullscreen="1"] .mode-host,
+html[data-active-mode="2"][data-shell="tauri"][data-fullscreen="1"] .mode-host,
 html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
   padding-top: 52px;
 }
@@ -1324,14 +1336,14 @@ html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
   margin: 0 6px;
   background: color-mix(in srgb, var(--fg) 18%, transparent);
 }
-/* Trailing Menu button — same typography as the pills' resting label;
-   JS swaps to ⌘K on hover / scroll-return flash. Both labels stack in
-   one grid cell and the inactive one goes invisible-but-sized, so the
-   button (and therefore the bar) NEVER changes width on the swap —
-   menubar geometry must not move under the mouse. */
+/* Trailing "Commands ⌘K" button — ONE static composed piece: the word
+   carries the mouse user, the key (quieter ink) teaches the shortcut.
+   Never mutates — menubar geometry and text must not move under the
+   mouse (the old Menu↔⌘K swap died in the 2026-08-03 round). */
 .top-toolbar__menu {
-  display: grid;
-  place-items: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
   height: 26px;
   padding: 0 10px;
   background: transparent;
@@ -1344,24 +1356,105 @@ html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.5px;
+  white-space: nowrap;
   transition: color 120ms ease, background 120ms ease;
 }
-.top-toolbar__menu-label {
-  grid-area: 1 / 1;
-  white-space: nowrap;
-}
-.top-toolbar__menu-label--key {
-  visibility: hidden;
-}
-.top-toolbar__menu--key .top-toolbar__menu-label--rest {
-  visibility: hidden;
-}
-.top-toolbar__menu--key .top-toolbar__menu-label--key {
-  visibility: visible;
+.top-toolbar__menu-key {
+  font-size: 10.5px;
+  color: color-mix(in srgb, var(--fg) 38%, var(--muted));
+  transition: color 120ms ease;
 }
 .top-toolbar__menu:hover {
   color: var(--fg);
   background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
+.top-toolbar__menu:hover .top-toolbar__menu-key {
+  color: color-mix(in srgb, var(--fg) 60%, var(--muted));
+}
+
+/* Nav-row buttons — labelled text targets on the centreline. */
+.top-toolbar__tb {
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: color-mix(in srgb, var(--fg) 55%, var(--muted));
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 140ms ease, background 140ms ease;
+}
+.top-toolbar__tb:hover {
+  color: color-mix(in srgb, var(--fg) 85%, var(--muted));
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+.top-toolbar__tb--current {
+  color: var(--accent);
+}
+.top-toolbar__tb--current::before {
+  content: "●";
+  font-size: 6px;
+}
+/* Two-stage visibility on the nav row: revealed = ghost-quiet;
+   pointer over the row firms every label; hovered button = full
+   presence. Material never changes — only the ink steps. */
+.top-toolbar--nav .top-toolbar__tb,
+.top-toolbar--nav .top-toolbar__menu {
+  color: color-mix(in srgb, var(--fg) 32%, transparent);
+}
+.top-toolbar--nav .top-toolbar__menu-key {
+  color: color-mix(in srgb, var(--fg) 22%, transparent);
+}
+.top-toolbar--nav .top-toolbar__tb--current {
+  color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.top-toolbar--nav:hover .top-toolbar__tb,
+.top-toolbar--nav:hover .top-toolbar__menu {
+  color: color-mix(in srgb, var(--fg) 62%, var(--muted));
+}
+.top-toolbar--nav:hover .top-toolbar__menu-key {
+  color: color-mix(in srgb, var(--fg) 40%, var(--muted));
+}
+.top-toolbar--nav:hover .top-toolbar__tb--current {
+  color: var(--accent);
+}
+.top-toolbar--nav .top-toolbar__tb:hover,
+.top-toolbar--nav .top-toolbar__menu:hover {
+  color: color-mix(in srgb, var(--fg) 85%, var(--muted));
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+
+/* ⌘K whisper — Split/Code's reach answer: a reminder, not buttons.
+   Matched to the strip control's typography, one step quieter,
+   sitting right beside it. Desktop only, modes 4/5 only. */
+.strip-kwhisper {
+  display: none;
+  align-items: center;
+  height: 22px;
+  padding: 0 6px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  font-family: var(--font-body);
+  font-size: 11px;
+  color: color-mix(in srgb, var(--fg) 35%, transparent);
+  cursor: pointer;
+  transition: color 120ms ease, background 120ms ease;
+}
+html[data-active-mode="4"][data-shell="tauri"] .strip-kwhisper,
+html[data-active-mode="5"][data-shell="tauri"] .strip-kwhisper {
+  display: flex;
+}
+.strip-kwhisper:hover {
+  color: color-mix(in srgb, var(--fg) 60%, var(--muted));
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
 }
 
 /* Command palette — Cmd+K / Cmd+/ opens a centred modal with a fuzzy
