@@ -19,10 +19,6 @@ import { getFlavour, READ_ENTRY } from './edit-mode'
 import { openPalette } from './command-palette'
 import { IS_MAC } from './platform'
 
-const CMD_K_TITLE_WHISPER = IS_MAC
-  ? 'All commands — ⌘K'
-  : 'All commands — Ctrl+K'
-
 function svg(paths: string): string {
   return (
     '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
@@ -35,22 +31,6 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   const wrap = document.createElement('div')
   wrap.className = 'mode-icons'
   root.appendChild(wrap)
-
-  // ⌘K whisper — Split/Code's answer to reach (2026-08-03 nav-row
-  // round): choosing those modes declares keyboard comfort, so they
-  // get a reminder instead of the Read/Live nav row. Sits tight
-  // against the strip control, same typography, quieter ink.
-  // Visibility is CSS-driven off data-active-mode + data-shell.
-  const whisper = document.createElement('button')
-  whisper.type = 'button'
-  whisper.className = 'strip-kwhisper'
-  whisper.textContent = IS_MAC ? '⌘K' : 'Ctrl+K'
-  whisper.title = CMD_K_TITLE_WHISPER
-  whisper.setAttribute('aria-label', 'Command palette')
-  whisper.addEventListener('click', () => {
-    openPalette()
-  })
-  wrap.appendChild(whisper)
 
   const control = document.createElement('button')
   control.type = 'button'
@@ -70,10 +50,28 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   caret.textContent = '▾'
   control.appendChild(caret)
 
+  // Split (4) / Code (5) on desktop: the key swaps in FOR the icons
+  // (2026-08-03 refinement round). Choosing those modes declares
+  // keyboard comfort — the control becomes the ⌘K reminder itself, at
+  // full strip ink. The swap happens on mode change, never under the
+  // mouse, so the no-geometry-shift rule holds. Read/Live/Write keep
+  // icon + caret (their rows carry the burger + key).
+  const keyLabel = document.createElement('span')
+  keyLabel.className = 'strip-control__key'
+  keyLabel.textContent = IS_MAC ? '⌘K' : 'Ctrl+K'
+  keyLabel.hidden = true
+  control.appendChild(keyLabel)
+
   const update = (key: number): void => {
     const entry = key === 1 ? READ_ENTRY : getFlavour(key)
     icon.innerHTML = svg(entry?.paths ?? READ_ENTRY.paths)
     const name = entry?.name ?? 'Read'
+    const keyOnly =
+      document.documentElement.dataset.shell === 'tauri' &&
+      (key === 4 || key === 5)
+    icon.hidden = keyOnly
+    caret.hidden = keyOnly
+    keyLabel.hidden = !keyOnly
     control.setAttribute('aria-label', `Mode: ${name} — modes and menu`)
     control.title = `${name} — modes and menu (${IS_MAC ? '⌘K' : 'Ctrl+K'})`
   }

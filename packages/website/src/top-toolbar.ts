@@ -149,6 +149,15 @@ function svg(paths: string, size: number): string {
   )
 }
 
+// Lucide "menu" — the burger. The one glyph every mouse user reads
+// as "everything else lives here"; the quiet key beside it teaches
+// the shortcut (2026-08-03 refinement round: the word "Commands" was
+// doing no work the glyph can't).
+const BURGER_PATHS =
+  '<line x1="4" x2="20" y1="6" y2="6"/>' +
+  '<line x1="4" x2="20" y1="12" y2="12"/>' +
+  '<line x1="4" x2="20" y1="18" y2="18"/>'
+
 // Static composed trailing button, shared by both bars.
 function makeCommandsButton(): HTMLButtonElement {
   const btn = document.createElement('button')
@@ -157,7 +166,8 @@ function makeCommandsButton(): HTMLButtonElement {
   btn.setAttribute('aria-label', 'Command palette')
   btn.title = CMD_K_TITLE
   btn.innerHTML =
-    'Commands' + `<span class="top-toolbar__menu-key">${CMD_K_LABEL}</span>`
+    svg(BURGER_PATHS, 14) +
+    `<span class="top-toolbar__menu-key">${CMD_K_LABEL}</span>`
   btn.addEventListener('mousedown', (e) => e.preventDefault())
   btn.addEventListener('click', () => {
     openPalette()

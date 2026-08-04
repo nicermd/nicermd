@@ -1431,30 +1431,13 @@ html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
   background: color-mix(in srgb, var(--fg) 7%, transparent);
 }
 
-/* ⌘K whisper — Split/Code's reach answer: a reminder, not buttons.
-   Matched to the strip control's typography, one step quieter,
-   sitting right beside it. Desktop only, modes 4/5 only. */
-.strip-kwhisper {
-  display: none;
-  align-items: center;
-  height: 22px;
-  padding: 0 6px;
-  background: transparent;
-  border: none;
-  border-radius: 6px;
-  font-family: var(--font-body);
+/* Strip control key label — Split/Code's reach answer: the ⌘K swaps
+   in FOR the icons at mode change (mode-icons.ts toggles hidden), at
+   the control's full ink so it's clearly legible whenever chrome is
+   up. Desktop only; typography matches the control. */
+.strip-control__key {
   font-size: 11px;
-  color: color-mix(in srgb, var(--fg) 35%, transparent);
-  cursor: pointer;
-  transition: color 120ms ease, background 120ms ease;
-}
-html[data-active-mode="4"][data-shell="tauri"] .strip-kwhisper,
-html[data-active-mode="5"][data-shell="tauri"] .strip-kwhisper {
-  display: flex;
-}
-.strip-kwhisper:hover {
-  color: color-mix(in srgb, var(--fg) 60%, var(--muted));
-  background: color-mix(in srgb, var(--fg) 7%, transparent);
+  white-space: nowrap;
 }
 
 /* Command palette — Cmd+K / Cmd+/ opens a centred modal with a fuzzy
