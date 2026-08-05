@@ -221,7 +221,7 @@ function setupNavToolbar(harness: Harness, root: HTMLElement): void {
 
   const openBtn = document.createElement('button')
   openBtn.type = 'button'
-  openBtn.className = 'top-toolbar__tb'
+  openBtn.className = 'top-toolbar__tb top-toolbar__tb--aux'
   openBtn.title = IS_MAC ? 'Open file — ⌘O' : 'Open file — Ctrl+O'
   openBtn.innerHTML = svg(FOLDER_PATHS, 13) + '<span>Open</span>'
   openBtn.addEventListener('click', () => void openFile(harness))
@@ -229,7 +229,7 @@ function setupNavToolbar(harness: Harness, root: HTMLElement): void {
 
   const themeBtn = document.createElement('button')
   themeBtn.type = 'button'
-  themeBtn.className = 'top-toolbar__tb'
+  themeBtn.className = 'top-toolbar__tb top-toolbar__tb--aux'
   themeBtn.title = IS_MAC ? 'Theme — ⌘⌥T' : 'Theme — Ctrl+Alt+T'
   themeBtn.innerHTML = svg(PALETTE_PATHS, 13) + '<span>Theme</span>'
   themeBtn.addEventListener('click', () => openThemePicker())
@@ -262,6 +262,28 @@ export function setupTopToolbar(harness: Harness, root: HTMLElement): void {
   const group = document.createElement('div')
   group.className = 'top-toolbar__group'
   bar.appendChild(group)
+
+  // One-click way home (2026-08-04): Write is the only mode whose bar
+  // had no mode button — the Read glyph leads the row in the format
+  // buttons' own style (icon-only, 16px; a labelled button read as a
+  // foreign accent here). Tooltip carries the name + shortcut.
+  const readBtn = document.createElement('button')
+  readBtn.type = 'button'
+  readBtn.className = 'top-toolbar__button'
+  readBtn.setAttribute('aria-label', READ_ENTRY.name)
+  readBtn.title = `${READ_ENTRY.name} — ${
+    IS_MAC ? READ_ENTRY.shortcut : READ_ENTRY.shortcut.replace(/\bCmd\b/g, 'Ctrl')
+  }`
+  readBtn.innerHTML = svg(READ_ENTRY.paths, 16)
+  readBtn.addEventListener('mousedown', (e) => e.preventDefault())
+  readBtn.addEventListener('click', () => {
+    harness.switchTo(1)
+  })
+  group.appendChild(readBtn)
+
+  const leadSep = document.createElement('span')
+  leadSep.className = 'top-toolbar__sep'
+  group.appendChild(leadSep)
 
   const buttonsByAction = new Map<FormatAction, HTMLButtonElement>()
 

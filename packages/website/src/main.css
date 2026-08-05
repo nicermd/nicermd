@@ -1048,77 +1048,8 @@ html {
   }
 }
 
-/* Top-centre menu pill — the big mouse target for the unified panel
-   (P2 search-field style, 2026-08-01). Milky-glass capsule centred
-   under the strip; static content sized for the longest platform
-   label so nothing ever swaps or shifts. Hidden in Write mode (the
-   tool row's Menu covers the job); rides pointer-reveal with the
-   rest of the chrome. */
-.menu-pill {
-  position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 6;
-  display: flex;
-  align-items: center;
-  gap: 9px;
-  height: 34px;
-  padding: 0 10px 0 15px;
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--bg) 78%, transparent);
-  -webkit-backdrop-filter: blur(18px) saturate(1.2);
-  backdrop-filter: blur(18px) saturate(1.2);
-  border: 1px solid color-mix(in srgb, var(--fg) 12%, var(--border));
-  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.1);
-  color: color-mix(in srgb, var(--fg) 70%, var(--muted));
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 500;
-  white-space: nowrap;
-  cursor: pointer;
-  transition: transform 200ms ease, color 120ms ease,
-    border-color 120ms ease;
-  will-change: transform;
-}
-/* Desktop: no floating pill — a floating search field is a web idiom
-   and it broke the window's minimalism (2026-08-01 verdict). The
-   desktop answers are the native menu bar, right-click, ⌘K and the
-   strip control. */
-[data-shell="tauri"] .menu-pill {
-  display: none;
-}
-/* Web's filename lives at the bottom (see .window-title web rules),
-   so the pill owns the top-centre. */
-[data-shell="web"] .menu-pill {
-  top: 14px;
-}
-.menu-pill:hover {
-  color: var(--fg);
-  border-color: color-mix(in srgb, var(--fg) 22%, var(--border));
-}
-/* Write mode: the tool row's Menu button covers the job — two menu
-   affordances on screen would compete. */
-html[data-active-mode="3"] .menu-pill {
-  display: none;
-}
-[data-strip-hidden="1"] .menu-pill {
-  transform: translateX(-50%) translateY(calc(-100% - 56px));
-}
-.menu-pill__glyph {
-  font-size: 13px;
-  opacity: 0.75;
-}
-.menu-pill__kbd {
-  font-size: 10.5px;
-  font-weight: 500;
-  letter-spacing: 0.03em;
-  padding: 1px 6px;
-  border-radius: 5px;
-  border: 1px solid color-mix(in srgb, var(--fg) 14%, var(--border));
-  background: color-mix(in srgb, var(--fg) 4%, transparent);
-  color: var(--muted);
-  font-family: var(--font-code);
-}
+/* (Top-centre menu pill retired 2026-08-04 — the web nav row absorbed
+   its job. It was the compromise for web having no other affordance.) */
 
 /* Right-click menu — Read mode, the Typora pattern: the whole page is
    the target and nothing is ever visible. Milky glass like the rest
@@ -1208,14 +1139,25 @@ html[data-active-mode="3"] .menu-pill {
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
   transition: transform 200ms ease;
   will-change: transform;
+  /* The bar is a visual surface, not a click surface: only the button
+     cluster is interactive. Everything else (the desktop strip band
+     inside the bar's top padding, the empty flanks) falls through to
+     the .title-drag-zone beneath, so window drag / dblclick-maximise
+     keep working with a toolbar up. (Found 2026-08-04: the bar had
+     been silently eating strip drags since the Write bar landed.) */
+  pointer-events: none;
+}
+.top-toolbar__group {
+  pointer-events: auto;
 }
 html[data-active-mode="3"] .top-toolbar--fmt {
   display: flex;
 }
-/* Nav row — Read/Live's answer to reach (2026-08-03). Desktop only:
-   web keeps the Commands pill as its floating affordance. */
-html[data-active-mode="1"][data-shell="tauri"] .top-toolbar--nav,
-html[data-active-mode="2"][data-shell="tauri"] .top-toolbar--nav {
+/* Nav row — Read/Live's answer to reach (2026-08-03; extended to web
+   2026-08-04, retiring the Commands pill). On web it renders as the
+   same single 40px bar the Write toolbar uses. */
+html[data-active-mode="1"] .top-toolbar--nav,
+html[data-active-mode="2"] .top-toolbar--nav {
   display: flex;
 }
 [data-shell="web"] .top-toolbar {
@@ -1291,6 +1233,8 @@ html[data-active-mode="2"][data-shell="tauri"] .top-toolbar--nav {
 /* Content clearance while the band is up. Write on both shells; on
    desktop also Read/Live (they have the nav row) — so switching
    between banded modes never jumps the content column. */
+html[data-active-mode="1"][data-shell="web"] .mode-host,
+html[data-active-mode="2"][data-shell="web"] .mode-host,
 html[data-active-mode="3"][data-shell="web"] .mode-host {
   padding-top: 52px;
 }
@@ -1436,6 +1380,38 @@ html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
   background: color-mix(in srgb, var(--fg) 7%, transparent);
 }
 
+/* Narrow viewports (phones): five labelled mode buttons + aux don't
+   fit 375px. Mode buttons go icon-only, Open/Theme fold away (they
+   live in the palette), the trailing key label hides (⌕ remains). */
+@media (max-width: 560px) {
+  .top-toolbar--nav .top-toolbar__tb span {
+    display: none;
+  }
+  .top-toolbar--nav .top-toolbar__tb--aux {
+    display: none;
+  }
+  .top-toolbar--nav .top-toolbar__menu-key {
+    display: none;
+  }
+}
+/* Touch: bigger tap targets; the two-stage quiet stays (touch reveals
+   chrome deliberately via scroll, so the firmed state is the norm). */
+@media (pointer: coarse) {
+  .top-toolbar__tb,
+  .top-toolbar__menu {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .top-toolbar--nav .top-toolbar__tb,
+  .top-toolbar--nav .top-toolbar__menu {
+    color: color-mix(in srgb, var(--fg) 62%, var(--muted));
+  }
+  .top-toolbar--nav .top-toolbar__tb--current {
+    color: var(--accent);
+  }
+}
+
 /* Strip control key label — in Split/Code on desktop the control
    reads "mode icon + ⌘K" at full strip ink (mode-icons.ts toggles
    hidden at mode change): reminder and mode signal in one static
@@ -1444,12 +1420,14 @@ html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
   font-size: 11px;
   white-space: nowrap;
 }
-/* Desktop: the nav row (Read/Live) and Write bar (⌕ ⌘K) made the
-   corner control redundant there — it survives only in Split/Code.
-   Web keeps its ghost chip in every mode (no nav row on web). */
-html[data-shell="tauri"][data-active-mode="1"] .mode-icons,
-html[data-shell="tauri"][data-active-mode="2"] .mode-icons,
-html[data-shell="tauri"][data-active-mode="3"] .mode-icons {
+/* Both shells (2026-08-04 web port): the nav row (Read/Live) and
+   Write bar (⌕ ⌘K) made the corner control redundant there — it
+   survives only in Split/Code. On desktop it's the bare key; web
+   keeps icon + caret (a shortcut label means nothing to a finger —
+   same rule, per-input face). */
+html[data-active-mode="1"] .mode-icons,
+html[data-active-mode="2"] .mode-icons,
+html[data-active-mode="3"] .mode-icons {
   display: none;
 }
 

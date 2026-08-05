@@ -58,8 +58,9 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   // ink: the SAME face as the rows' trailing button, because it's
   // the same action (mode signal comes from the document itself —
   // two panes / raw mono are unmistakable). All changes ride mode
-  // switches, never hover. Web keeps icon + caret everywhere (no
-  // nav row yet).
+  // switches, never hover. Web (2026-08-04 port): same hide rule in
+  // 1/2/3, but Split/Code keep icon + caret — a shortcut label means
+  // nothing to a finger, so the chip stays the touch-friendly face.
   const keyLabel = document.createElement('span')
   keyLabel.className = 'strip-control__key'
   keyLabel.textContent = IS_MAC ? '⌘K' : 'Ctrl+K'

@@ -54,7 +54,6 @@ import { openThemePicker } from './theme-picker'
 import { registerServiceWorker } from './sw-register'
 import { setupChromeVisibility, showStrip } from './chrome-visibility'
 import { setupTopToolbar } from './top-toolbar'
-import { setupMenuPill } from './menu-pill'
 import { setupContextMenu } from './context-menu'
 import { setupCommandPalette } from './command-palette'
 import { setupEditMode, toggleEdit } from './edit-mode'
@@ -1039,7 +1038,6 @@ async function boot(): Promise<void> {
     document.documentElement.dataset.activeMode = String(key)
   })
   setupTopToolbar(harness, root)
-  setupMenuPill(root)
   setupContextMenu(harness)
   setupCommandPalette(harness)
   setupVersionBadge(root)
