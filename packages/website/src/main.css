@@ -1344,12 +1344,10 @@ html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
   color: color-mix(in srgb, var(--fg) 85%, var(--muted));
   background: color-mix(in srgb, var(--fg) 7%, transparent);
 }
+/* Current mode is marked by accent ink ALONE — a dot prefix shifted
+   the row's button positions on every mode switch (2026-08-04: out). */
 .top-toolbar__tb--current {
   color: var(--accent);
-}
-.top-toolbar__tb--current::before {
-  content: "●";
-  font-size: 6px;
 }
 /* Two-stage visibility on the nav row: revealed = ghost-quiet;
    pointer over the row firms every label; hovered button = full
