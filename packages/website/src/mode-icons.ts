@@ -50,12 +50,16 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
   caret.textContent = '▾'
   control.appendChild(caret)
 
-  // Split (4) / Code (5) on desktop: the key swaps in FOR the icons
-  // (2026-08-03 refinement round). Choosing those modes declares
-  // keyboard comfort — the control becomes the ⌘K reminder itself, at
-  // full strip ink. The swap happens on mode change, never under the
-  // mouse, so the no-geometry-shift rule holds. Read/Live/Write keep
-  // icon + caret (their rows carry the burger + key).
+  // Desktop (2026-08-04 round): the nav row made this control
+  // redundant in Read/Live, and Write's bar carries the ⌕ ⌘K — so on
+  // those modes the control hides entirely (CSS, keyed off
+  // data-active-mode). It survives only in Split/Code — the modes
+  // whose users chose a keyboard posture — as ⌕ + ⌘K at full strip
+  // ink: the SAME face as the rows' trailing button, because it's
+  // the same action (mode signal comes from the document itself —
+  // two panes / raw mono are unmistakable). All changes ride mode
+  // switches, never hover. Web keeps icon + caret everywhere (no
+  // nav row yet).
   const keyLabel = document.createElement('span')
   keyLabel.className = 'strip-control__key'
   keyLabel.textContent = IS_MAC ? '⌘K' : 'Ctrl+K'
@@ -64,11 +68,13 @@ export function setupModeIcons(harness: Harness, root: HTMLElement): void {
 
   const update = (key: number): void => {
     const entry = key === 1 ? READ_ENTRY : getFlavour(key)
-    icon.innerHTML = svg(entry?.paths ?? READ_ENTRY.paths)
     const name = entry?.name ?? 'Read'
+    // Bare key, no glyph (2026-08-04 verdict): Split/Code users are
+    // keyboard people or will figure it out — the key alone is enough.
     const keyOnly =
       document.documentElement.dataset.shell === 'tauri' &&
       (key === 4 || key === 5)
+    icon.innerHTML = svg(entry?.paths ?? READ_ENTRY.paths)
     icon.hidden = keyOnly
     caret.hidden = keyOnly
     keyLabel.hidden = !keyOnly

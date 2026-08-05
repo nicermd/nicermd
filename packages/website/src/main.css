@@ -1431,13 +1431,21 @@ html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
   background: color-mix(in srgb, var(--fg) 7%, transparent);
 }
 
-/* Strip control key label — Split/Code's reach answer: the ⌘K swaps
-   in FOR the icons at mode change (mode-icons.ts toggles hidden), at
-   the control's full ink so it's clearly legible whenever chrome is
-   up. Desktop only; typography matches the control. */
+/* Strip control key label — in Split/Code on desktop the control
+   reads "mode icon + ⌘K" at full strip ink (mode-icons.ts toggles
+   hidden at mode change): reminder and mode signal in one static
+   composition. Typography matches the control. */
 .strip-control__key {
   font-size: 11px;
   white-space: nowrap;
+}
+/* Desktop: the nav row (Read/Live) and Write bar (⌕ ⌘K) made the
+   corner control redundant there — it survives only in Split/Code.
+   Web keeps its ghost chip in every mode (no nav row on web). */
+html[data-shell="tauri"][data-active-mode="1"] .mode-icons,
+html[data-shell="tauri"][data-active-mode="2"] .mode-icons,
+html[data-shell="tauri"][data-active-mode="3"] .mode-icons {
+  display: none;
 }
 
 /* Command palette — Cmd+K / Cmd+/ opens a centred modal with a fuzzy
