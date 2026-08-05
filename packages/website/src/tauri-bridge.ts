@@ -80,6 +80,10 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
     harness.cycle()
   })
 
+  await listenHere('menu:view-cycle-prev', () => {
+    harness.cyclePrevious()
+  })
+
   await listenHere('menu:mode-toggle-edit', () => {
     toggleEdit(harness)
   })

@@ -711,8 +711,13 @@ fn build_menu(
                 .build(app)?,
         )
         .item(
-            &MenuItemBuilder::with_id("view-cycle-mode", "Cycle Modes")
-                .accelerator("CmdOrCtrl+Shift+M")
+            &MenuItemBuilder::with_id("view-mode-next", "Next Mode")
+                .accelerator("CmdOrCtrl+Alt+Right")
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::with_id("view-mode-prev", "Previous Mode")
+                .accelerator("CmdOrCtrl+Alt+Left")
                 .build(app)?,
         )
         .separator()
@@ -845,7 +850,8 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
         "view-mode-4" => emit_to_focused_or_all(app, "menu:view-mode", 4),
         "view-mode-5" => emit_to_focused_or_all(app, "menu:view-mode", 5),
         "mode-toggle-edit" => emit_to_focused_or_all(app, "menu:mode-toggle-edit", ()),
-        "view-cycle-mode" => emit_to_focused_or_all(app, "menu:view-cycle", ()),
+        "view-mode-next" => emit_to_focused_or_all(app, "menu:view-cycle", ()),
+        "view-mode-prev" => emit_to_focused_or_all(app, "menu:view-cycle-prev", ()),
         "view-command-palette" => emit_to_focused_or_all(app, "menu:command-palette", ()),
         "view-focus" => emit_to_focused_or_all(app, "menu:view-focus-toggle", ()),
         "view-reload" => emit_to_focused_or_all(app, "menu:view-reload", ()),

@@ -59,6 +59,7 @@ import { setupCommandPalette } from './command-palette'
 import { setupEditMode, toggleEdit } from './edit-mode'
 import { mountLive } from './live-engine'
 import { setupTouchSwipe } from './touch-swipe'
+import { setupTrackpadSwipe } from './trackpad-swipe'
 import { cycleOption, getOption } from './option-flag'
 import type { FormatAction } from './wysiwyg-engine'
 import type { FindAdapter } from './find/types'
@@ -1046,6 +1047,8 @@ async function boot(): Promise<void> {
   // own behaviour; filters in the gesture handler exclude editor
   // surfaces so text selection in Write / Code modes still works.
   setupTouchSwipe(harness, host)
+  // Desktop trackpad sibling of the touch swipe (no-ops on web).
+  setupTrackpadSwipe(harness, host)
 
   // Resurface the strip on mode change — user benefits from re-seeing
   // filename + active mode whenever the editing context shifts.
