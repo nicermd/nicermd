@@ -149,14 +149,27 @@ function svg(paths: string, size: number): string {
   )
 }
 
-// Lucide "menu" — the burger. The one glyph every mouse user reads
-// as "everything else lives here"; the quiet key beside it teaches
-// the shortcut (2026-08-03 refinement round: the word "Commands" was
-// doing no work the glyph can't).
-const BURGER_PATHS =
-  '<line x1="4" x2="20" y1="6" y2="6"/>' +
-  '<line x1="4" x2="20" y1="12" y2="12"/>' +
-  '<line x1="4" x2="20" y1="18" y2="18"/>'
+// Lucide "search" — the palette is a search box, so the trailing
+// glyph says what it does (Spotlight idiom; the web pill already
+// used ⌕). Burger and ⋯ both read "menu stuff" and felt off in
+// dogfood (2026-08-04). The quiet key beside it keeps teaching.
+const SEARCH_PATHS =
+  '<circle cx="11" cy="11" r="8"/>' + '<path d="m21 21-4.3-4.3"/>'
+
+// Lucide "folder" / "palette" — the nav row's grammar is
+// icon + word on every button, matching the mode buttons.
+const FOLDER_PATHS =
+  '<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1' +
+  '-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>'
+const PALETTE_PATHS =
+  '<circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/>' +
+  '<circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/>' +
+  '<circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>' +
+  '<circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/>' +
+  '<path d="M12 2C6.5 2 2 6.5 2 12s4.5 10 10 10c.926 0 1.648-.746 ' +
+  '1.648-1.688 0-.437-.18-.835-.437-1.125-.29-.289-.438-.652-.438-1.125a1.64 ' +
+  '1.64 0 0 1 1.668-1.668h1.996c3.051 0 5.555-2.503 5.555-5.554C21.965 ' +
+  '6.012 17.461 2 12 2z"/>'
 
 // Static composed trailing button, shared by both bars.
 function makeCommandsButton(): HTMLButtonElement {
@@ -166,7 +179,7 @@ function makeCommandsButton(): HTMLButtonElement {
   btn.setAttribute('aria-label', 'Command palette')
   btn.title = CMD_K_TITLE
   btn.innerHTML =
-    svg(BURGER_PATHS, 14) +
+    svg(SEARCH_PATHS, 13) +
     `<span class="top-toolbar__menu-key">${CMD_K_LABEL}</span>`
   btn.addEventListener('mousedown', (e) => e.preventDefault())
   btn.addEventListener('click', () => {
@@ -210,7 +223,7 @@ function setupNavToolbar(harness: Harness, root: HTMLElement): void {
   openBtn.type = 'button'
   openBtn.className = 'top-toolbar__tb'
   openBtn.title = IS_MAC ? 'Open file — ⌘O' : 'Open file — Ctrl+O'
-  openBtn.innerHTML = '<span>Open</span>'
+  openBtn.innerHTML = svg(FOLDER_PATHS, 13) + '<span>Open</span>'
   openBtn.addEventListener('click', () => void openFile(harness))
   group.appendChild(openBtn)
 
@@ -218,7 +231,7 @@ function setupNavToolbar(harness: Harness, root: HTMLElement): void {
   themeBtn.type = 'button'
   themeBtn.className = 'top-toolbar__tb'
   themeBtn.title = IS_MAC ? 'Theme — ⌘⌥T' : 'Theme — Ctrl+Alt+T'
-  themeBtn.innerHTML = '<span>Theme</span>'
+  themeBtn.innerHTML = svg(PALETTE_PATHS, 13) + '<span>Theme</span>'
   themeBtn.addEventListener('click', () => openThemePicker())
   group.appendChild(themeBtn)
 
