@@ -712,12 +712,12 @@ fn build_menu(
         )
         .item(
             &MenuItemBuilder::with_id("view-mode-next", "Next Mode")
-                .accelerator("CmdOrCtrl+Alt+Right")
+                .accelerator("Ctrl+Alt+Right")
                 .build(app)?,
         )
         .item(
             &MenuItemBuilder::with_id("view-mode-prev", "Previous Mode")
-                .accelerator("CmdOrCtrl+Alt+Left")
+                .accelerator("Ctrl+Alt+Left")
                 .build(app)?,
         )
         .separator()

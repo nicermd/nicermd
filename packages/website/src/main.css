@@ -534,6 +534,14 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Reclaim two-finger horizontal from browser back/forward navigation
+   so the trackpad mode-swipe works on web (the Figma/Maps pattern).
+   -x only: vertical rubber-band stays native. */
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
 /* Accent window frame (framing rounds concluded 2026-07-31: the
    accent frame won; page-card, titlebar band and vignette rejected).
    A rounded 2px inset border around the viewport in the theme's
@@ -961,9 +969,9 @@ html {
 [data-shell="tauri"][data-fullscreen="1"] .window-title {
   display: none;
 }
-[data-shell="tauri"][data-fullscreen="1"] .mode-host {
-  padding-top: 0;
-}
+/* (mode-host fullscreen clearance now flows from --chrome-clearance —
+   every mode has a bar, so the old padding-top: 0 would put content
+   under the 40px fullscreen bar.) */
 [data-shell="tauri"][data-fullscreen="1"] .mode-label {
   top: 0.75rem;
 }
@@ -1244,14 +1252,26 @@ html[data-active-mode="5"] .top-toolbar--nav {
 /* Content clearance while the band is up. Write on both shells; on
    desktop also Read/Live (they have the nav row) — so switching
    between banded modes never jumps the content column. */
-[data-shell="web"] .mode-host {
-  padding-top: 52px;
+/* One clearance number per shell, shared by mode-host padding and
+   Split's in-pane padding so they can never drift. */
+html {
+  --chrome-clearance: 52px;
 }
+[data-shell="tauri"] {
+  --chrome-clearance: 72px;
+}
+[data-shell="tauri"][data-fullscreen="1"] {
+  --chrome-clearance: 52px;
+}
+[data-shell="web"] .mode-host,
 [data-shell="tauri"] .mode-host {
-  padding-top: 72px;
+  padding-top: var(--chrome-clearance);
 }
-[data-shell="tauri"][data-fullscreen="1"] .mode-host {
-  padding-top: 52px;
+/* Split runs full-height — its pane divider carries up behind the
+   glass chrome instead of stopping at a floating gap (2026-08-06);
+   the clearance moves inside each pane (rules at .mode-split). */
+html[data-active-mode="4"] .mode-host {
+  padding-top: 0;
 }
 .top-toolbar__group {
   display: flex;
@@ -2228,10 +2248,15 @@ html[data-active-mode="5"] .top-toolbar--nav {
   overflow: auto;
 }
 .mode-split__editor .cm-editor { height: 100%; }
-.mode-split__editor .cm-content { padding: 1rem 0.75rem; }
+/* Panes carry the chrome clearance internally (the mode-host padding
+   is zeroed in Split so the divider spans full height behind the
+   glass); scrolled content slides under the bars like every mode. */
+.mode-split__editor .cm-content {
+  padding: calc(var(--chrome-clearance) + 1rem) 0.75rem 1rem;
+}
 .mode-split__preview {
   overflow: auto;
-  padding: 2rem 2rem 4rem;
+  padding: calc(var(--chrome-clearance) + 2rem) 2rem 4rem;
   background: var(--bg);
   color: var(--fg);
 }

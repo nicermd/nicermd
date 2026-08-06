@@ -1223,6 +1223,24 @@ function finish(harness: Harness): void {
       openUrlPrompt(harness)
       return
     }
+    // Ctrl + Alt + ←/→ — cycle modes. The one free arrow chord in
+    // browsers (⌘⌥-arrows is Chrome tab switching, plain ⌥/⌘ arrows
+    // belong to text editing); the desktop Mode menu carries the same
+    // accelerators so one muscle memory works on both shells. Ctrl
+    // WITHOUT meta, so Cmd combos never collide; skipped in Tauri
+    // where the native menu accelerator fires instead.
+    if (
+      event.ctrlKey &&
+      !event.metaKey &&
+      event.altKey &&
+      (event.code === 'ArrowRight' || event.code === 'ArrowLeft')
+    ) {
+      if (document.documentElement.dataset.shell === 'tauri') return
+      event.preventDefault()
+      if (event.code === 'ArrowRight') harness.cycle()
+      else harness.cyclePrevious()
+      return
+    }
     if (event.altKey) return
 
     if (event.shiftKey) {

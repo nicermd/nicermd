@@ -1,8 +1,10 @@
-// Trackpad two-finger swipe → cycle modes. Desktop only — the
+// Trackpad two-finger swipe → cycle modes, both shells — the
 // pointer-world sibling of touch-swipe.ts (touch already swipes to
 // cycle; a trackpad swipe is the same gesture arriving as wheel
-// events with horizontal delta). In browsers two-finger horizontal
-// is history back/forward, so this never runs on web.
+// events with horizontal delta). On web, browsers use the gesture
+// for history back/forward — main.css sets overscroll-behavior-x:
+// none (the Figma/Maps pattern) so the page reclaims it before this
+// detector ever sees the wheel train.
 //
 // Guards, in order:
 //   1. Horizontal-scroll yield — if anything under the pointer can
@@ -27,6 +29,12 @@ const FIRE_THRESHOLD_PX = 100
 const DOMINANCE = 2
 const GESTURE_END_MS = 180
 const COOLDOWN_MS = 300
+// Axis lock: a gesture declares itself in its first few pixels —
+// real swipes start horizontal immediately, scrolls start vertical.
+// A vertical-locked gesture can never fire, however it drifts
+// (2026-08-06: total-based dominance let long scrolls that curved
+// sideways mis-fire mode switches).
+const AXIS_LOCK_PX = 12
 // Momentum deltas only ever decay; a delta that jumps well past the
 // previous one is fresh fingers — a NEW swipe starting inside the
 // old gesture's tail. Without this, the tail keeps the gesture
@@ -35,10 +43,9 @@ const IMPULSE_RATIO = 2
 const IMPULSE_MIN_PX = 15
 
 export function setupTrackpadSwipe(harness: Harness, host: HTMLElement): void {
-  if (document.documentElement.dataset.shell !== 'tauri') return
-
   let accX = 0
   let accY = 0
+  let axis: 'h' | 'v' | null = null
   let done = false // fired OR yielded — swallow the rest of the gesture
   let endTimer: number | null = null
   let coolUntil = 0
@@ -47,6 +54,7 @@ export function setupTrackpadSwipe(harness: Harness, host: HTMLElement): void {
   const reset = (): void => {
     accX = 0
     accY = 0
+    axis = null
     done = false
     prevMag = 0
   }
@@ -70,21 +78,35 @@ export function setupTrackpadSwipe(harness: Harness, host: HTMLElement): void {
       endTimer = window.setTimeout(reset, GESTURE_END_MS)
       // Rising edge inside a spent gesture's momentum tail = new
       // swipe: reopen immediately instead of waiting for quiet.
-      const mag = Math.abs(e.deltaX)
+      // prevMag tracks the event's TOTAL magnitude — during a
+      // vertical scroll deltaX is ~0, and comparing horizontal-only
+      // made any sideways drift look like fresh fingers, reopening
+      // a vertical-locked gesture (the drift misfire, 2026-08-06).
+      const dxMag = Math.abs(e.deltaX)
+      const evMag = dxMag + Math.abs(e.deltaY)
       if (
         done &&
         now >= coolUntil &&
-        mag > IMPULSE_MIN_PX &&
-        mag > prevMag * IMPULSE_RATIO
+        dxMag > IMPULSE_MIN_PX &&
+        evMag > prevMag * IMPULSE_RATIO
       ) {
         accX = 0
         accY = 0
+        axis = null
         done = false
       }
-      prevMag = mag
+      prevMag = evMag
       if (done || now < coolUntil) return
       accX += e.deltaX
       accY += e.deltaY
+      if (axis === null && Math.abs(accX) + Math.abs(accY) >= AXIS_LOCK_PX) {
+        axis = Math.abs(accX) > Math.abs(accY) ? 'h' : 'v'
+        if (axis === 'v') {
+          done = true
+          return
+        }
+      }
+      if (axis !== 'h') return
       if (Math.abs(accX) < FIRE_THRESHOLD_PX) return
       if (Math.abs(accX) < DOMINANCE * Math.abs(accY)) return
       if (e.target instanceof Element && horizontallyScrollable(e.target)) {
