@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 96 96">
+  <!-- Nicer.md mark — grotesk lowercase n on an Ayu-Mirage-inspired
+       ground (#1F2430 / #FFA759). This SVG carries the SIMPLIFIED
+       small-size cut (heavier stems, fatter counter) because svg
+       favicons render at tab size; the full-detail glyph lives in
+       the 192/256/512 PNGs and the app icon — both regenerate from
+       scratch/ render scripts. Drawn paths, not text. -->
+  <rect width="96" height="96" rx="21" fill="#1F2430"/>
+  <path d="M27 69 V33 h13 v3 c2.5 -2.5 5.8 -4 9.8 -4 c8.2 0 12.2 4.8 12.2 12.6 V69 h-13 V47.5 c0 -3 -1.5 -4.5 -4.5 -4.5 c-3.2 0 -4.5 1.8 -4.5 5 V69 Z"
+        fill="#FFA759"/>
+</svg>
