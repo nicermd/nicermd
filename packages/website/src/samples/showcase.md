@@ -8,15 +8,16 @@ A nicer, zero-server markdown reader. The page you're looking at is plain markdo
 
 ## Try these first
 
-- `Ctrl/Cmd+1`–`4` for Read / Write / Split / Code — or just click the mode icons, top-right.
+- Move the mouse — a toolbar appears at the top with the five modes: **Read / Live / Write / Split / Code** (`Ctrl/Cmd+1`–`5`). It gets out of the way when you're reading or typing.
+- Two-finger swipe left or right on a trackpad to flip between modes. `Ctrl+Alt+←`/`→` does the same from the keyboard.
 - `Ctrl/Cmd+3` to enter Write mode, then click anywhere and type.
 - `Ctrl/Cmd+S` saves local files back to where the file came from.
 - `Ctrl/Cmd+O` to **O**pen a local file, or drop a `.md` / `.markdown` / `.mdx` file onto the window.
 - `Ctrl/Cmd+Alt+O` to **O**pen a URL — raw GitHub, gists, or `github.com/user/repo` for the README.
 - `Ctrl/Cmd+Alt+T` to switch theme. `Ctrl/Cmd+Alt+F` for fonts.
-- `Ctrl/Cmd+K` for the command palette — the fastest way to find everything else.
+- `Ctrl/Cmd+K` for the command palette — the fastest way to find everything else. It's also the ⌕ button at the toolbar's end, and on the desktop app a right-click away.
 
-In a browser tab, your browser may grab the number shortcuts for switching tabs — the mode icons and the command palette always work. The desktop app has every shortcut to itself.
+In a browser tab, your browser may grab the number shortcuts for switching tabs — the toolbar buttons, the swipe and the command palette always work. The desktop app has every shortcut to itself.
 
 ## Take it with you
 
