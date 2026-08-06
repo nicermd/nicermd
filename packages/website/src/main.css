@@ -534,13 +534,22 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Accent window frame (framing rounds concluded 2026-07-31: the
+   accent frame won; page-card, titlebar band and vignette rejected).
+   A rounded 2px inset border around the viewport in the theme's
+   accent — re-tints with the theme. The radius matches macOS window
+   corners. 2026-08-05: extended from Tauri to web on dogfood ("really
+   like the border color — try it on web"); on web it frames the
+   viewport inside the tab. */
 /* Desktop window frame (framing rounds concluded 2026-07-31: the
    accent frame won; page-card, titlebar band and vignette rejected).
    A rounded 2px inset border around the viewport in the theme's
    accent — the same hue family as the pill rings, so frame + pills
    read as one chrome family that re-tints with the theme. The radius
    matches macOS window corners. Tauri-only: browser tabs already
-   have chrome; the frame is a window affordance. */
+   have chrome; the frame is a window affordance. (2026-08-05: tried
+   on web + inset/hairline seam on both — WORSE, rolled back; the
+   flush Tauri-only frame is final.) */
 [data-shell='tauri'] body::after {
   content: '';
   position: fixed;
@@ -1157,7 +1166,9 @@ html[data-active-mode="3"] .top-toolbar--fmt {
    2026-08-04, retiring the Commands pill). On web it renders as the
    same single 40px bar the Write toolbar uses. */
 html[data-active-mode="1"] .top-toolbar--nav,
-html[data-active-mode="2"] .top-toolbar--nav {
+html[data-active-mode="2"] .top-toolbar--nav,
+html[data-active-mode="4"] .top-toolbar--nav,
+html[data-active-mode="5"] .top-toolbar--nav {
   display: flex;
 }
 [data-shell="web"] .top-toolbar {
@@ -1233,19 +1244,13 @@ html[data-active-mode="2"] .top-toolbar--nav {
 /* Content clearance while the band is up. Write on both shells; on
    desktop also Read/Live (they have the nav row) — so switching
    between banded modes never jumps the content column. */
-html[data-active-mode="1"][data-shell="web"] .mode-host,
-html[data-active-mode="2"][data-shell="web"] .mode-host,
-html[data-active-mode="3"][data-shell="web"] .mode-host {
+[data-shell="web"] .mode-host {
   padding-top: 52px;
 }
-html[data-active-mode="1"][data-shell="tauri"] .mode-host,
-html[data-active-mode="2"][data-shell="tauri"] .mode-host,
-html[data-active-mode="3"][data-shell="tauri"] .mode-host {
+[data-shell="tauri"] .mode-host {
   padding-top: 72px;
 }
-html[data-active-mode="1"][data-shell="tauri"][data-fullscreen="1"] .mode-host,
-html[data-active-mode="2"][data-shell="tauri"][data-fullscreen="1"] .mode-host,
-html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
+[data-shell="tauri"][data-fullscreen="1"] .mode-host {
   padding-top: 52px;
 }
 .top-toolbar__group {
@@ -1418,15 +1423,13 @@ html[data-active-mode="3"][data-shell="tauri"][data-fullscreen="1"] .mode-host {
   font-size: 11px;
   white-space: nowrap;
 }
-/* Both shells (2026-08-04 web port): the nav row (Read/Live) and
-   Write bar (⌕ ⌘K) made the corner control redundant there — it
-   survives only in Split/Code. On desktop it's the bare key; web
-   keeps icon + caret (a shortcut label means nothing to a finger —
-   same rule, per-input face). */
-html[data-active-mode="1"] .mode-icons,
-html[data-active-mode="2"] .mode-icons,
-html[data-active-mode="3"] .mode-icons {
-  display: none;
+/* 2026-08-05: Split/Code joined the nav-row modes (dogfood reversal —
+   "modes 4 and 5 should also have the bar"), so every mode carries a
+   bar and the corner control is retired EVERYWHERE, both shells. The
+   strip-control machinery in mode-icons.ts stays for now in case the
+   verdict moves again; this rule keeps it out of the way. */
+.mode-icons {
+  display: none !important;
 }
 
 /* Command palette — Cmd+K / Cmd+/ opens a centred modal with a fuzzy
@@ -2152,6 +2155,14 @@ html[data-active-mode="3"] .mode-icons {
  * instead of raw <div> source. user-select: none signals "preserved
  * verbatim, not editable" without screaming about it; cursor stays as
  * default so dragging text around the preview still works. */
+/* Images in the editable surface cap at the column like every other
+   mode (Read/Split via CSS, Live inline in its widget) — without
+   this a wide gif blows out the 720px column in Write only. */
+.mode-wysiwyg .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
 .mode-wysiwyg .ProseMirror .nicermd-parked-html-preview {
   margin: 0 0 1em;
   user-select: none;
