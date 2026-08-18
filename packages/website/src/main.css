@@ -1329,21 +1329,22 @@ html[data-active-mode="4"] .mode-host {
   font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
-  letter-spacing: 0.5px;
   white-space: nowrap;
   transition: color 120ms ease, background 120ms ease;
 }
+/* Key label is typographically IDENTICAL to the rest of the bar —
+   same size, weight, spacing, ink. The stepped-down "quiet key"
+   (smaller + lighter mix) read as a different font weight sitting
+   off the centreline; the ⌕ glyph alone carries the affordance
+   (2026-08-18). */
 .top-toolbar__menu-key {
-  font-size: 10.5px;
-  color: color-mix(in srgb, var(--fg) 38%, var(--muted));
-  transition: color 120ms ease;
+  font-size: inherit;
+  line-height: 1;
+  color: inherit;
 }
 .top-toolbar__menu:hover {
   color: var(--fg);
   background: color-mix(in srgb, var(--fg) 6%, transparent);
-}
-.top-toolbar__menu:hover .top-toolbar__menu-key {
-  color: color-mix(in srgb, var(--fg) 60%, var(--muted));
 }
 
 /* Nav-row buttons — labelled text targets on the centreline. */
@@ -1381,18 +1382,12 @@ html[data-active-mode="4"] .mode-host {
 .top-toolbar--nav .top-toolbar__menu {
   color: color-mix(in srgb, var(--fg) 32%, transparent);
 }
-.top-toolbar--nav .top-toolbar__menu-key {
-  color: color-mix(in srgb, var(--fg) 22%, transparent);
-}
 .top-toolbar--nav .top-toolbar__tb--current {
   color: color-mix(in srgb, var(--accent) 55%, transparent);
 }
 .top-toolbar--nav:hover .top-toolbar__tb,
 .top-toolbar--nav:hover .top-toolbar__menu {
   color: color-mix(in srgb, var(--fg) 62%, var(--muted));
-}
-.top-toolbar--nav:hover .top-toolbar__menu-key {
-  color: color-mix(in srgb, var(--fg) 40%, var(--muted));
 }
 .top-toolbar--nav:hover .top-toolbar__tb--current {
   color: var(--accent);
