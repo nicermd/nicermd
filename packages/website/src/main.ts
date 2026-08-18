@@ -52,12 +52,14 @@ import { openUrlPrompt, processBootUrlParam } from './url-open'
 import { setupLinkChaining, showNoticeBanner } from './link-chain'
 import { openThemePicker } from './theme-picker'
 import { registerServiceWorker } from './sw-register'
-import { setupScrollStrip, showStrip } from './scroll-strip'
-import { setupFormatBar } from './format-bar'
+import { setupChromeVisibility, showStrip } from './chrome-visibility'
+import { setupTopToolbar } from './top-toolbar'
+import { setupContextMenu } from './context-menu'
 import { setupCommandPalette } from './command-palette'
-import { setupEditMode, toggleEdit, openEditPicker } from './edit-mode'
+import { setupEditMode, toggleEdit } from './edit-mode'
 import { mountLive } from './live-engine'
 import { setupTouchSwipe } from './touch-swipe'
+import { setupTrackpadSwipe } from './trackpad-swipe'
 import { cycleOption, getOption } from './option-flag'
 import type { FormatAction } from './wysiwyg-engine'
 import type { FindAdapter } from './find/types'
@@ -957,7 +959,7 @@ async function boot(): Promise<void> {
 
   // Hide title strip + mode icons on scroll-down, restore on scroll-up.
   // Inert in mode 4 (split scrolls inside panes, not the document).
-  setupScrollStrip()
+  setupChromeVisibility()
 
   // Snapshot the persisted per-window state IMMEDIATELY, before any
   // setDocState call (which the boot path makes a few lines down with
@@ -1027,7 +1029,17 @@ async function boot(): Promise<void> {
   setupTitle(harness, root)
   setupEditMode(harness)
   setupModeIcons(harness, root)
-  setupFormatBar(harness, root)
+  // Per-mode chrome CSS (top-toolbar visibility, content clearance)
+  // keys off data-active-mode — maintained here since the bottom pill
+  // that used to own it is gone (2026-08-01 unified-panel round).
+  document.documentElement.dataset.activeMode = String(
+    harness.getCurrentMode().key,
+  )
+  harness.onModeChange((key) => {
+    document.documentElement.dataset.activeMode = String(key)
+  })
+  setupTopToolbar(harness, root)
+  setupContextMenu(harness)
   setupCommandPalette(harness)
   setupVersionBadge(root)
   // Touch swipe on the doc surface cycles modes. Scoped to .mode-host
@@ -1035,6 +1047,8 @@ async function boot(): Promise<void> {
   // own behaviour; filters in the gesture handler exclude editor
   // surfaces so text selection in Write / Code modes still works.
   setupTouchSwipe(harness, host)
+  // Desktop trackpad sibling of the touch swipe (no-ops on web).
+  setupTrackpadSwipe(harness, host)
 
   // Resurface the strip on mode change — user benefits from re-seeing
   // filename + active mode whenever the editing context shifts.
@@ -1200,15 +1214,6 @@ function finish(harness: Harness): void {
       cycleOption()
       return
     }
-    // Cmd/Ctrl + Alt/Option + E — open the edit-flavour picker. Same
-    // Alt-family rationale as theme/font: plain Cmd+E is Tiptap's
-    // inline-code binding in Write mode, so the picker takes the Alt
-    // slot and Cmd+Return handles the fast enter/exit toggle.
-    if (event.altKey && event.code === 'KeyE') {
-      event.preventDefault()
-      openEditPicker(harness)
-      return
-    }
     // Cmd/Ctrl + Alt/Option + O — open URL prompt. Slots into the
     // Cmd+Alt+letter picker family. Cmd+Shift+O is Chrome's bookmark
     // manager and Cmd+U is View-Source on most browsers (and not always
@@ -1216,6 +1221,24 @@ function finish(harness: Harness): void {
     if (event.altKey && event.code === 'KeyO') {
       event.preventDefault()
       openUrlPrompt(harness)
+      return
+    }
+    // Ctrl + Alt + ←/→ — cycle modes. The one free arrow chord in
+    // browsers (⌘⌥-arrows is Chrome tab switching, plain ⌥/⌘ arrows
+    // belong to text editing); the desktop Mode menu carries the same
+    // accelerators so one muscle memory works on both shells. Ctrl
+    // WITHOUT meta, so Cmd combos never collide; skipped in Tauri
+    // where the native menu accelerator fires instead.
+    if (
+      event.ctrlKey &&
+      !event.metaKey &&
+      event.altKey &&
+      (event.code === 'ArrowRight' || event.code === 'ArrowLeft')
+    ) {
+      if (document.documentElement.dataset.shell === 'tauri') return
+      event.preventDefault()
+      if (event.code === 'ArrowRight') harness.cycle()
+      else harness.cyclePrevious()
       return
     }
     if (event.altKey) return
@@ -1263,15 +1286,8 @@ function finish(harness: Harness): void {
       void openFile(harness)
       return
     }
-    // Cmd+E — the mode picker. The two-glyph sibling of Cmd+K:
-    // ⌘K = commands, ⌘E = edit/mode. Tiptap's inline-code (the old
-    // Mod-e) moved to Cmd+Shift+E (see wysiwyg-engine's remap);
-    // Cmd+Alt+E stays as a working alias.
-    if (event.code === 'KeyE') {
-      event.preventDefault()
-      openEditPicker(harness)
-      return
-    }
+    // (Cmd+E is Tiptap's inline-code binding again — the mode picker
+    // merged into the unified ⌘K panel, 2026-08-01.)
     // Cmd+Return — toggle Read ↔ edit. From Read, enter the remembered
     // edit flavour (picker on first-ever use); from any edit flavour,
     // return to Read. See edit-mode.ts for the architecture.

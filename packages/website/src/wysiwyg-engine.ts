@@ -135,27 +135,13 @@ export function createWysiwyg(
   const parked = parkHtml(markdown)
   let isDirty = false
 
-  // Cmd+E belongs to the app-level mode picker (the "⌘E" story beside
-  // ⌘K — see main.ts). StarterKit's Code mark binds Mod-e for inline
-  // code; this remap swallows Mod-e inside the editor (no format
-  // action, event bubbles up to the window handler which opens the
-  // picker) and moves inline code to Mod-Shift-e. High priority so
-  // its keymap sits ahead of Code's.
-  const ShortcutRemap = Extension.create({
-    name: 'nicermdShortcutRemap',
-    priority: 1000,
-    addKeyboardShortcuts() {
-      return {
-        'Mod-e': () => true,
-        'Mod-Shift-e': () => this.editor.commands.toggleCode(),
-      }
-    },
-  })
+  // Cmd+E is StarterKit Code's own inline-code binding — it briefly
+  // belonged to the standalone mode picker (2026-07-31 → 2026-08-01),
+  // returned when the picker merged into the unified ⌘K panel.
 
   const editor = new Editor({
     element: parent,
     extensions: [
-      ShortcutRemap,
       StarterKit.configure({
         // Default opens links on click — fights editing. Off here so a
         // click-through happens via the format bar / keyboard later.

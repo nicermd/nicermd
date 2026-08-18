@@ -11,7 +11,7 @@
   --reading-width: 720px;
   --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-code: ui-monospace, SFMono-Regular, 'SF Mono', Menlo, Consolas, monospace;
-  --font-size: 17px;
+  --font-size: 16px;
 
   /* Surfaces */
   --bg: #ffffff;
@@ -520,7 +520,7 @@ body,
   color: var(--fg);
   font-family: var(--font-body);
   font-size: var(--font-size);
-  line-height: 1.65;
+  line-height: 1.6;
 }
 
 /* Reserve the scrollbar gutter at the document level so viewport
@@ -534,13 +534,30 @@ html {
   scrollbar-gutter: stable;
 }
 
+/* Reclaim two-finger horizontal from browser back/forward navigation
+   so the trackpad mode-swipe works on web (the Figma/Maps pattern).
+   -x only: vertical rubber-band stays native. */
+html,
+body {
+  overscroll-behavior-x: none;
+}
+
+/* Accent window frame (framing rounds concluded 2026-07-31: the
+   accent frame won; page-card, titlebar band and vignette rejected).
+   A rounded 2px inset border around the viewport in the theme's
+   accent — re-tints with the theme. The radius matches macOS window
+   corners. 2026-08-05: extended from Tauri to web on dogfood ("really
+   like the border color — try it on web"); on web it frames the
+   viewport inside the tab. */
 /* Desktop window frame (framing rounds concluded 2026-07-31: the
    accent frame won; page-card, titlebar band and vignette rejected).
    A rounded 2px inset border around the viewport in the theme's
    accent — the same hue family as the pill rings, so frame + pills
    read as one chrome family that re-tints with the theme. The radius
    matches macOS window corners. Tauri-only: browser tabs already
-   have chrome; the frame is a window affordance. */
+   have chrome; the frame is a window affordance. (2026-08-05: tried
+   on web + inset/hairline seam on both — WORSE, rolled back; the
+   flush Tauri-only frame is final.) */
 [data-shell='tauri'] body::after {
   content: '';
   position: fixed;
@@ -747,9 +764,7 @@ html {
    it never intercepts clicks on content beneath. */
 .version-badge {
   position: fixed;
-  /* Sized to the same 32px height as .format-bar so the two share a
-     baseline and a vertical centre when they sit at the same `bottom`.
-     padding is intentionally vertical-only; the flex centring handles
+  /* padding is intentionally vertical-only; the flex centring handles
      the rest. */
   bottom: 14px;
   right: 12px;
@@ -883,80 +898,67 @@ html {
   display: none;
 }
 
-/* Mode icons in the title strip — top-right, 4 buttons, active one
-   accent-coloured, others muted. */
+/* Strip control — the single mouse affordance for modes + commands
+   (2026-08-01 unified-panel round; replaced the floating mode pill
+   and the bottom Menu pill). Desktop: quiet control at the strip's
+   right end, riding the strip's one transition. Web: same control
+   floats as a ghost chip top-right (no strip there). */
 .mode-icons {
   display: none;
   position: fixed;
-  top: 6px;
-  right: 12px;
-  height: 28px;
+  right: 10px;
   z-index: 6;
   align-items: center;
-  gap: 2px;
 }
 [data-tauri="1"] .mode-icons {
   display: flex;
 }
-.mode-icon {
-  width: 26px;
-  height: 22px;
+[data-shell="tauri"] .mode-icons {
+  top: 3px;
+}
+[data-shell="web"] .mode-icons {
+  top: 9px;
+}
+.strip-control {
   display: flex;
   align-items: center;
-  justify-content: center;
+  gap: 4px;
+  height: 22px;
+  padding: 0 8px;
   background: transparent;
   border: none;
-  border-radius: 4px;
-  color: var(--muted);
-  opacity: 0.5;
+  border-radius: 6px;
+  color: color-mix(in srgb, var(--fg) 60%, var(--muted));
   cursor: pointer;
-  padding: 0;
-  transition: color 120ms ease, opacity 120ms ease, background 120ms ease;
+  transition: color 120ms ease, background 120ms ease;
 }
-.mode-icon:hover {
-  opacity: 0.85;
-  background: color-mix(in srgb, var(--fg) 6%, transparent);
-}
-.mode-icon--active {
-  color: var(--accent);
-  opacity: 1;
-}
-.mode-icon--active:hover {
-  background: color-mix(in srgb, var(--accent) 10%, transparent);
-}
-/* Single-icon mode pill (2026-07-31 — the segmented A/B round
-   collapsed to this). One control showing the current mode's icon;
-   click opens the mode picker. Same visual language as the bottom
-   ⌘K pill: bg, hairline border, full radius, soft shadow. */
-.mode-icon--pill-toggle {
-  min-width: 38px;
-  width: auto;
-  padding: 0 8px;
-  height: 28px;
-  background: var(--bg);
-  /* Accent ring — same 45% mix as the window frame so the floating
-     chrome (frame, mode pill, cmdk pill) reads as one family. */
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-  border-radius: 999px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  opacity: 0.9;
+.strip-control:hover {
   color: var(--fg);
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
 }
-/* In-pill shortcut hint — pill content swaps from the mode icon to
-   the shortcut text on hover and briefly on scroll-return (JS in
-   mode-icons.ts drives the swap). Typography matches the ⌘K pill's
-   resting label (.format-bar__dots): 12px, 500, 0.5px tracking. */
-.mode-icon--pill-toggle.mode-icon--hint {
-  font-size: 12px;
-  font-weight: 500;
-  letter-spacing: 0.5px;
-  font-family: var(--font-body);
-  white-space: nowrap;
+/* On web's bare page (no strip surface behind it) the chip needs a
+   whisper of its own material to be findable. */
+[data-shell="web"] .strip-control {
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid color-mix(in srgb, var(--fg) 10%, var(--border));
 }
-.mode-icon--pill-toggle:hover {
-  opacity: 1;
-  background: var(--bg);
-  border-color: color-mix(in srgb, var(--accent) 75%, var(--border));
+[data-shell="web"] .strip-control:hover {
+  background: color-mix(in srgb, var(--fg) 7%, var(--bg));
+}
+.strip-control__icon {
+  display: flex;
+  align-items: center;
+}
+/* The explicit display beats the UA's [hidden] rule, so restate it —
+   mode-icons.ts hides the icon in Split/Code (bare-⌘K composition). */
+.strip-control__icon[hidden] {
+  display: none;
+}
+.strip-control__caret {
+  font-size: 8px;
+  opacity: 0.7;
 }
 
 
@@ -967,14 +969,14 @@ html {
 [data-shell="tauri"][data-fullscreen="1"] .window-title {
   display: none;
 }
-[data-shell="tauri"][data-fullscreen="1"] .mode-host {
-  padding-top: 0;
-}
+/* (mode-host fullscreen clearance now flows from --chrome-clearance —
+   every mode has a bar, so the old padding-top: 0 would put content
+   under the 40px fullscreen bar.) */
 [data-shell="tauri"][data-fullscreen="1"] .mode-label {
   top: 0.75rem;
 }
 
-/* Hide-on-scroll-down: scroll-strip.ts sets data-strip-hidden="1" on
+/* Chrome hide: chrome-visibility.ts sets data-strip-hidden="1" on
    <html> when the user scrolls past the top. Both filename and icons
    slide up out of view together. */
 .window-title,
@@ -982,22 +984,16 @@ html {
   transition: transform 200ms ease;
   will-change: transform;
 }
-[data-strip-hidden="1"] .window-title,
-[data-strip-hidden="1"] .mode-icons {
-  /* The pill floats below the viewport edge with a drop shadow, so a
-     plain -100% leaves its bottom sliver + shadow peeking. Overshoot
-     far enough that both clear the edge completely — the mode pill
-     disappears and returns exactly like the bottom ⌘K pill. */
+[data-strip-hidden="1"] .window-title {
   transform: translateY(calc(-100% - 24px));
 }
-/* Format / command pill is bottom-anchored, so it slides down out of
-   view (translateX is preserved for centring; transform stacks via
-   composition). Inherits the same scroll-driven flag — the title strip
-   and the pill appear / disappear together. The version badge piggy-
-   backs on the same flag so all chrome hides as a single unit. */
-[data-strip-hidden="1"] .format-bar {
-  transform: translateX(-50%) translateY(calc(100% + 14px));
+[data-strip-hidden="1"] .mode-icons {
+  /* Overshoot past -100% so the control clears the edge from any
+     resting top (3px in the strip, 9px as the web chip). */
+  transform: translateY(calc(-100% - 24px));
 }
+/* The version badge piggybacks on the same flag so all chrome hides
+   as a single unit. */
 [data-strip-hidden="1"] .version-badge {
   transform: translateY(calc(100% + 14px));
 }
@@ -1010,7 +1006,7 @@ html {
    - Push mode icons down by 32px so when Chrome's title bar collapses
      and its chrome buttons overlay on the page content, they sit
      above (not on top of) our icons.
-   - Pin mode icons against [data-strip-hidden] (our scroll-strip flag)
+   - Pin mode icons against [data-strip-hidden] (our chrome-visibility flag)
      so scrolling doesn't translate them up into the chrome zone.
    Tauri and plain browser tabs are unaffected. */
 @media (display-mode: standalone) {
@@ -1069,157 +1065,391 @@ html {
   }
 }
 
-/* Format / command pill. Always visible at low opacity. In modes
-   1/3/4 the resting "⌘K" label opens the command palette on click; in
-   mode 2 it expands to a format toolbar via proximity reveal (handled
-   in format-bar.ts), with a trailing ⌘K button that opens the palette
-   from there. Hide-on-scroll handled by [data-strip-hidden] above. */
-.format-bar {
-  display: flex;
+/* (Top-centre menu pill retired 2026-08-04 — the web nav row absorbed
+   its job. It was the compromise for web having no other affordance.) */
+
+/* Right-click menu — Read mode, the Typora pattern: the whole page is
+   the target and nothing is ever visible. Milky glass like the rest
+   of the chrome; built and torn down per-open by context-menu.ts. */
+.ctxm {
   position: fixed;
-  bottom: 14px;
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 5;
-  background: var(--bg);
-  /* Accent ring — matches the mode pill and window frame. */
-  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--border));
-  border-radius: 999px;
-  height: 32px;
+  z-index: 120;
+  min-width: 200px;
+  padding: 5px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--bg) 92%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border: 1px solid color-mix(in srgb, var(--fg) 16%, var(--border));
+  box-shadow: 0 14px 38px rgba(0, 0, 0, 0.2);
+  font-family: var(--font-body);
+}
+.ctxm__row {
+  display: flex;
   align-items: center;
-  padding: 0 4px;
-  gap: 2px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-  transition: opacity 160ms ease, padding 160ms ease,
-    transform 240ms ease, border-color 240ms ease,
-    box-shadow 240ms ease;
-  opacity: 0.9;
-  cursor: pointer;
-  /* One-shot settle pulse: a soft accent ring expands and fades after
-     the pill slides into place. Runs on first paint AND every return
-     from hide-on-scroll — [data-strip-hidden="1"] sets animation:none,
-     so removing the flag restarts the animation. The 300ms delay lets
-     the slide-in transition land first; `backwards` holds the 0% frame
-     (plain shadow) during the delay. Deliberately once-only per
-     appearance: an attention cue, not a decoration loop. */
-  animation: format-bar-settle 700ms ease-out 300ms 1 backwards;
-}
-@keyframes format-bar-settle {
-  0% {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1),
-      0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent);
-  }
-  100% {
-    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1),
-      0 0 0 14px transparent;
-  }
-}
-[data-strip-hidden="1"] .format-bar {
-  animation: none;
-}
-@media (prefers-reduced-motion: reduce) {
-  .format-bar {
-    animation: none;
-  }
-}
-.format-bar:hover,
-.format-bar--open {
-  opacity: 1;
-}
-/* In mode 2 clicking the bar background does nothing (proximity
-   reveals format buttons; the trailing ⌘K button opens cmdp), so drop
-   the pointer cursor to match. */
-[data-active-mode="3"] .format-bar {
-  cursor: default;
-}
-.format-bar__dots {
+  justify-content: space-between;
+  gap: 14px;
+  width: 100%;
+  padding: 5px 10px;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
   color: var(--fg);
-  font-size: 12px;
-  font-weight: 500;
-  padding: 0 10px;
-  user-select: none;
-  letter-spacing: 0.5px;
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
+  font: inherit;
+  font-size: 13px;
+  cursor: pointer;
+  text-align: left;
+  position: relative;
 }
-/* Mode-2 hybrid hint: styled B + I telegraph the format toolbar that
-   proximity reveals; the trailing cmdp glyph telegraphs the palette
-   button at the end of the expanded toolbar. */
-.format-bar__hint-b {
-  font-weight: 700;
-  font-style: normal;
+.ctxm__row:hover {
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  color: var(--accent);
 }
-.format-bar__hint-i {
-  font-weight: 500;
-  font-style: italic;
+.ctxm__row--current::before {
+  content: '';
+  position: absolute;
+  left: 2px;
+  width: 4px;
+  height: 4px;
+  border-radius: 999px;
+  background: var(--accent);
 }
-.format-bar__hint-sep {
-  opacity: 0.6;
+.ctxm__shortcut {
+  color: var(--muted);
+  font-size: 11px;
+  font-family: var(--font-code);
+  letter-spacing: 0.02em;
 }
-.format-bar__hint-cmdp {
-  font-weight: 500;
-  font-style: normal;
+.ctxm__row:hover .ctxm__shortcut {
+  color: color-mix(in srgb, var(--accent) 70%, var(--muted));
 }
-.format-bar--open .format-bar__dots {
+.ctxm__divider {
+  height: 1px;
+  margin: 4px 8px;
+  background: color-mix(in srgb, var(--fg) 9%, transparent);
+}
+
+/* Top chrome band — shell-split geometry, one material system.
+   Desktop (Tauri): 28px window strip (surfaced on .window-title in
+   EVERY mode, riding the pointer-reveal flag) + a 32px tool row that
+   joins it in Write mode → 60px band. The strip contains the native
+   traffic lights; pills tuck below it outside Write mode.
+   Web: a browser tab has no window buttons to contain, so no strip —
+   Write mode gets a single 40px tool bar (filename tucked left
+   inside it) and other modes keep the invisible floating title.
+   Material: milky glass (2026-08-01 final verdict — graphite and the
+   button-island plate both retired after dogfood). The first
+   thin-glass recipe (45-55% opacity) lost on legibility; the milky
+   recipe — macOS-toolbar opacity (72-80%), heavy blur, near-ink
+   labels — won: it keeps text crisp AND adapts to every theme
+   automatically, which a fixed neutral mix couldn't (fought loud
+   gallery themes). Buttons sit directly on the frost. */
+.top-toolbar {
   display: none;
-}
-.format-bar__buttons {
-  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 5;
   align-items: center;
-  gap: 2px;
+  justify-content: center;
+  border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  transition: transform 200ms ease;
+  will-change: transform;
+  /* The bar is a visual surface, not a click surface: only the button
+     cluster is interactive. Everything else (the desktop strip band
+     inside the bar's top padding, the empty flanks) falls through to
+     the .title-drag-zone beneath, so window drag / dblclick-maximise
+     keep working with a toolbar up. (Found 2026-08-04: the bar had
+     been silently eating strip drags since the Write bar landed.) */
+  pointer-events: none;
 }
-.format-bar--open .format-bar__buttons {
+.top-toolbar__group {
+  pointer-events: auto;
+}
+html[data-active-mode="3"] .top-toolbar--fmt {
   display: flex;
 }
-.format-bar__button {
-  width: 26px;
-  height: 24px;
+/* Nav row — Read/Live's answer to reach (2026-08-03; extended to web
+   2026-08-04, retiring the Commands pill). On web it renders as the
+   same single 40px bar the Write toolbar uses. */
+html[data-active-mode="1"] .top-toolbar--nav,
+html[data-active-mode="2"] .top-toolbar--nav,
+html[data-active-mode="4"] .top-toolbar--nav,
+html[data-active-mode="5"] .top-toolbar--nav {
+  display: flex;
+}
+[data-shell="web"] .top-toolbar {
+  height: 40px;
+}
+[data-shell="tauri"] .top-toolbar {
+  height: 60px;
+  padding-top: 28px;
+}
+/* Tool material paints the whole bar on web, only the lower 32px on
+   desktop — the strip region belongs to .window-title. */
+[data-shell="tauri"] .top-toolbar::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 28px;
+  bottom: 0;
+  pointer-events: none;
+}
+[data-shell="web"] .top-toolbar,
+[data-shell="tauri"] .top-toolbar::before {
+  background: color-mix(in srgb, var(--bg) 72%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+}
+/* Desktop window strip — surfaced in every mode; hides and returns
+   with the rest of the chrome via data-strip-hidden. Milkier than the
+   tool row (80% vs 72%) so the filename reads over anything, in
+   near-ink rather than the muted grey tuned for opaque chrome. */
+[data-shell="tauri"] .window-title {
+  z-index: 6;
+  background: color-mix(in srgb, var(--bg) 80%, transparent);
+  -webkit-backdrop-filter: blur(18px) saturate(1.2);
+  backdrop-filter: blur(18px) saturate(1.2);
+  border-bottom: 1px solid color-mix(in srgb, var(--fg) 10%, transparent);
+  color: color-mix(in srgb, var(--fg) 80%, var(--muted));
+}
+/* Button glyphs and labels step up from muted toward ink on glass. */
+.top-toolbar__button,
+.top-toolbar__menu {
+  color: color-mix(in srgb, var(--fg) 55%, var(--muted));
+}
+/* Web filename — bottom-centre status line (2026-08-01: it clashed
+   with the Commands pill when both floated at top-centre; desktop
+   keeps the filename in the strip because that's what a titlebar is
+   for). Same element, repositioned; hides DOWNWARD with the chrome. */
+[data-shell="web"] .window-title {
+  top: auto;
+  bottom: 10px;
+  height: 22px;
+  font-size: 11px;
+  padding: 0 8rem;
+}
+[data-shell="web"][data-strip-hidden="1"] .window-title {
+  transform: translateY(calc(100% + 16px));
+}
+/* macOS fullscreen hides the strip (no window buttons to hold) — the
+   band collapses to the web-style single tool bar. */
+[data-shell="tauri"][data-fullscreen="1"] .top-toolbar {
+  height: 40px;
+  padding-top: 0;
+}
+[data-shell="tauri"][data-fullscreen="1"] .top-toolbar::before {
+  top: 0;
+}
+[data-shell="tauri"][data-fullscreen="1"] .mode-icons {
+  top: 9px;
+}
+[data-strip-hidden="1"] .top-toolbar {
+  transform: translateY(calc(-100% - 8px));
+}
+/* Content clearance while the band is up. Write on both shells; on
+   desktop also Read/Live (they have the nav row) — so switching
+   between banded modes never jumps the content column. */
+/* One clearance number per shell, shared by mode-host padding and
+   Split's in-pane padding so they can never drift. */
+html {
+  --chrome-clearance: 52px;
+}
+[data-shell="tauri"] {
+  --chrome-clearance: 72px;
+}
+[data-shell="tauri"][data-fullscreen="1"] {
+  --chrome-clearance: 52px;
+}
+[data-shell="web"] .mode-host,
+[data-shell="tauri"] .mode-host {
+  padding-top: var(--chrome-clearance);
+}
+/* Split runs full-height — its pane divider carries up behind the
+   glass chrome instead of stopping at a floating gap (2026-08-06);
+   the clearance moves inside each pane (rules at .mode-split). */
+html[data-active-mode="4"] .mode-host {
+  padding-top: 0;
+}
+.top-toolbar__group {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  /* Above the D2 ::before sheen layer. */
+  position: relative;
+  z-index: 1;
+}
+/* Format buttons — icon-only, quiet until hover/active. */
+.top-toolbar__button {
+  width: 28px;
+  height: 26px;
   display: flex;
   align-items: center;
   justify-content: center;
   background: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   color: var(--muted);
   cursor: pointer;
   padding: 0;
   transition: color 120ms ease, background 120ms ease;
 }
-.format-bar__button:hover {
+.top-toolbar__button:hover {
   color: var(--fg);
   background: color-mix(in srgb, var(--fg) 6%, transparent);
 }
-.format-bar__button--active {
+.top-toolbar__button--active {
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
-/* Trailing palette button — only meaningful next to the format
-   buttons (mode 2 expanded), so hidden until --open is set. */
-.format-bar__more {
-  display: none;
+.top-toolbar__sep {
+  width: 1px;
+  height: 16px;
+  margin: 0 6px;
+  background: color-mix(in srgb, var(--fg) 18%, transparent);
+}
+/* Trailing "Commands ⌘K" button — ONE static composed piece: the word
+   carries the mouse user, the key (quieter ink) teaches the shortcut.
+   Never mutates — menubar geometry and text must not move under the
+   mouse (the old Menu↔⌘K swap died in the 2026-08-03 round). */
+.top-toolbar__menu {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  height: 24px;
-  padding: 0 8px;
-  margin-left: 4px;
+  gap: 5px;
+  height: 26px;
+  padding: 0 10px;
   background: transparent;
   border: none;
-  border-radius: 4px;
+  border-radius: 5px;
   color: var(--muted);
   cursor: pointer;
   font: inherit;
+  font-family: var(--font-body);
   font-size: 12px;
   font-weight: 500;
   letter-spacing: 0.5px;
+  white-space: nowrap;
   transition: color 120ms ease, background 120ms ease;
 }
-.format-bar--open .format-bar__more {
-  display: flex;
+.top-toolbar__menu-key {
+  font-size: 10.5px;
+  color: color-mix(in srgb, var(--fg) 38%, var(--muted));
+  transition: color 120ms ease;
 }
-.format-bar__more:hover {
+.top-toolbar__menu:hover {
   color: var(--fg);
   background: color-mix(in srgb, var(--fg) 6%, transparent);
+}
+.top-toolbar__menu:hover .top-toolbar__menu-key {
+  color: color-mix(in srgb, var(--fg) 60%, var(--muted));
+}
+
+/* Nav-row buttons — labelled text targets on the centreline. */
+.top-toolbar__tb {
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 0 9px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: color-mix(in srgb, var(--fg) 55%, var(--muted));
+  cursor: pointer;
+  font: inherit;
+  font-family: var(--font-body);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  transition: color 140ms ease, background 140ms ease;
+}
+.top-toolbar__tb:hover {
+  color: color-mix(in srgb, var(--fg) 85%, var(--muted));
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+/* Current mode is marked by accent ink ALONE — a dot prefix shifted
+   the row's button positions on every mode switch (2026-08-04: out). */
+.top-toolbar__tb--current {
+  color: var(--accent);
+}
+/* Two-stage visibility on the nav row: revealed = ghost-quiet;
+   pointer over the row firms every label; hovered button = full
+   presence. Material never changes — only the ink steps. */
+.top-toolbar--nav .top-toolbar__tb,
+.top-toolbar--nav .top-toolbar__menu {
+  color: color-mix(in srgb, var(--fg) 32%, transparent);
+}
+.top-toolbar--nav .top-toolbar__menu-key {
+  color: color-mix(in srgb, var(--fg) 22%, transparent);
+}
+.top-toolbar--nav .top-toolbar__tb--current {
+  color: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+.top-toolbar--nav:hover .top-toolbar__tb,
+.top-toolbar--nav:hover .top-toolbar__menu {
+  color: color-mix(in srgb, var(--fg) 62%, var(--muted));
+}
+.top-toolbar--nav:hover .top-toolbar__menu-key {
+  color: color-mix(in srgb, var(--fg) 40%, var(--muted));
+}
+.top-toolbar--nav:hover .top-toolbar__tb--current {
+  color: var(--accent);
+}
+.top-toolbar--nav .top-toolbar__tb:hover,
+.top-toolbar--nav .top-toolbar__menu:hover {
+  color: color-mix(in srgb, var(--fg) 85%, var(--muted));
+  background: color-mix(in srgb, var(--fg) 7%, transparent);
+}
+
+/* Narrow viewports (phones): five labelled mode buttons + aux don't
+   fit 375px. Mode buttons go icon-only, Open/Theme fold away (they
+   live in the palette), the trailing key label hides (⌕ remains). */
+@media (max-width: 560px) {
+  .top-toolbar--nav .top-toolbar__tb span {
+    display: none;
+  }
+  .top-toolbar--nav .top-toolbar__tb--aux {
+    display: none;
+  }
+  .top-toolbar--nav .top-toolbar__menu-key {
+    display: none;
+  }
+}
+/* Touch: bigger tap targets; the two-stage quiet stays (touch reveals
+   chrome deliberately via scroll, so the firmed state is the norm). */
+@media (pointer: coarse) {
+  .top-toolbar__tb,
+  .top-toolbar__menu {
+    height: 32px;
+    padding: 0 12px;
+    font-size: 13px;
+  }
+  .top-toolbar--nav .top-toolbar__tb,
+  .top-toolbar--nav .top-toolbar__menu {
+    color: color-mix(in srgb, var(--fg) 62%, var(--muted));
+  }
+  .top-toolbar--nav .top-toolbar__tb--current {
+    color: var(--accent);
+  }
+}
+
+/* Strip control key label — in Split/Code on desktop the control
+   reads "mode icon + ⌘K" at full strip ink (mode-icons.ts toggles
+   hidden at mode change): reminder and mode signal in one static
+   composition. Typography matches the control. */
+.strip-control__key {
+  font-size: 11px;
+  white-space: nowrap;
+}
+/* 2026-08-05: Split/Code joined the nav-row modes (dogfood reversal —
+   "modes 4 and 5 should also have the bar"), so every mode carries a
+   bar and the corner control is retired EVERYWHERE, both shells. The
+   strip-control machinery in mode-icons.ts stays for now in case the
+   verdict moves again; this rule keeps it out of the way. */
+.mode-icons {
+  display: none !important;
 }
 
 /* Command palette — Cmd+K / Cmd+/ opens a centred modal with a fuzzy
@@ -1309,64 +1539,33 @@ html {
   font-size: 14px;
   text-align: center;
 }
-
-/* Edit-flavour picker — Cmd+Alt+E / the chevron next to the Edit
-   button. Small centred modal in the command-palette idiom (same
-   backdrop treatment, same row rhythm) but list-only: three flavours
-   don't need a search input. Built and torn down per-open by
-   edit-mode.ts. */
-.edp__backdrop {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: color-mix(in srgb, var(--bg) 40%, rgba(0, 0, 0, 0.35));
-  display: flex;
-  align-items: flex-start;
-  justify-content: center;
-  padding-top: 18vh;
-}
-.edp__panel {
-  width: min(400px, calc(100vw - 32px));
-  display: flex;
-  flex-direction: column;
-  background: var(--bg);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.18);
-  overflow: hidden;
-  font-family: var(--font-body);
-}
-.edp__title {
-  padding: 12px 18px 8px;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-.edp__list {
-  list-style: none;
-  margin: 0;
-  padding: 0 0 6px;
-}
-.edp__row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 10px 18px;
-  min-height: 36px;
-  cursor: pointer;
-  color: var(--fg);
-}
-.edp__row--selected {
-  background: color-mix(in srgb, var(--accent) 12%, transparent);
-}
-/* The mode you're currently IN — distinct from the arrow-key
-   selection. A small accent dot in the row's left gutter. */
-.edp__row {
+/* Mode rows — the pinned mode section at the top of the unified
+   panel (the standalone edp picker merged in, 2026-08-01). Same row
+   rhythm as commands, plus an icon; the mode you're currently IN
+   gets an accent dot in the left gutter (distinct from the arrow-key
+   selection). */
+.cmdp__row {
   position: relative;
 }
-.edp__row--current::before {
+.cmdp__row--mode .cmdp__label {
+  flex: none;
+  font-weight: 500;
+}
+.cmdp__row--mode .cmdp__hint {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cmdp__icon {
+  display: flex;
+  align-items: center;
+  color: var(--muted);
+}
+.cmdp__row--selected .cmdp__icon,
+.cmdp__row--current .cmdp__icon {
+  color: var(--accent);
+}
+.cmdp__row--current::before {
   content: '';
   position: absolute;
   left: 7px;
@@ -1375,39 +1574,23 @@ html {
   border-radius: 999px;
   background: var(--accent);
 }
-.edp__icon {
+.cmdp__divider {
   display: flex;
   align-items: center;
+  gap: 10px;
+  margin: 6px 0 2px;
+  padding: 0 18px;
   color: var(--muted);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
-.edp__row--selected .edp__icon {
-  color: var(--accent);
-}
-.edp__label {
-  font-size: 14px;
-  font-weight: 500;
-  white-space: nowrap;
-}
-.edp__hint {
+.cmdp__divider::after {
+  content: '';
   flex: 1;
-  color: var(--muted);
-  font-size: 12px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-.edp__shortcut {
-  color: var(--muted);
-  font-size: 12px;
-  font-family: var(--font-code);
-  white-space: nowrap;
-  letter-spacing: 0.02em;
-}
-.edp__note {
-  padding: 8px 18px 12px;
-  color: var(--muted);
-  font-size: 12px;
-  border-top: 1px solid var(--border);
+  height: 1px;
+  background: var(--border);
 }
 
 /* --- Open URL modal --- */
@@ -1787,7 +1970,7 @@ html {
   border-radius: 0;
   font-family: var(--font-body);
   font-size: 1em;
-  line-height: 1.65;
+  line-height: 1.6;
   white-space: pre-wrap;
   overflow-x: visible;
 }
@@ -1992,6 +2175,14 @@ html {
  * instead of raw <div> source. user-select: none signals "preserved
  * verbatim, not editable" without screaming about it; cursor stays as
  * default so dragging text around the preview still works. */
+/* Images in the editable surface cap at the column like every other
+   mode (Read/Split via CSS, Live inline in its widget) — without
+   this a wide gif blows out the 720px column in Write only. */
+.mode-wysiwyg .ProseMirror img {
+  max-width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
 .mode-wysiwyg .ProseMirror .nicermd-parked-html-preview {
   margin: 0 0 1em;
   user-select: none;
@@ -2057,10 +2248,15 @@ html {
   overflow: auto;
 }
 .mode-split__editor .cm-editor { height: 100%; }
-.mode-split__editor .cm-content { padding: 1rem 0.75rem; }
+/* Panes carry the chrome clearance internally (the mode-host padding
+   is zeroed in Split so the divider spans full height behind the
+   glass); scrolled content slides under the bars like every mode. */
+.mode-split__editor .cm-content {
+  padding: calc(var(--chrome-clearance) + 1rem) 0.75rem 1rem;
+}
 .mode-split__preview {
   overflow: auto;
-  padding: 2rem 2rem 4rem;
+  padding: calc(var(--chrome-clearance) + 2rem) 2rem 4rem;
   background: var(--bg);
   color: var(--fg);
 }
@@ -2666,7 +2862,7 @@ html {
 }
 
 /* --- Find bar (Cmd+F) ---
-   Floating pill anchored top-right, below the scroll-strip area. One
+   Floating pill anchored top-right, below the title-strip area. One
    bar across all modes; per-mode adapters drive content highlighting
    beneath it. The match-count badge dims to muted when empty so the
    'no matches yet' state reads as passive, not error. */
@@ -2777,7 +2973,6 @@ html {
    per-panel border/shadow declared earlier; keep panels in sync by
    editing HERE, not per-panel. */
 .cmdp__panel,
-.edp__panel,
 .url-open__panel,
 .theme-picker,
 .font-picker,

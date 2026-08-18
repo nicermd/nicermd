@@ -74,8 +74,8 @@ const liveTheme = EditorView.theme({
     backgroundColor: 'transparent',
     color: 'var(--fg)',
     fontFamily: 'var(--font-prose)',
-    fontSize: 'var(--prose-font-size, 17px)',
-    lineHeight: '1.65',
+    fontSize: 'var(--font-size, 16px)',
+    lineHeight: '1.6',
   },
   '.cm-scroller': {
     fontFamily: 'inherit',

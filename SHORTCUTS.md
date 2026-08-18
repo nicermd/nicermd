@@ -11,11 +11,18 @@ A quick reference for everything wired in nicermd.
 | Shortcut              | Action                              |
 |-----------------------|-------------------------------------|
 | `Cmd` + `1`           | Switch to **Mode 1 — Read**         |
-| `Cmd` + `2`           | Switch to **Mode 2 — Write**        |
-| `Cmd` + `3`           | Switch to **Mode 3 — Split**        |
-| `Cmd` + `4`           | Switch to **Mode 4 — Code**         |
-| `Cmd` + `Return`      | Toggle Read ↔ Write (from Split / Code, jumps to Write) |
-| `Cmd` + `Shift` + `M` | Cycle modes 1 → 2 → 3 → 4 → 1       |
+| `Cmd` + `2`           | Switch to **Mode 2 — Live**         |
+| `Cmd` + `3`           | Switch to **Mode 3 — Write**        |
+| `Cmd` + `4`           | Switch to **Mode 4 — Split**        |
+| `Cmd` + `5`           | Switch to **Mode 5 — Code**         |
+| `Cmd` + `Return`      | Toggle Read ↔ your remembered edit mode |
+| `Ctrl` + `Alt` + `→` / `←` | Cycle to the next / previous mode |
+| `Cmd` + `Shift` + `M` | Cycle modes forward (legacy alias)  |
+
+Not a shortcut, but the same muscle: **two-finger trackpad swipe**
+left/right cycles modes (both shells), as does a horizontal touch
+swipe on phones. Mouse users get the mode buttons in the top toolbar
+that appears on pointer movement.
 
 ## Window
 
@@ -83,14 +90,15 @@ The picker also auto-opens on first-ever visit (when no theme has been chosen ye
 
 `Cmd` + `Alt` + `T` was picked over `Cmd` + `Shift` + `T` because Chrome reserves `Cmd+Shift+T` for "reopen closed tab" — `preventDefault` cannot override that browser-level accelerator.
 
-The four modes:
+The five modes:
 
 1. **Read** — rendered HTML via `nicermd-core`, no editor.
-2. **Write** — Tiptap rich-text, markers hidden, modern WYSIWYG feel. Lazy-loaded on first enter.
-3. **Split** — CodeMirror source on the left, live `nicermd-core` preview on the right.
-4. **Code** — CodeMirror with a syntax-aware palette and line numbers. The "purist" mode where bytes are preserved exactly.
+2. **Live** — rendered like the page, but it's live markdown: source reveals itself at the cursor (CodeMirror).
+3. **Write** — Tiptap rich-text, markers hidden, modern WYSIWYG feel. Lazy-loaded on first enter.
+4. **Split** — CodeMirror source on the left, live `nicermd-core` preview on the right.
+5. **Code** — CodeMirror with a syntax-aware palette and line numbers. The "purist" mode where bytes are preserved exactly.
 
-## Standard editing (modes 2, 3, 4)
+## Standard editing (modes 2–5)
 
 These come from CodeMirror / ProseMirror defaults. Mode 1 is read-only and ignores them.
 
@@ -121,7 +129,7 @@ Table column drag-resize is supported visually but does not survive a markdown r
 | `Cmd` + `K`           | Open command palette                              |
 | `Cmd` + `/`           | Open command palette (alternate binding)          |
 
-The fastest way to find a command, theme, or shortcut. Type to filter, arrow keys to navigate, Enter to run.
+The fastest way to find a command, theme, or shortcut. Type to filter, arrow keys to navigate, Enter to run. The five modes sit pinned at the top with the natural round-trip preselected (from Read, your remembered edit mode; from an edit mode, Read) — so `Cmd+K`, `Return` bounces you across. The same panel is the ⌕ button at the toolbar's end, and on the desktop app it's in the right-click menu and the **Mode** menu.
 
 ## Planned
 

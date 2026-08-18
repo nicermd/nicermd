@@ -673,40 +673,62 @@ fn build_menu(
         .item(&PredefinedMenuItem::select_all(app, None)?)
         .build()?;
 
-    let view_submenu = SubmenuBuilder::new(app, "View")
+    // Mode gets its own top-level menu (2026-08-01 minimal-affordance
+    // round): with the floating pills gone, the menu bar is desktop's
+    // primary discoverable entry point, and modes are the app's core
+    // concept. Items were previously in View with the STALE pre-Live
+    // 4-mode numbering (Read/Write/Split/Code on Cmd+1..4).
+    let mode_submenu = SubmenuBuilder::new(app, "Mode")
         .item(
             &MenuItemBuilder::with_id("view-mode-1", "Read")
                 .accelerator("CmdOrCtrl+1")
                 .build(app)?,
         )
         .item(
-            &MenuItemBuilder::with_id("view-mode-2", "Write")
+            &MenuItemBuilder::with_id("view-mode-2", "Live")
                 .accelerator("CmdOrCtrl+2")
                 .build(app)?,
         )
         .item(
-            &MenuItemBuilder::with_id("view-mode-3", "Split")
+            &MenuItemBuilder::with_id("view-mode-3", "Write")
                 .accelerator("CmdOrCtrl+3")
                 .build(app)?,
         )
         .item(
-            &MenuItemBuilder::with_id("view-mode-4", "Code")
+            &MenuItemBuilder::with_id("view-mode-4", "Split")
                 .accelerator("CmdOrCtrl+4")
                 .build(app)?,
         )
-        .separator()
         .item(
-            &MenuItemBuilder::with_id("view-cycle-mode", "Cycle Modes")
-                .accelerator("CmdOrCtrl+Shift+M")
+            &MenuItemBuilder::with_id("view-mode-5", "Code")
+                .accelerator("CmdOrCtrl+5")
                 .build(app)?,
         )
         .separator()
         .item(
-            &MenuItemBuilder::with_id("view-command-palette", "Command Palette…")
+            &MenuItemBuilder::with_id("mode-toggle-edit", "Toggle Edit")
+                .accelerator("CmdOrCtrl+Enter")
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::with_id("view-mode-next", "Next Mode")
+                .accelerator("Ctrl+Alt+Right")
+                .build(app)?,
+        )
+        .item(
+            &MenuItemBuilder::with_id("view-mode-prev", "Previous Mode")
+                .accelerator("Ctrl+Alt+Left")
+                .build(app)?,
+        )
+        .separator()
+        .item(
+            &MenuItemBuilder::with_id("view-command-palette", "All Commands…")
                 .accelerator("CmdOrCtrl+K")
                 .build(app)?,
         )
-        .separator()
+        .build()?;
+
+    let view_submenu = SubmenuBuilder::new(app, "View")
         .item(
             &MenuItemBuilder::with_id("view-focus", "Focus Mode")
                 .accelerator("CmdOrCtrl+.")
@@ -748,6 +770,7 @@ fn build_menu(
         .item(&app_submenu)
         .item(&file_submenu)
         .item(&edit_submenu)
+        .item(&mode_submenu)
         .item(&view_submenu)
         .item(&window_submenu)
         .build()?;
@@ -825,7 +848,10 @@ fn handle_menu_event(app: &AppHandle, event: tauri::menu::MenuEvent) {
         "view-mode-2" => emit_to_focused_or_all(app, "menu:view-mode", 2),
         "view-mode-3" => emit_to_focused_or_all(app, "menu:view-mode", 3),
         "view-mode-4" => emit_to_focused_or_all(app, "menu:view-mode", 4),
-        "view-cycle-mode" => emit_to_focused_or_all(app, "menu:view-cycle", ()),
+        "view-mode-5" => emit_to_focused_or_all(app, "menu:view-mode", 5),
+        "mode-toggle-edit" => emit_to_focused_or_all(app, "menu:mode-toggle-edit", ()),
+        "view-mode-next" => emit_to_focused_or_all(app, "menu:view-cycle", ()),
+        "view-mode-prev" => emit_to_focused_or_all(app, "menu:view-cycle-prev", ()),
         "view-command-palette" => emit_to_focused_or_all(app, "menu:command-palette", ()),
         "view-focus" => emit_to_focused_or_all(app, "menu:view-focus-toggle", ()),
         "view-reload" => emit_to_focused_or_all(app, "menu:view-reload", ()),

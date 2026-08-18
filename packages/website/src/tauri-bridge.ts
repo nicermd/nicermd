@@ -46,6 +46,7 @@ import {
 } from './doc-source'
 import { loadFromUrl, openUrlPrompt } from './url-open'
 import { openPalette } from './command-palette'
+import { toggleEdit } from './edit-mode'
 
 function isTauri(): boolean {
   return typeof window !== 'undefined' && '__TAURI_INTERNALS__' in window
@@ -77,6 +78,14 @@ export async function setupTauriBridge(harness: Harness): Promise<void> {
 
   await listenHere('menu:view-cycle', () => {
     harness.cycle()
+  })
+
+  await listenHere('menu:view-cycle-prev', () => {
+    harness.cyclePrevious()
+  })
+
+  await listenHere('menu:mode-toggle-edit', () => {
+    toggleEdit(harness)
   })
 
   await listenHere('menu:command-palette', () => {

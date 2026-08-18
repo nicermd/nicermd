@@ -5,9 +5,12 @@
 // in main.ts. 0 = baseline (current build).
 
 const STORAGE_KEY = 'nicermd:option'
-// No active round. (2026-07-31 framing rounds concluded: accent
-// window frame shipped as the Tauri default; page-card, titlebar
-// band and vignette rejected. Earlier: single-icon mode pill.)
+// No active round. (2026-08-01 top-chrome workstream concluded: milky
+// glass locked as THE chrome material — graphite, thin glass and the
+// button-island plate all rejected in dogfood rounds; two-tier D beat
+// B's traffic-light reposition; soft sheen beat flat tint + bottom
+// proximity pill. Earlier: accent window frame shipped; page-card,
+// titlebar band, vignette rejected.)
 const MAX_OPTION = 0 // bump as new variants land
 
 let cached: number | null = null

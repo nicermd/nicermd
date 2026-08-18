@@ -1,25 +1,42 @@
-// Command palette — fuzzy-search every action. Opens on Cmd+K or
-// Cmd+/, both bound here. Centred modal with an auto-focused input
-// and a single flat result list. Up/Down navigate, Enter executes,
-// Esc closes; clicking a row executes; clicking the backdrop closes.
+// Unified command panel (2026-08-01 — the standalone mode picker
+// merged in). Opens on Cmd+K / Cmd+/ / the strip control. Centred
+// modal with an auto-focused input over two zones:
+//
+//   MODES     Read / Live / Write / Split / Code with descriptions —
+//             the round-trip preselection preserved from the old
+//             picker: from Read the remembered edit flavour opens
+//             selected (Enter drops straight in); from any edit mode
+//             Read is selected (Enter goes home). The current mode
+//             is marked with an accent icon.
+//   COMMANDS  everything else, as before.
+//
+// The input keeps keyboard focus the whole time; selection is a
+// visual cursor. Arrows move it linearly through everything visible,
+// Enter activates, any character filters (first keystroke re-ranks
+// to best match — a mode never steals Enter from a typed query),
+// backspace-to-empty restores the resting preselection, Escape
+// clears the query first and closes when empty.
 //
 // Each command can be filtered out via an optional `available()`
-// predicate — used to scope format actions to mode 2 and zoom /
+// predicate — used to scope format actions to mode 3 and zoom /
 // reload to Tauri.
-//
-// Commands display their keyboard shortcut in muted text on the right
-// — teaches the shortcut as a side effect of using the palette.
 
 import type { Harness } from './main'
 import { toggleFullscreen } from './main'
-import { openFile, saveFile, newFile, getCurrentSourceUrl } from './doc-source'
+import { openFile, saveFile, newFile, getCurrentSourceUrl, getContentKind } from './doc-source'
 import { openUrlPrompt } from './url-open'
 import { openThemePicker } from './theme-picker'
 import { toggleRecentTheme, showThemeToast, showToast } from './themes'
 import { openFontPicker } from './font-picker'
 import { isTauri as isZoomTauri, zoomIn, zoomOut, zoomReset } from './zoom'
 import { IS_MAC } from './platform'
-import { toggleEdit, openEditPicker, isEditMode } from './edit-mode'
+import {
+  EDIT_FLAVOURS,
+  READ_ENTRY,
+  isEditMode,
+  readEditFlavour,
+} from './edit-mode'
+import type { EditFlavour } from './edit-mode'
 
 interface Command {
   id: string
@@ -37,18 +54,12 @@ function isTauri(): boolean {
 function buildCommands(harness: Harness): Command[] {
   const inMode = (k: number) => () => harness.getCurrentMode().key === k
   const inWysiwyg = inMode(3)
-  const inEditMode = () => isEditMode(harness.getCurrentMode().key)
 
   return [
-    // Modes — Read-primary shape: one Edit toggle + a flavour picker,
-    // with the direct per-flavour jumps kept for power users.
-    { id: 'mode.read', label: 'Switch to Read', shortcut: 'Cmd+1', action: () => harness.switchTo(1) },
-    { id: 'mode.edit', label: 'Edit', hint: 'Last-used edit mode', shortcut: 'Cmd+Return', action: () => toggleEdit(harness), available: () => !inEditMode() },
-    { id: 'mode.editPicker', label: 'Choose mode…', shortcut: 'Cmd+E', action: () => openEditPicker(harness) },
-    { id: 'mode.live', label: 'Edit in Live', hint: 'Rendered, edits in place', shortcut: 'Cmd+2', action: () => harness.switchTo(2) },
-    { id: 'mode.write', label: 'Edit in Write', shortcut: 'Cmd+3', action: () => harness.switchTo(3) },
-    { id: 'mode.split', label: 'Edit in Split', shortcut: 'Cmd+4', action: () => harness.switchTo(4) },
-    { id: 'mode.code', label: 'Edit in Code', shortcut: 'Cmd+5', action: () => harness.switchTo(5) },
+    // Modes live in the panel's pinned mode section, not here — the
+    // old "Switch to Read" / "Edit in X" / "Choose mode…" commands
+    // were redundant with it. Cycle survives as the one mode action
+    // with no row of its own.
     { id: 'mode.cycle', label: 'Cycle modes', shortcut: 'Cmd+Shift+M', action: () => harness.cycle() },
 
     // File
@@ -111,7 +122,7 @@ function buildCommands(harness: Harness): Command[] {
     { id: 'format.bold', label: 'Bold', shortcut: 'Cmd+B', action: () => harness.toggleFormat('bold'), available: inWysiwyg },
     { id: 'format.italic', label: 'Italic', shortcut: 'Cmd+I', action: () => harness.toggleFormat('italic'), available: inWysiwyg },
     { id: 'format.strike', label: 'Strikethrough', action: () => harness.toggleFormat('strike'), available: inWysiwyg },
-    { id: 'format.code', label: 'Inline code', shortcut: 'Cmd+Shift+E', action: () => harness.toggleFormat('code'), available: inWysiwyg },
+    { id: 'format.code', label: 'Inline code', shortcut: 'Cmd+E', action: () => harness.toggleFormat('code'), available: inWysiwyg },
     { id: 'format.h1', label: 'Heading 1', shortcut: 'Cmd+Alt+1', action: () => harness.toggleFormat('h1'), available: inWysiwyg },
     { id: 'format.h2', label: 'Heading 2', shortcut: 'Cmd+Alt+2', action: () => harness.toggleFormat('h2'), available: inWysiwyg },
     { id: 'format.bulletList', label: 'Bullet list', shortcut: 'Cmd+Shift+8', action: () => harness.toggleFormat('bulletList'), available: inWysiwyg },
@@ -147,11 +158,11 @@ function fuzzyScore(query: string, target: string): number {
 let isOpen = false
 let registeredHarness: Harness | null = null
 
-// Programmatic open — used by mouse-affordance experiments (e.g. the
-// option-B format-bar trailing button) to open the palette without
-// having to dispatch a synthetic Cmd+K. Returns false silently if the
-// palette has not been wired yet (setupCommandPalette not called) or
-// is already open.
+// Programmatic open — used by the strip control, the Write tool row's
+// Menu button and edit-mode's first-use fallback, without having to
+// dispatch a synthetic Cmd+K. Returns false silently if the panel has
+// not been wired yet (setupCommandPalette not called) or is already
+// open.
 export function openPalette(): boolean {
   if (isOpen || !registeredHarness) return false
   openPaletteImpl(registeredHarness)
@@ -172,11 +183,33 @@ export function setupCommandPalette(harness: Harness): void {
   })
 }
 
+// A row in the unified list — either a mode or a command. Kept as one
+// flat array so selection/arrow logic stays a single index.
+type PanelItem =
+  | { kind: 'mode'; flavour: EditFlavour }
+  | { kind: 'command'; cmd: Command }
+
 function openPaletteImpl(harness: Harness): void {
   if (isOpen) return
   isOpen = true
 
   const all = buildCommands(harness).filter((cmd) => !cmd.available || cmd.available())
+
+  // Mode rows — full list Read-first, trimmed to Code for non-markdown
+  // docs (the markdown-only boundary surfaced by absence, matching
+  // harness.switchTo's enforcement).
+  const isMarkdown = getContentKind().kind === 'markdown'
+  const modes: EditFlavour[] = [READ_ENTRY, ...EDIT_FLAVOURS].filter(
+    (f) => isMarkdown || !f.markdownOnly,
+  )
+  const current = harness.getCurrentMode().key
+
+  // Round-trip preselection: from an edit mode → Read; from Read →
+  // the remembered flavour (first-ever use falls back to the first
+  // edit flavour so Enter still does something sensible).
+  const preferredKey = isEditMode(current)
+    ? 1
+    : (readEditFlavour() ?? modes.find((f) => f.key !== 1)?.key ?? 1)
 
   const backdrop = document.createElement('div')
   backdrop.className = 'cmdp__backdrop'
@@ -184,14 +217,14 @@ function openPaletteImpl(harness: Harness): void {
   const panel = document.createElement('div')
   panel.className = 'cmdp__panel'
   panel.setAttribute('role', 'dialog')
-  panel.setAttribute('aria-label', 'Command palette')
+  panel.setAttribute('aria-label', 'Modes and commands')
 
   const input = document.createElement('input')
   input.className = 'cmdp__input'
   input.type = 'text'
   input.name = 'cmdp-search'
-  input.placeholder = 'Search commands…'
-  input.setAttribute('aria-label', 'Command search')
+  input.placeholder = 'Type to search…'
+  input.setAttribute('aria-label', 'Search modes and commands')
   input.autocomplete = 'off'
   input.spellcheck = false
   // Stop Chrome / 1Password / LastPass from attaching autofill UI that
@@ -210,7 +243,7 @@ function openPaletteImpl(harness: Harness): void {
   backdrop.appendChild(panel)
   document.body.appendChild(backdrop)
 
-  let filtered: Command[] = all
+  let filtered: PanelItem[] = []
   let selectedIdx = 0
 
   const close = (): void => {
@@ -220,23 +253,48 @@ function openPaletteImpl(harness: Harness): void {
     backdrop.remove()
   }
 
-  const execute = (cmd: Command): void => {
+  const execute = (item: PanelItem): void => {
     close()
     // Run after the modal is gone so commands like "Open file…" that
     // hand off to a system dialog don't fight the closing backdrop.
+    // rememberEditFlavour fires via the onModeChange hook on actual
+    // entry, so mode rows just switch.
+    if (item.kind === 'mode') {
+      const key = item.flavour.key
+      queueMicrotask(() => harness.switchTo(key))
+      return
+    }
+    const cmd = item.cmd
     queueMicrotask(() => void cmd.action())
   }
+
+  const shortcutLabel = (shortcut: string): string =>
+    IS_MAC ? shortcut : shortcut.replace(/\bCmd\b/g, 'Ctrl')
 
   const render = (): void => {
     list.textContent = ''
     if (filtered.length === 0) {
       const empty = document.createElement('li')
       empty.className = 'cmdp__empty'
-      empty.textContent = 'No matching commands'
+      empty.textContent = 'No matches'
       list.appendChild(empty)
       return
     }
-    filtered.forEach((cmd, idx) => {
+    filtered.forEach((item, idx) => {
+      // Divider between the mode zone and the commands beneath it —
+      // rendered as inert list furniture, never selectable.
+      if (
+        idx > 0 &&
+        item.kind === 'command' &&
+        filtered[idx - 1]?.kind === 'mode'
+      ) {
+        const div = document.createElement('li')
+        div.className = 'cmdp__divider'
+        div.setAttribute('aria-hidden', 'true')
+        div.textContent = 'Commands'
+        list.appendChild(div)
+      }
+
       const row = document.createElement('li')
       row.className = 'cmdp__row'
       if (idx === selectedIdx) {
@@ -245,26 +303,56 @@ function openPaletteImpl(harness: Harness): void {
       row.setAttribute('role', 'option')
       row.setAttribute('aria-selected', idx === selectedIdx ? 'true' : 'false')
 
-      const label = document.createElement('span')
-      label.className = 'cmdp__label'
-      label.textContent = cmd.label
-      row.appendChild(label)
+      if (item.kind === 'mode') {
+        row.classList.add('cmdp__row--mode')
+        // Accent icon marks the mode you're IN (distinct from the
+        // arrow-key selection) so the list answers "where am I".
+        if (item.flavour.key === current) row.classList.add('cmdp__row--current')
 
-      if (cmd.hint) {
+        const icon = document.createElement('span')
+        icon.className = 'cmdp__icon'
+        icon.innerHTML =
+          '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" ' +
+          'stroke="currentColor" stroke-width="2" stroke-linecap="round" ' +
+          `stroke-linejoin="round">${item.flavour.paths}</svg>`
+        row.appendChild(icon)
+
+        const label = document.createElement('span')
+        label.className = 'cmdp__label'
+        label.textContent = item.flavour.name
+        row.appendChild(label)
+
         const hint = document.createElement('span')
         hint.className = 'cmdp__hint'
-        hint.textContent = cmd.hint
+        hint.textContent = item.flavour.hint
         row.appendChild(hint)
-      }
 
-      if (cmd.shortcut) {
         const sc = document.createElement('span')
         sc.className = 'cmdp__shortcut'
-        // Shortcuts are authored Mac-side ('Cmd+K'); rewrite at render
-        // time for non-Mac so Windows / Linux readers don't see a key
-        // that doesn't exist on their keyboard.
-        sc.textContent = IS_MAC ? cmd.shortcut : cmd.shortcut.replace(/\bCmd\b/g, 'Ctrl')
+        sc.textContent = shortcutLabel(item.flavour.shortcut)
         row.appendChild(sc)
+      } else {
+        const cmd = item.cmd
+        const label = document.createElement('span')
+        label.className = 'cmdp__label'
+        label.textContent = cmd.label
+        row.appendChild(label)
+
+        if (cmd.hint) {
+          const hint = document.createElement('span')
+          hint.className = 'cmdp__hint'
+          hint.textContent = cmd.hint
+          row.appendChild(hint)
+        }
+
+        if (cmd.shortcut) {
+          const sc = document.createElement('span')
+          sc.className = 'cmdp__shortcut'
+          // Shortcuts are authored Mac-side ('Cmd+K'); rewrite at
+          // render time for non-Mac readers.
+          sc.textContent = shortcutLabel(cmd.shortcut)
+          row.appendChild(sc)
+        }
       }
 
       row.addEventListener('mousemove', () => {
@@ -274,7 +362,7 @@ function openPaletteImpl(harness: Harness): void {
       })
       row.addEventListener('mousedown', (e) => {
         e.preventDefault()
-        execute(cmd)
+        execute(item)
       })
 
       list.appendChild(row)
@@ -290,12 +378,52 @@ function openPaletteImpl(harness: Harness): void {
 
   const filter = (): void => {
     const q = input.value.trim()
-    const scored = all
-      .map((cmd) => ({ cmd, score: fuzzyScore(q, cmd.label) }))
-      .filter((entry) => entry.score > 0)
+    if (!q) {
+      // Resting state: full list, selection back on the round-trip
+      // mode — backspacing to empty restores it rather than stranding
+      // the cursor wherever the last query left it.
+      filtered = [
+        ...modes.map((flavour): PanelItem => ({ kind: 'mode', flavour })),
+        ...all.map((cmd): PanelItem => ({ kind: 'command', cmd })),
+      ]
+      selectedIdx = Math.max(
+        0,
+        filtered.findIndex(
+          (i) => i.kind === 'mode' && i.flavour.key === preferredKey,
+        ),
+      )
+      render()
+      return
+    }
+    // Typed query: matching modes stay pinned above matching commands,
+    // each zone ranked by score; selection jumps to the best match so
+    // a mode never steals Enter from a typed command query.
+    // Modes match on name, description AND invisible keywords —
+    // "edit" must surface the edit flavours even though the row
+    // names stay clean. Name matches outrank the weaker channels.
+    const modeScore = (f: EditFlavour): number =>
+      Math.max(
+        fuzzyScore(q, f.name),
+        Math.round(fuzzyScore(q, f.hint) * 0.4),
+        Math.round(fuzzyScore(q, f.keywords) * 0.8),
+      )
+    const modeScored = modes
+      .map((flavour) => ({ flavour, score: modeScore(flavour) }))
+      .filter((e) => e.score > 0)
       .sort((a, b) => b.score - a.score)
-    filtered = scored.map((entry) => entry.cmd)
-    selectedIdx = 0
+    const cmdScored = all
+      .map((cmd) => ({ cmd, score: fuzzyScore(q, cmd.label) }))
+      .filter((e) => e.score > 0)
+      .sort((a, b) => b.score - a.score)
+    filtered = [
+      ...modeScored.map((e): PanelItem => ({ kind: 'mode', flavour: e.flavour })),
+      ...cmdScored.map((e): PanelItem => ({ kind: 'command', cmd: e.cmd })),
+    ]
+    // Best match wins the cursor: a stronger command score outranks a
+    // weak mode name match even though modes render first.
+    const bestMode = modeScored[0]?.score ?? 0
+    const bestCmd = cmdScored[0]?.score ?? 0
+    selectedIdx = bestCmd > bestMode ? modeScored.length : 0
     render()
   }
 
@@ -306,12 +434,23 @@ function openPaletteImpl(harness: Harness): void {
   // panel-level listener, so binding here is more robust. Capture
   // phase so we win over any deeper handler (e.g. Tiptap's editor
   // shortcuts, which would otherwise eat Cmd+B inside the palette).
+  // Escape is two-stage: clear a typed query first, close when empty —
+  // two taps from deep in a search, one from rest.
+  const onEscape = (): void => {
+    if (input.value) {
+      input.value = ''
+      filter()
+      return
+    }
+    close()
+  }
+
   const onKeydown = (e: KeyboardEvent): void => {
     if (!isOpen) return
     if (e.key === 'Escape') {
       e.preventDefault()
       e.stopPropagation()
-      close()
+      onEscape()
       return
     }
     if (e.key === 'ArrowDown') {
@@ -330,8 +469,8 @@ function openPaletteImpl(harness: Harness): void {
     }
     if (e.key === 'Enter') {
       e.preventDefault()
-      const cmd = filtered[selectedIdx]
-      if (cmd) execute(cmd)
+      const item = filtered[selectedIdx]
+      if (item) execute(item)
       return
     }
   }
@@ -346,7 +485,7 @@ function openPaletteImpl(harness: Harness): void {
       if (e.key !== 'Escape') return
       e.preventDefault()
       e.stopPropagation()
-      close()
+      onEscape()
     },
     true,
   )
@@ -355,7 +494,9 @@ function openPaletteImpl(harness: Harness): void {
     if (e.target === backdrop) close()
   })
 
-  render()
+  // Initial state runs through filter() with the empty query — builds
+  // the resting list and places selection on the round-trip mode.
+  filter()
   // Defer focus to the next tick so the keydown that opened the
   // palette finishes processing first — otherwise some browsers fire
   // the same keystroke at the input and prefill it.

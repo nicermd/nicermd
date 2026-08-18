@@ -197,11 +197,32 @@ these three follow it.
   frame — rounded 2px inset border in the theme accent, matching
   the pill rings. Shipped as the Tauri-shell default (web tabs
   already have chrome).
-- **NEXT — WYSIWYG format bar to top.** Bottom FAB/format-bar is a
-  Milkdown-era port; users expect editing controls along the top.
-  Persistent top toolbar while in Write mode, absent in Read —
-  consistent with controls-on-demand. Fold into or sequence after
-  the edit-picker work since both touch the toolbar.
+- **DONE 2026-08-01 — WYSIWYG format bar to top.** Landed as part of
+  the top-chrome workstream (feat/write-toolbar-top): milky-glass
+  tool row under the window strip in Write mode, single 40px bar on
+  web; the bottom pill and its proximity expansion are gone.
+- **PARKED — Windows/Linux top-chrome adaptation.** _Trigger: first
+  real testing session on Windows or Linux hardware (builds
+  themselves are separately parked under Distribution)._ Decision
+  ladder locked 2026-08-01 after mock rounds (see
+  `../scratch/windows-before-after.html` and
+  `../scratch/desktop-platforms-mockups.html` in the workspace):
+  - **Never** ship the muda in-window menu row off-Mac (W-B —
+    "1995 Windows"). First step when unparking: gate `set_menu` to
+    macOS only (`#[cfg(target_os = "macos")]` in lib.rs setup) —
+    until then the unconditional menu is harmless because no
+    Windows/Linux builds exist.
+  - **First ship (W-C):** native OS titlebar, no menu; right-click
+    menu + Ctrl+K + web-style corner chip carry everything. Needs a
+    `data-platform` attribute (main.ts) so CSS can hide the glass
+    strip off-Mac (OS titlebar already holds name + buttons).
+  - **Graduation target (W-D):** frameless (`decorations: false`) —
+    the glass strip IS the titlebar with our own caption buttons,
+    identical to the Mac build. Known trade: Win11 Snap Layouts
+    lost on custom captions (VS Code accepts the same trade).
+  Web/mac behaviour is unaffected throughout; the right-click menu,
+  Ctrl+K panel and pointer-reveal are already platform-proofed with
+  Ctrl labels.
 
 ## Fonts
 
