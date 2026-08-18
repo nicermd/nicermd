@@ -177,6 +177,24 @@ Direction: lean into iA Writer / Typora-class minimalism. Mode
 architecture (Read-primary + edit picker) is the active workstream;
 these three follow it.
 
+- **NEXT — ⌘K key-label optical alignment (dogfooding, revisit ~w/c
+  2026-08-24).** #124 unified the key label with the bar typography
+  (size/weight/spacing/ink) after the stepped-down quiet key read as
+  a different weight sitting high. Open question: does ⌘ still sit
+  optically high (the glyph comes from the system fallback font, whose
+  vertical metrics differ from the theme face), or was it the ink
+  step? If it persists, candidates: render ⌘K as a small inline SVG,
+  or nudge with a sub-pixel translate.
+
+- **NEXT — Logo n letterform round (revisit ~w/c 2026-08-24).** N6
+  drawn grotesk is shipped and live; user wants a completeness pass
+  against classic tech-logo faces before settling long-term. Mock:
+  `scratch/logo-n-fonts.html` (current + 9: Helvetica Neue, Futura,
+  Avenir, Inter, IBM Plex, Space Grotesk, Montserrat, Manrope,
+  JetBrains Mono; commercial vs OFL noted per row). A winner becomes
+  a redraw reference, same as N6 did. Gates the 0.3.0 icon only if
+  the verdict lands before the cut.
+
 - **DONE 2026-07-31 — Clean default Light/Dark themes.** Paper + Ink
   shipped (#108) then tuned through four dogfood rounds to a
   three-colour-family design: blue headings/links, muted berry
