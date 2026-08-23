@@ -177,6 +177,18 @@ Direction: lean into iA Writer / Typora-class minimalism. Mode
 architecture (Read-primary + edit picker) is the active workstream;
 these three follow it.
 
+- **NEXT — Tabs: a new UX experiment.** User wants to play with a new
+  way to manage tabs — explicitly framed as exploring a fresh UX, not
+  copying browser tab strips. No design constraints captured yet
+  beyond the chrome grammar (reach reveals, no persistent chrome over
+  the document). Start with mock pages per the established process.
+
+- **NEXT — Top bar reveal: fade-in instead of slide-down (spike in
+  flight).** Keep the slide-up hide (user likes the bar scrolling
+  away with the page); on reveal the bar should not slide down but
+  fade in extremely light — a hint it exists — firming under the
+  pointer. Spike branch: spike/bar-fade-reveal.
+
 - **NEXT — ⌘K key-label optical alignment (dogfooding, revisit ~w/c
   2026-08-24).** #124 unified the key label with the bar typography
   (size/weight/spacing/ink) after the stepped-down quiet key read as
