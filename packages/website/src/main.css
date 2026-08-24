@@ -976,26 +976,46 @@ body {
   top: 0.75rem;
 }
 
-/* Chrome hide: chrome-visibility.ts sets data-strip-hidden="1" on
-   <html> when the user scrolls past the top. Both filename and icons
-   slide up out of view together. */
+/* Chrome hide: chrome-visibility.ts sets data-strip-hidden on <html>
+   carrying the REASON — "slide" (scroll/type/click: chrome rides the
+   page motion up and away) or "fade" (idle: nothing moved, so chrome
+   dissolves where it stands). Reveal is always an in-place fade —
+   the transform snaps back instantly (no transition on the visible
+   state) while opacity animates, so the bar never slides DOWN. */
 .window-title,
 .mode-icons {
-  transition: transform 200ms ease;
-  will-change: transform;
+  transition: opacity 250ms ease;
+  will-change: transform, opacity;
 }
-[data-strip-hidden="1"] .window-title {
-  transform: translateY(calc(-100% - 24px));
+[data-strip-hidden] .window-title,
+[data-strip-hidden] .mode-icons {
+  opacity: 0;
 }
-[data-strip-hidden="1"] .mode-icons {
+[data-strip-hidden="slide"] .window-title,
+[data-strip-hidden="slide"] .mode-icons {
   /* Overshoot past -100% so the control clears the edge from any
      resting top (3px in the strip, 9px as the web chip). */
   transform: translateY(calc(-100% - 24px));
+  transition: transform 200ms ease, opacity 0ms 200ms;
+}
+[data-strip-hidden="fade"] .window-title,
+[data-strip-hidden="fade"] .mode-icons {
+  transition: opacity 350ms ease;
 }
 /* The version badge piggybacks on the same flag so all chrome hides
    as a single unit. */
-[data-strip-hidden="1"] .version-badge {
+.version-badge {
+  transition: opacity 250ms ease;
+}
+[data-strip-hidden] .version-badge {
+  opacity: 0;
+}
+[data-strip-hidden="slide"] .version-badge {
   transform: translateY(calc(100% + 14px));
+  transition: transform 200ms ease, opacity 0ms 200ms;
+}
+[data-strip-hidden="fade"] .version-badge {
+  transition: opacity 350ms ease;
 }
 
 /* PWA standalone on the web shell — Chrome draws its own thin title
@@ -1033,7 +1053,7 @@ body {
     -webkit-app-region: no-drag;
     app-region: no-drag;
   }
-  [data-shell="web"][data-strip-hidden="1"] .mode-icons {
+  [data-shell="web"][data-strip-hidden] .mode-icons {
     transform: none;
   }
 }
@@ -1154,8 +1174,14 @@ body {
   align-items: center;
   justify-content: center;
   border-bottom: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
-  transition: transform 200ms ease;
-  will-change: transform;
+  /* Only opacity transitions on the visible state: the reveal must
+     never slide down, so transform snaps back instantly while the
+     fade animates (hide states own their transforms). A barely-there
+     rest opacity was tried 2026-08-24 and rejected — translucent
+     glass over text is unreadable mush; quietness stays the ink
+     stages' job. */
+  transition: opacity 250ms ease;
+  will-change: transform, opacity;
   /* The bar is a visual surface, not a click surface: only the button
      cluster is interactive. Everything else (the desktop strip band
      inside the bar's top padding, the empty flanks) falls through to
@@ -1231,7 +1257,7 @@ html[data-active-mode="5"] .top-toolbar--nav {
   font-size: 11px;
   padding: 0 8rem;
 }
-[data-shell="web"][data-strip-hidden="1"] .window-title {
+[data-shell="web"][data-strip-hidden] .window-title {
   transform: translateY(calc(100% + 16px));
 }
 /* macOS fullscreen hides the strip (no window buttons to hold) — the
@@ -1246,8 +1272,19 @@ html[data-active-mode="5"] .top-toolbar--nav {
 [data-shell="tauri"][data-fullscreen="1"] .mode-icons {
   top: 9px;
 }
-[data-strip-hidden="1"] .top-toolbar {
+[data-strip-hidden] .top-toolbar {
+  opacity: 0;
+  visibility: hidden;
+}
+/* Slide keeps full presence during the 200ms ride (opacity jumps to 0
+   only once offscreen) so the exit reads exactly as before; the jump
+   is what lets the NEXT reveal fade in instead of popping. */
+[data-strip-hidden="slide"] .top-toolbar {
   transform: translateY(calc(-100% - 8px));
+  transition: transform 200ms ease, opacity 0ms 200ms, visibility 0s 200ms;
+}
+[data-strip-hidden="fade"] .top-toolbar {
+  transition: opacity 350ms ease, visibility 0s 350ms;
 }
 /* Content clearance while the band is up. Write on both shells; on
    desktop also Read/Live (they have the nav row) — so switching

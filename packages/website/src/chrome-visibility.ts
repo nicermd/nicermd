@@ -6,13 +6,21 @@
 // The grammar: chrome answers INTENT (2026-08-01, supersedes the
 // scroll-only grammar):
 //
-//   reach  — pointer moves (mouse)            → show, arm idle timer
-//   read   — sustained scroll down            → hide immediately
-//   write  — typing in an editing surface     → hide immediately
-//   engage — clicking into the page           → hide immediately
-//   still  — ~2.5s without reach              → hide
+//   reach  — pointer moves (mouse)            → show quiet, arm idle timer
+//   read   — sustained scroll down            → hide immediately (slide)
+//   write  — typing in an editing surface     → hide immediately (slide)
+//   engage — clicking into the page           → hide immediately (slide)
+//   still  — ~2.5s without reach              → hide (fade)
 //   pin    — pointer resting on chrome        → never counts as idle
-//   shift  — mode change / boot (showStrip)   → show, arm idle timer
+//   shift  — mode change / boot (showStrip)   → show FIRM, settle to quiet
+//
+// Arrival/departure grammar (2026-08-24): the bar never slides DOWN.
+// It fades in where it stands, at full presence (a barely-there rest
+// opacity was tried and rejected — glass over text is unreadable).
+// Departures keep two shapes: the slide-up rides page motion
+// (scroll/type/click), the idle timeout fades out in place.
+// data-strip-hidden carries the reason ('slide' | 'fade') so the CSS
+// can animate each exit differently.
 //
 // Scroll-UP deliberately does NOT reveal for mouse users — reaching
 // is the reveal gesture, and up-scroll reveal was the main source of
@@ -43,12 +51,12 @@ function html(): DOMStringMap {
   return document.documentElement.dataset
 }
 
-function hide(): void {
+function hide(reason: 'slide' | 'fade' = 'slide'): void {
   if (idleTimer !== null) {
     window.clearTimeout(idleTimer)
     idleTimer = null
   }
-  html().stripHidden = '1'
+  html().stripHidden = reason
 }
 
 function armIdle(ms: number = IDLE_MS): void {
@@ -57,7 +65,9 @@ function armIdle(ms: number = IDLE_MS): void {
   if (pinned) return
   idleTimer = window.setTimeout(() => {
     idleTimer = null
-    hide()
+    // Nothing moved — the bar dissolves where it stands rather than
+    // sliding, which would imply page motion that didn't happen.
+    hide('fade')
   }, ms)
 }
 
