@@ -183,12 +183,6 @@ these three follow it.
   beyond the chrome grammar (reach reveals, no persistent chrome over
   the document). Start with mock pages per the established process.
 
-- **NEXT — Top bar reveal: fade-in instead of slide-down.** Keep the
-  slide-up hide (user likes the bar scrolling away with the page); on
-  reveal the bar should not slide down but fade in extremely light —
-  a hint it exists — firming under the pointer. (A first spike branch
-  was lost to /tmp cleanup before committing; rebuild from this spec.)
-
 - **NEXT — ⌘K key-label optical alignment (dogfooding, revisit ~w/c
   2026-08-24).** #124 unified the key label with the bar typography
   (size/weight/spacing/ink) after the stepped-down quiet key read as
