@@ -28,7 +28,7 @@ Total packages: **98**
 
 ### (MPL-2.0 OR Apache-2.0)
 
-#### `dompurify@3.4.13`
+#### `dompurify@3.4.14`
 
 Author: Dr.-Ing. Mario Heiderich, Cure53  
 Homepage: <https://github.com/cure53/DOMPurify>
