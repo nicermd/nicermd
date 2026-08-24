@@ -183,11 +183,11 @@ these three follow it.
   beyond the chrome grammar (reach reveals, no persistent chrome over
   the document). Start with mock pages per the established process.
 
-- **NEXT — Top bar reveal: fade-in instead of slide-down (spike in
-  flight).** Keep the slide-up hide (user likes the bar scrolling
-  away with the page); on reveal the bar should not slide down but
-  fade in extremely light — a hint it exists — firming under the
-  pointer. Spike branch: spike/bar-fade-reveal.
+- **NEXT — Top bar reveal: fade-in instead of slide-down.** Keep the
+  slide-up hide (user likes the bar scrolling away with the page); on
+  reveal the bar should not slide down but fade in extremely light —
+  a hint it exists — firming under the pointer. (A first spike branch
+  was lost to /tmp cleanup before committing; rebuild from this spec.)
 
 - **NEXT — ⌘K key-label optical alignment (dogfooding, revisit ~w/c
   2026-08-24).** #124 unified the key label with the bar typography
@@ -197,15 +197,6 @@ these three follow it.
   vertical metrics differ from the theme face), or was it the ink
   step? If it persists, candidates: render ⌘K as a small inline SVG,
   or nudge with a sub-pixel translate.
-
-- **NEXT — Logo n letterform round (revisit ~w/c 2026-08-24).** N6
-  drawn grotesk is shipped and live; user wants a completeness pass
-  against classic tech-logo faces before settling long-term. Mock:
-  `scratch/logo-n-fonts.html` (current + 9: Helvetica Neue, Futura,
-  Avenir, Inter, IBM Plex, Space Grotesk, Montserrat, Manrope,
-  JetBrains Mono; commercial vs OFL noted per row). A winner becomes
-  a redraw reference, same as N6 did. Gates the 0.3.0 icon only if
-  the verdict lands before the cut.
 
 - **DONE 2026-07-31 — Clean default Light/Dark themes.** Paper + Ink
   shipped (#108) then tuned through four dogfood rounds to a
