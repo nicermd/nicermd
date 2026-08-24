@@ -92,6 +92,21 @@ is prefixed with a status tag so its disposition is scannable:
     keep an eye on edge cases with hidden / off-screen windows.
   _packages/website/src-tauri/src/lib.rs_
 
+## Documents & history
+
+- **NEXT — Searchable history.** A history of documents the user has
+  opened / pasted / saved, searchable — the natural home is the ⌘K
+  palette (type to filter recent docs alongside commands, per the
+  "power features via command palette" philosophy), plus a possible
+  History entry in the desktop File menu. Zero-server constraint
+  holds: stored locally only (per-window/session storage on web,
+  file paths on desktop — desktop entries reopen the file, web
+  entries reopen a stored snapshot). Open questions: retention
+  (count / age cap), whether web snapshots of pasted text are wanted
+  or only opened files, dedupe by path vs by content, and a clear
+  "Clear history" affordance. Requested 2026-08-24; no design yet —
+  start with a palette mock.
+
 ## Browser integration
 
 - **PARKED — Full Chrome extension (auto-render flavour).**
