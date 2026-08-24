@@ -9,10 +9,10 @@
 //   reach  — pointer moves (mouse)            → show quiet, arm idle timer
 //   read   — sustained scroll down            → hide immediately (slide)
 //   write  — typing in an editing surface     → hide immediately (slide)
-//   engage — clicking into the page           → hide immediately (slide)
+//   engage — clicking into the page           → hide immediately (slide; Write mode exempt)
 //   still  — ~2.5s without reach              → hide (fade)
 //   pin    — pointer resting on chrome        → never counts as idle
-//   shift  — mode change / boot (showStrip)   → show FIRM, settle to quiet
+//   shift  — mode change / boot (showStrip)   → show, arm idle timer
 //
 // Arrival/departure grammar (2026-08-24): the bar never slides DOWN.
 // It fades in where it stands, at full presence (a barely-there rest
@@ -123,6 +123,11 @@ export function setupChromeVisibility(): void {
       anchorX = e.clientX
       anchorY = e.clientY
       pinned = false
+      // Write mode exempt (2026-08-24): formatting workflows are
+      // click-heavy (place caret → reach for the bar → click a control
+      // → click back), and hiding on every document click made the
+      // format row flash in and out. Typing still hides it.
+      if (html().activeMode === '3') return
       hide()
     },
     { passive: true },
